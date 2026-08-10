@@ -4,18 +4,20 @@ import type {
   AnalyticsDataStatus,
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
-} from "@genius-support-os/contracts";
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2 } from "./analytics-api";
+} from '@genius-support-os/contracts';
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
   DEFAULT_ANALYTICS_FILTERS,
   type AnalyticsFilters,
   type AnalyticsPageProps,
+  type AnalyticsSourceConfig,
   type CeoHistory,
   type CeoSnapshot,
 } from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
+import { AnalyticsOperationScope } from "./AnalyticsOperationScope";
 import {
   AnalyticsLoadingState,
   AnalyticsRetryAction,
@@ -112,6 +114,14 @@ export function AnalyticsCeoPage({
   const [refreshing, setRefreshing] = useState(false);
   const [executiveKpis, setExecutiveKpis] = useState<unknown>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
+  const [groupCompany, setGroupCompany] = useState<string>('');
+
+  useEffect(() => {
+    listAnalyticsSourceConfig()
+      .then((configs) => setConfiguredPipelines(configs))
+      .catch(() => setConfiguredPipelines([]));
+  }, []);
 
   useEffect(
     () => setFilters((current) => ({ ...current, ...period })),
@@ -145,7 +155,7 @@ export function AnalyticsCeoPage({
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  }, [filters, groupCompany]);
 
   if (result.loading && !result.data)
     return (
@@ -239,6 +249,9 @@ export function AnalyticsCeoPage({
       canSyncSources={canSyncSources}
       syncSources={syncSources}
       syncBusy={syncBusy}
+      configuredPipelines={configuredPipelines}
+      groupCompany={groupCompany}
+      setGroupCompany={setGroupCompany}
     />
   );
 }
@@ -348,6 +361,9 @@ function ExecutiveHdCanvas({
   canSyncSources,
   syncSources,
   syncBusy,
+  configuredPipelines,
+  groupCompany,
+  setGroupCompany,
 }: {
   data: CeoSnapshot;
   executiveKpis: unknown;
@@ -372,6 +388,9 @@ function ExecutiveHdCanvas({
   canSyncSources: boolean;
   syncSources?: () => void;
   syncBusy: boolean;
+  configuredPipelines: AnalyticsSourceConfig[];
+  groupCompany: string;
+  setGroupCompany: (value: string) => void;
 }) {
   const periodLabel = formatPeriod(filters);
   const qualityExpected = state?.coverage.expected;
@@ -429,7 +448,24 @@ function ExecutiveHdCanvas({
           Filtros <span>{mobileFiltersOpen ? "−" : "+"}</span>
         </button>
         <div className={`gso-hd-filters ${mobileFiltersOpen ? "is-open" : ""}`}>
-          <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
+          <Filters
+            value={filters}
+            onApply={applyFilters}
+            stageOptions={[]}
+            extraFields={
+              configuredPipelines.length > 0 ? (
+                <AnalyticsOperationScope
+                  storageKey="analytics-overview-operation"
+                  value={groupCompany}
+                  onChange={setGroupCompany}
+                  options={configuredPipelines.map((pipeline) => ({
+                    value: pipeline.groupCompany,
+                    source: pipeline.groupCompanySource,
+                  }))}
+                />
+              ) : null
+            }
+          />
         </div>
       </div>
 

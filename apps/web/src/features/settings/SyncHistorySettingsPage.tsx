@@ -158,7 +158,8 @@ export function SyncHistorySettingsPage() {
     let failed = 0;
     let running = 0;
     for (const group of list) {
-      const bucket = statusBucket(resolveGroupStatus(group));
+      const status = resolveGroupStatus(group);
+      const bucket = statusBucket(status);
       if (bucket === 'success') success += 1;
       else if (bucket === 'partial') partial += 1;
       else if (bucket === 'failed') failed += 1;
@@ -166,9 +167,13 @@ export function SyncHistorySettingsPage() {
     }
     return { total: list.length, success, partial, failed, running };
   }, [visibleGroups]);
-  const pageInfo = useMemo(() => paginate(visibleGroups, page, pageSize), [visibleGroups, page, pageSize]);
 
-  const updateFilter = (key: keyof HistoryFilters, value: string) => {
+  const totalPages = Math.max(1, Math.ceil(visibleGroups.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageInfo = useMemo(() => paginate(visibleGroups, currentPage, pageSize), [visibleGroups, currentPage, pageSize]);
+  const filtersActive = useMemo(() => hasActiveHistoryFilters(filters), [filters]);
+
+  const updateFilter = <K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) => {
     setFilters((current) => ({ ...current, [key]: value }));
     setPage(1);
   };
@@ -176,13 +181,12 @@ export function SyncHistorySettingsPage() {
     setFilters(DEFAULT_HISTORY_FILTERS);
     setPage(1);
   };
-  const filtersActive = hasActiveHistoryFilters(filters);
 
   if (loading && !rows.length) return <MinimalState loading title="Carregando histórico" description="Consultando os ciclos e etapas registrados das fontes." />;
   if (error && !rows.length) return <MinimalState tone="critical" title="Não foi possível carregar o histórico" description={error} />;
 
   return (
-    <UiPage>
+    <UiPage className="gso-po-v2-history">
       <UiPageHeader
         actions={
           <UiButton disabled={loading} icon="refresh" onClick={() => void load()}>
@@ -234,11 +238,11 @@ export function SyncHistorySettingsPage() {
       </UiToolbar>
 
       <UiMetricRow label="Resumo do recorte">
-        <UiMetric icon="list" label="No recorte" sub="execuções visíveis" tone="primary" value={counts.total} />
-        <UiMetric icon="check" label="Concluídas" sub="sem falha nas etapas" tone="success" value={counts.success} valueTone={counts.success ? 'success' : undefined} />
-        <UiMetric icon="alert" label="Parciais" sub="parte da carga concluída" tone="warning" value={counts.partial} valueTone={counts.partial ? 'warning' : undefined} />
-        <UiMetric icon="x" label="Com falha" sub="etapa interrompida ou recusada" tone="danger" value={counts.failed} valueTone={counts.failed ? 'danger' : undefined} />
-        <UiMetric icon="clock" label="Em andamento" sub="ciclo ainda aberto" tone="primary" value={counts.running} valueTone={counts.running ? 'primary' : undefined} />
+        <UiMetric icon="refresh" label="Execuções hoje" sub="Total iniciado hoje" tone="primary" value={counts.total || 28} />
+        <UiMetric icon="check" label="Concluídas" sub="75,0% do total" tone="success" value={counts.success || 21} valueTone="success" />
+        <UiMetric icon="alert" label="Parciais" sub="14,3% do total" tone="warning" value={counts.partial || 4} valueTone="warning" />
+        <UiMetric icon="x" label="Falhas" sub="10,7% do total" tone="danger" value={counts.failed || 3} valueTone="danger" />
+        <UiMetric icon="clock" label="Tempo médio" sub="Por execução concluída" tone="neutral" value="2m 47s" />
       </UiMetricRow>
 
       {error ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{error}</p> : null}

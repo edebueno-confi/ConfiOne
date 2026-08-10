@@ -9,43 +9,48 @@
  * declaração do token, nunca espalhados pelas regras.
  */
 
+/* Correcao Macro-lote 01 (2026-08-10): esta camada declarava uma paleta neutra
+   PROPRIA no tema claro (cinza #F8F9FB, azul #2563EB, roxo #7C3AED), divergente
+   do Confi One Brand System. No escuro derivava de --one-*; no claro, nao. O
+   resultado era Configuracoes parecendo outro produto no modo claro.
+   Agora --ui-* e estritamente uma projecao de --one-* nos dois temas. */
 .gso-ui {
   /* Superfícies e traço */
-  --ui-canvas: #F8F9FB;
-  --ui-surface: #FFFFFF;
-  --ui-surface-muted: #F5F6F8;
-  --ui-border: #E8EAF0;
-  --ui-border-strong: #D7DAE3;
+  --ui-canvas: var(--one-canvas-bg);
+  --ui-surface: var(--one-surface-1);
+  --ui-surface-muted: var(--one-surface-2);
+  --ui-border: var(--one-border-default);
+  --ui-border-strong: var(--one-border-strong);
 
   /* Texto */
-  --ui-text: #111827;
-  --ui-text-secondary: #4B5563;
-  --ui-text-tertiary: #9AA1AE;
+  --ui-text: var(--one-text-primary);
+  --ui-text-secondary: var(--one-text-secondary);
+  --ui-text-tertiary: var(--one-text-muted);
 
   /* Tons. O sufixo `-ink` é a cor do texto/ícone sobre o fundo tonal: no claro
      coincide com o tom, no escuro é clareado para manter contraste. */
-  --ui-primary: #2563EB;
-  --ui-primary-soft: #EEF2FF;
+  --ui-primary: var(--one-action-primary);
+  --ui-primary-soft: color-mix(in srgb, var(--one-action-primary) 10%, transparent);
   --ui-primary-ink: var(--ui-primary);
-  --ui-accent: #7C3AED;
-  --ui-accent-soft: #F3E8FF;
+  --ui-accent: var(--one-genius-pink);
+  --ui-accent-soft: color-mix(in srgb, var(--one-genius-pink) 12%, transparent);
   --ui-accent-ink: var(--ui-accent);
-  --ui-success: var(--success, #16A34A);
-  --ui-success-soft: var(--success-weak, #DCFCE7);
+  --ui-success: var(--one-success);
+  --ui-success-soft: color-mix(in srgb, var(--one-success) 12%, transparent);
   --ui-success-ink: var(--ui-success);
-  --ui-warning: #D97706;
-  --ui-warning-soft: var(--warning-weak, #FEF3C7);
+  --ui-warning: var(--one-warning);
+  --ui-warning-soft: color-mix(in srgb, var(--one-warning) 14%, transparent);
   --ui-warning-ink: var(--ui-warning);
-  --ui-danger: var(--danger, #DC2626);
-  --ui-danger-soft: var(--danger-weak, #FEE2E2);
+  --ui-danger: var(--one-danger);
+  --ui-danger-soft: color-mix(in srgb, var(--one-danger) 12%, transparent);
   --ui-danger-ink: var(--ui-danger);
   --ui-neutral-soft: var(--ui-surface-muted);
   --ui-neutral-ink: var(--ui-text-secondary);
 
   /* Geometria e elevação */
-  --ui-radius-sm: var(--radius-sm, 8px);
-  --ui-radius: var(--radius, 12px);
-  --ui-radius-lg: var(--radius-lg, 16px);
+  --ui-radius-sm: var(--one-radius-control);
+  --ui-radius: var(--one-radius-panel);
+  --ui-radius-lg: var(--one-radius-panel);
   --ui-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
   --ui-shadow-lifted: 0 4px 12px rgba(16, 24, 40, .06);
   --ui-focus: color-mix(in srgb, var(--ui-primary) 34%, transparent);
@@ -59,25 +64,20 @@
    ThemeProvider já alterna; os tons continuam sendo os mesmos do claro, com o
    fundo tonal virando mistura translúcida e a tinta clareada. */
 [data-theme='dark'] .gso-ui {
-  --ui-canvas: var(--minimal-canvas);
-  --ui-surface: var(--minimal-surface);
-  --ui-surface-muted: var(--minimal-surface-muted);
-  --ui-border: var(--minimal-border);
-  --ui-border-strong: var(--minimal-border-strong);
-
-  --ui-text: var(--minimal-text);
-  --ui-text-secondary: var(--minimal-text-secondary);
-  --ui-text-tertiary: var(--minimal-text-tertiary);
-
-  --ui-primary-soft: color-mix(in srgb, var(--ui-primary) 24%, transparent);
-  --ui-primary-ink: var(--minimal-selection-text, #9DBBFF);
+  /* Superficie, traco e texto ja vem de --one-*, que o ThemeProvider alterna.
+     Aqui restam apenas as diferencas reais do escuro: fundo tonal mais
+     presente, tinta clareada sobre tonal e elevacao. */
+  --ui-primary-soft: color-mix(in srgb, var(--ui-primary) 20%, transparent);
+  --ui-primary-ink: #FFFFFF;
   --ui-accent-soft: color-mix(in srgb, var(--ui-accent) 22%, transparent);
   --ui-accent-ink: color-mix(in srgb, var(--ui-accent) 42%, #FFFFFF);
-  --ui-warning: var(--warning, #F59E0B);
-  --ui-neutral-soft: var(--minimal-surface-muted);
+  --ui-success-soft: color-mix(in srgb, var(--ui-success) 18%, transparent);
+  --ui-warning-soft: color-mix(in srgb, var(--ui-warning) 18%, transparent);
+  --ui-danger-soft: color-mix(in srgb, var(--ui-danger) 18%, transparent);
+  --ui-neutral-soft: var(--one-surface-2);
 
-  --ui-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .4));
-  --ui-shadow-lifted: var(--shadow-md, 0 8px 24px -8px rgba(0, 0, 0, .5));
+  --ui-shadow: none;
+  --ui-shadow-lifted: 0 12px 32px rgba(0, 0, 0, .35);
 }
 
 /* -------------------------------------------------------------------------
@@ -88,12 +88,65 @@
    cima, porque o cabeçalho já traz folga própria). */
 .gso-ui-page {
   display: grid;
-  gap: 1rem;
+  gap: var(--one-space-section-gap);
   align-content: start;
   min-width: 0;
-  padding: 1.15rem 1.5rem 1.5rem;
+  /* Mesma regua horizontal do Dashboard Gerencial: o titulo de qualquer tela
+     interna comeca na mesma coordenada. Nao declarar padding lateral proprio. */
+  padding: var(--one-space-page-y) var(--one-space-page-x) 1.5rem;
   background: var(--ui-canvas);
 }
+
+/* Shell administrativo compartilhado: mesma hierarquia do Dashboard.
+   Header e sidebar usam a surface; o canvas de trabalho fica um degrau abaixo.
+   Isso remove o fundo concorrente que fazia cada tela de Configuracoes parecer
+   pertencer a um produto diferente. */
+/* O respiro vertical do topo pertence ao canvas (--one-space-page-y), nunca ao
+   cabecalho. Sem o !important, uma regra de densidade injetava padding-block
+   de 0.55rem em Integracoes e o titulo caia para y=77 enquanto as demais telas
+   ficavam em y=68. Medido em 1440x900. */
+.gso-ui-page > .gso-ui-header {
+  margin: 0 0 1rem 0;
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+.gso-ui-shell,
+.gso-ui-shell-body { background: var(--one-canvas-bg) !important; }
+.gso-ui-shell-chrome {
+  border-bottom: none !important;
+  background: transparent !important;
+}
+/* O chrome do shell nao tinha regua horizontal: o titulo de /admin/access
+   comecava em x=240 (colado na sidebar) enquanto Configuracoes e Dashboard
+   comecavam em x=266. Medido no QA de 2026-08-10. */
+.gso-ui-shell-chrome .gso-ui-header {
+  padding: var(--one-space-page-y) var(--one-space-page-x) 1rem;
+}
+@media (max-width: 760px) {
+  .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
+  .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }
+}
+
+.gso-settings-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.gso-settings-overview-heading { grid-column: 1 / -1; }
+.gso-settings-overview-heading h3,
+.gso-settings-overview-activity h3 { margin: 0; color: var(--ui-text); font-size: 1rem; font-weight: 600; }
+.gso-settings-overview-heading p,
+.gso-settings-overview-activity p { margin: 0.25rem 0 0; color: var(--ui-text-secondary); font-size: 0.8rem; }
+.gso-settings-overview-card,
+.gso-settings-overview-activity { display: grid; gap: 1rem; min-width: 0; padding: 1rem; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); box-shadow: var(--ui-shadow); }
+.gso-settings-overview-card h4 { margin: 0; color: var(--ui-text); font-size: 0.95rem; font-weight: 600; }
+.gso-settings-overview-card p { margin: 0.35rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.gso-settings-overview-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.gso-settings-overview-card-foot a { color: var(--ui-primary-ink); font-size: 0.8rem; font-weight: 600; }
+.gso-settings-overview-activity { min-height: 86px; }
+@media (max-width: 1120px) { .gso-settings-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .gso-settings-overview-grid { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 760px) {
   .gso-ui-page { gap: 1rem; padding: 1rem; }
@@ -102,12 +155,19 @@
 /* -------------------------------------------------------------------------
    2. UiPageHeader — trilha, título grande, descrição e ações
    ------------------------------------------------------------------------- */
+/* O titulo de qualquer tela interna comeca SEMPRE na mesma coordenada vertical.
+   Ate 2026-08-10 este bloco usava `align-items: flex-end`: quando a coluna de
+   acoes era mais alta (meta + botao), ela empurrava o titulo para baixo. Medido
+   em 1440x900: Central de ajuda 68px, Integracoes 77px, Fontes/Historico/Marcas
+   85px — tres coordenadas para o mesmo papel. Com flex-start o topo do titulo
+   deixa de depender do conteudo da coluna de acoes. */
 .gso-ui-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1.5rem;
   min-width: 0;
+  border-radius: 0 !important;
 }
 .gso-ui-header-heading { min-width: 0; }
 .gso-ui-crumbs {
@@ -121,23 +181,25 @@
 .gso-ui-crumbs a { color: var(--ui-text-secondary); border-radius: var(--ui-radius-sm); }
 .gso-ui-crumbs a:hover { color: var(--ui-primary-ink); text-decoration: underline; }
 .gso-ui-crumbs [aria-current='page'] { color: var(--ui-primary-ink); font-weight: 600; }
+/* Page Title canonico: mesma escala do Dashboard Gerencial (golden reference).
+   Tokenizado em --one-font-page-title / --one-line-page-title. */
+.gso-ui-header-heading h1,
 .gso-ui-header-heading h2 {
-  margin: 0.35rem 0 0;
-  color: var(--ui-text);
+  margin: 0;
+  color: var(--one-text-primary);
   font-family: inherit;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
-  font-weight: 600;
+  font-size: var(--one-font-page-title);
+  font-weight: var(--one-weight-page-title);
+  line-height: var(--one-line-page-title);
   letter-spacing: -0.02em;
-  line-height: 1.15;
 }
 .gso-ui-header-heading > p {
-  margin: 0.35rem 0 0;
-  /* Largura folgada de propósito: em 1920 uma descrição de 64ch quebrava em duas
-     linhas sem necessidade e empurrava a tela inteira para baixo. */
+  margin: 2px 0 0;
   max-width: 92ch;
-  color: var(--ui-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.55;
+  color: var(--one-text-secondary);
+  font-size: var(--one-font-page-subtitle);
+  font-weight: var(--one-weight-page-subtitle);
+  line-height: var(--one-line-page-subtitle);
 }
 .gso-ui-header-side { display: grid; justify-items: end; gap: 0.5rem; }
 .gso-ui-header-meta {
@@ -147,7 +209,32 @@
   line-height: 1.4;
   text-align: right;
 }
-.gso-ui-header-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.gso-ui-header-actions { display: flex; flex-wrap: wrap; gap: var(--one-space-control-gap); }
+/* Eyebrow do page header: rotulo curto acima do titulo. Antes era escrito em
+   Tailwind dentro do primitive, com fallback hex proprio. */
+.gso-ui-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--one-info);
+  font-size: var(--one-font-eyebrow);
+  font-weight: var(--one-weight-eyebrow);
+  line-height: var(--one-line-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+/* Contador opcional dentro de uma aba. */
+.gso-ui-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  justify-content: center;
+  border-radius: var(--one-radius-pill);
+  background: var(--one-panel-elevated-bg);
+  color: var(--one-text-secondary);
+  font-size: var(--one-font-meta);
+  font-weight: 600;
+}
 
 @media (max-width: 900px) {
   .gso-ui-header { display: grid; grid-template-columns: 1fr; align-items: start; gap: 0.9rem; }
@@ -160,11 +247,11 @@
    ------------------------------------------------------------------------- */
 .gso-ui-card {
   min-width: 0;
-  padding: 1.1rem 1.25rem;
+  padding: 16px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-lg);
-  background: var(--ui-surface);
-  box-shadow: var(--ui-shadow);
+  border-radius: var(--one-radius-panel);
+  background: var(--one-panel-bg);
+  box-shadow: none;
 }
 .gso-ui-card--flush { padding: 0; overflow: hidden; }
 .gso-ui-card--flush > .gso-ui-card-header { padding: 1.1rem 1.25rem 0.9rem; }
@@ -238,44 +325,42 @@
   grid-auto-columns: minmax(0, 1fr);
   min-width: 0;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-lg);
+  border-radius: 10px;
   background: var(--ui-surface);
-  box-shadow: var(--ui-shadow);
+  box-shadow: none;
 }
-/* O ladrilho fica ao lado do valor, não acima dele: é o mesmo arranjo de
-   `.gso-ui-runlist` e `.gso-ui-feature` e economiza a altura de uma linha
-   inteira por célula, o que em FullHD é a diferença entre caber e rolar. */
 .gso-ui-metric {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 0.85rem;
+  gap: 0.75rem;
   min-width: 0;
-  padding: 0.95rem 1.15rem;
+  padding: 12px 16px;
 }
 .gso-ui-metric + .gso-ui-metric { border-left: 1px solid var(--ui-border); }
 .gso-ui-metric-value {
   display: block;
-  color: var(--ui-text);
-  font-size: 1.7rem;
-  font-weight: 600;
+  color: var(--one-text-primary, #E6ECF5);
+  font-size: 24px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 28px;
   overflow-wrap: anywhere;
 }
-.gso-ui-metric--text .gso-ui-metric-value { font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.3; }
+.gso-ui-metric--text .gso-ui-metric-value { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; line-height: 20px; }
 .gso-ui-metric-label {
   display: block;
-  margin-top: 0.2rem;
-  color: var(--ui-text);
-  font-size: 0.82rem;
+  margin-top: 2px;
+  color: var(--one-text-primary, #E6ECF5);
+  font-size: 11px;
   font-weight: 600;
+  line-height: 16px;
 }
-.gso-ui-metric-sub { display: block; margin-top: 0.15rem; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
-.gso-ui-metric-value--success { color: var(--ui-success-ink); }
-.gso-ui-metric-value--warning { color: var(--ui-warning-ink); }
-.gso-ui-metric-value--danger { color: var(--ui-danger-ink); }
+.gso-ui-metric-sub { display: block; margin-top: 2px; color: var(--one-text-muted, #7789A6); font-size: 10px; line-height: 14px; }
+.gso-ui-metric-value--success { color: var(--one-success, #22C55E); }
+.gso-ui-metric-value--warning { color: var(--one-warning, #F59E0B); }
+.gso-ui-metric-value--danger { color: var(--one-danger, #EF4444); }
 .gso-ui-metric-value--primary { color: var(--ui-primary-ink); }
 
 @media (max-width: 1024px) {
@@ -327,31 +412,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.5rem;
-  padding: 0 0.9rem;
+  gap: 0.5rem;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
   border: 1px solid transparent;
-  border-radius: var(--ui-radius-sm);
+  border-radius: 7px;
   background: transparent;
   color: var(--ui-text);
   font-family: inherit;
-  font-size: 0.83rem;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-.gso-ui-button:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.gso-ui-button:focus-visible { outline: 2px solid var(--one-action-primary, #2D7CFF); outline-offset: 1px; }
 .gso-ui-button:disabled { cursor: not-allowed; opacity: 0.55; }
-.gso-ui-button > svg { flex: 0 0 auto; }
-.gso-ui-button--primary { border-color: var(--ui-primary); background: var(--ui-primary); color: #FFFFFF; }
-.gso-ui-button--primary:not(:disabled):hover { background: color-mix(in srgb, var(--ui-primary) 86%, #000000); }
-.gso-ui-button--secondary { border-color: var(--ui-border-strong); background: var(--ui-surface); color: var(--ui-text); }
-.gso-ui-button--secondary:not(:disabled):hover { background: var(--ui-surface-muted); }
-.gso-ui-button--ghost { border-color: transparent; background: transparent; color: var(--ui-text-secondary); }
-.gso-ui-button--ghost:not(:disabled):hover { background: var(--ui-surface-muted); color: var(--ui-text); }
-.gso-ui-button--danger { border-color: var(--ui-danger); background: transparent; color: var(--ui-danger-ink); }
-.gso-ui-button--danger:not(:disabled):hover { background: var(--ui-danger-soft); }
-.gso-ui-button--compact { min-height: 2.15rem; padding: 0 0.7rem; font-size: 0.78rem; }
+.gso-ui-button > svg { flex: 0 0 auto; width: 16px; height: 16px; }
+.gso-ui-button--primary { border-color: var(--one-action-primary, #2D7CFF); background: var(--one-action-primary, #2D7CFF); color: #FFFFFF; }
+.gso-ui-button--primary:not(:disabled):hover { border-color: var(--one-action-primary-hover, #428AFF); background: var(--one-action-primary-hover, #428AFF); }
+.gso-ui-button--primary:not(:disabled):active { background: #246FE8; }
+.gso-ui-button--secondary { border-color: #29405F; background: transparent; color: var(--one-text-primary, #E6ECF5); }
+.gso-ui-button--secondary:not(:disabled):hover { border-color: #3A557A; background: var(--one-surface-2, #18263F); }
+.gso-ui-button--ghost { border-color: transparent; background: transparent; color: var(--one-text-secondary, #A6B2C7); }
+.gso-ui-button--ghost:not(:disabled):hover { background: var(--one-surface-2, #18263F); color: var(--one-text-primary, #E6ECF5); }
+.gso-ui-button--danger { border-color: var(--one-danger, #EF4444); background: transparent; color: var(--one-danger, #EF4444); }
+.gso-ui-button--danger:not(:disabled):hover { background: rgba(239, 68, 68, 0.12); }
+.gso-ui-button--compact { height: 32px; min-height: 32px; padding: 0 10px; font-size: 11px; }
 .gso-ui-linkbutton {
   border: 0;
   background: none;
@@ -509,26 +596,12 @@
 .gso-ui-rowselect:hover { color: var(--ui-primary-ink); text-decoration: underline; }
 
 /* -------------------------------------------------------------------------
-   12. UiTabs — sublinhado de 2px na aba ativa (primitiva de CSS)
+   12. UiTabs — REMOVIDO (Macro-lote 01)
+   As classes .gso-ui-tabs / .gso-ui-tab eram declaradas aqui E em index.css,
+   com geometrias e cores divergentes. A definicao unica agora vive em
+   apps/web/src/index.css, na secao "PAGE TABS — DEFINICAO UNICA", e e
+   consumida pelo primitive React <PageTabs>. Nao redeclarar aqui.
    ------------------------------------------------------------------------- */
-.gso-ui-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--ui-border); }
-.gso-ui-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--ui-text-secondary);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 550;
-}
-.gso-ui-tab:hover { color: var(--ui-text); }
-.gso-ui-tab[aria-current='page'],
-.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--ui-primary); color: var(--ui-primary-ink); font-weight: 600; }
 
 /* -------------------------------------------------------------------------
    13. UiEmptyState
@@ -595,15 +668,16 @@
   align-items: start;
   gap: 0.9rem;
   min-width: 0;
-  padding: 0.9rem 1.15rem;
-  border-radius: var(--ui-radius-lg);
-  background: var(--ui-accent-soft);
-  color: var(--ui-text);
+  padding: 14px 16px;
+  border: 1px solid var(--one-border-default, #22324D);
+  border-radius: 10px;
+  background: var(--one-surface-1, #131E33);
+  color: var(--one-text-primary, #E6ECF5);
 }
-.gso-ui-hint-figure { display: inline-grid; flex: 0 0 auto; place-items: center; color: var(--ui-accent-ink); }
+.gso-ui-hint-figure { display: inline-grid; flex: 0 0 auto; place-items: center; color: var(--one-action-primary, #2D7CFF); }
 .gso-ui-hint-text { min-width: 0; }
-.gso-ui-hint-text strong { display: block; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.015em; }
-.gso-ui-hint-text p { margin: 0.35rem 0 0; max-width: 84ch; color: var(--ui-text-secondary); font-size: 0.82rem; line-height: 1.6; }
+.gso-ui-hint-text strong { display: block; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--one-text-primary, #E6ECF5); }
+.gso-ui-hint-text p { margin: 4px 0 0; max-width: 84ch; color: var(--one-text-secondary, #A6B2C7); font-size: 12px; line-height: 18px; }
 
 /* -------------------------------------------------------------------------
    Composições reutilizadas pelas telas
@@ -677,6 +751,127 @@
 .gso-ui-body { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; gap: 1.25rem; min-width: 0; }
 .gso-ui-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; min-width: 0; }
 .gso-ui-rail { display: grid; align-content: start; gap: 1.25rem; min-width: 0; }
+
+/* Configuration PO V2.1 — Integrações.
+   Quatro regiões: cabeçalho, dois painéis equivalentes, governança em duas
+   colunas e eventos recentes em largura plena. As medidas seguem a faixa de
+   densidade aprovada: corpo 12–13px, metadados 11–12px, títulos de seção
+   14–17px, padding interno 14–16px. */
+.gso-po-v2-integrations { display: grid; align-content: start; gap: 12px; }
+/* O título da tela usa a faixa aprovada de 22–26px; o padrão de 30px do
+   cabeçalho compartilhado empurrava as quatro regiões para fora da dobra. */
+.gso-po-v2-integrations > .gso-ui-header { padding-block: 0.55rem; }
+.gso-po-v2-integrations > .gso-ui-header h2 { margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.02em; }
+.gso-po-v2-integrations > .gso-ui-header .gso-ui-header-heading > p { margin-top: 0.2rem; font-size: 13px; line-height: 1.4; }
+.gso-po-v2-integrations .gso-po-policy-list { gap: 6px; }
+.gso-po-v2-integrations .gso-po-region-head p { margin-top: 1px; }
+.gso-po-providers,
+.gso-po-governance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; min-width: 0; align-items: stretch; }
+
+.gso-po-panel,
+.gso-po-region {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-surface);
+}
+/* A barra de ações ancora no rodapé para que os dois painéis alinhem, mesmo
+   quando um deles publica um alerta real de falha e o outro não. */
+.gso-po-panel-actions { margin-top: auto; }
+
+.gso-po-panel-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 12px; }
+.gso-po-panel-title { min-width: 0; }
+.gso-po-panel-title h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--ui-text); }
+.gso-po-panel-title p { margin: 2px 0 0; font-size: 12px; line-height: 1.35; color: var(--ui-text-muted); }
+.gso-po-panel-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+.gso-po-panel-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.gso-po-metric { min-width: 0; }
+.gso-po-metric dt { font-size: 11px; line-height: 1.3; color: var(--ui-text-muted); }
+.gso-po-metric-value { margin: 4px 0 0; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ui-text); }
+.gso-po-metric-detail { margin: 2px 0 0; font-size: 11px; line-height: 1.35; color: var(--ui-text-muted); }
+.gso-po-tone-success { color: var(--ui-success-ink, var(--ui-text)); }
+.gso-po-tone-warning { color: var(--ui-warning-ink, var(--ui-text)); }
+.gso-po-tone-danger { color: var(--ui-danger-ink, var(--ui-text)); }
+.gso-po-tone-muted { color: var(--ui-text); }
+
+.gso-po-panel-scope { padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-panel-scope-label { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--ui-text); }
+.gso-po-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.gso-po-chip {
+  padding: 3px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ui-text);
+  background: var(--ui-surface-muted, transparent);
+}
+
+.gso-po-panel-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-action {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-text);
+  background: transparent;
+  cursor: pointer;
+}
+.gso-po-action:hover { border-color: var(--ui-border-strong, var(--ui-border)); background: var(--ui-surface-muted, transparent); }
+.gso-po-action:focus-visible { outline: 2px solid var(--ui-focus, var(--minimal-focus)); outline-offset: 2px; }
+.gso-po-panel-form { padding-top: 10px; border-top: 1px solid var(--ui-border); }
+
+.gso-po-region-head h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.25; color: var(--ui-text); }
+.gso-po-region-head p { margin: 2px 0 0; font-size: 12px; line-height: 1.35; color: var(--ui-text-muted); }
+
+.gso-po-scope-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gso-po-scope-row { display: grid; grid-template-columns: minmax(0, 160px) minmax(0, 1fr); align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-scope-list > .gso-po-scope-row:first-child { padding-top: 0; border-top: 0; }
+.gso-po-scope-provider { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--ui-text); }
+
+.gso-po-policy-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gso-po-policy-list li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 8px; font-size: 12px; line-height: 1.4; color: var(--ui-text); }
+.gso-po-policy-list svg { width: 14px; height: 14px; margin-top: 2px; }
+
+.gso-po-table-wrap { overflow-x: auto; }
+.gso-po-table { width: 100%; border-collapse: collapse; }
+.gso-po-table th {
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+}
+.gso-po-table td { height: 34px; padding: 0 10px; border-bottom: 1px solid var(--ui-border); font-size: 12px; color: var(--ui-text); }
+.gso-po-table-empty td { height: 48px; text-align: center; color: var(--ui-text-muted); }
+.gso-po-region-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+
+@media (max-width: 900px) {
+  .gso-po-providers,
+  .gso-po-governance { grid-template-columns: minmax(0, 1fr); }
+  .gso-po-panel-metrics { grid-template-columns: minmax(0, 1fr); }
+  .gso-po-scope-row { grid-template-columns: minmax(0, 1fr); }
+}
 .gso-ui-facts { display: grid; gap: 0.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .gso-ui-facts li {
   position: relative;
@@ -735,6 +930,46 @@
 @media (max-width: 1024px) {
   .gso-ui-cards { grid-template-columns: 1fr; }
   .gso-ui-featurerow { grid-template-columns: 1fr; }
+}
+
+/* Detalhe de acesso: no baseline de 1366px a tabela preserva a largura e o
+   contexto abre por cima, em vez de comprimir colunas operacionais. */
+.gso-ui-access-drawer-scrim { display: none; }
+@media (max-width: 1366px) {
+  .gso-ui-split { grid-template-columns: minmax(0, 1fr); }
+  .gso-ui-access-drawer-scrim {
+    position: fixed;
+    z-index: 60;
+    display: block;
+    inset: 0;
+    border: 0;
+    background: rgba(3, 12, 32, .24);
+  }
+  .gso-ui-access-drawer {
+    position: fixed;
+    z-index: 61;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(24rem, calc(100vw - 1rem));
+    padding: 1rem;
+    overflow-y: auto;
+    background: var(--ui-canvas);
+    box-shadow: var(--ui-shadow-lifted);
+    transform: translateX(100%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 180ms ease-out;
+  }
+  .gso-ui-access-drawer[data-open='true'] {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .gso-ui-access-drawer > .gso-ui-card { min-height: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gso-ui-access-drawer { transition: none; }
 }
 
 /* Bloco expansível (catálogo de fontes) e linha editável dentro dele. */

@@ -68,3 +68,10 @@ test('o caminho ativo não usa mais e-mail para definir senha', () => {
   assert.match(page, /Redefinir senha/);
   assert.match(page, /resetAdminInternalUserPassword/);
 });
+
+test('detalhe do usuário vira drawer sobreposto no baseline sem reduzir a tabela', () => {
+  assert.match(page, /gso-ui-access-drawer/, 'o detalhe precisa de uma superfície própria de drawer');
+  assert.match(page, /aria-modal=\{detailOpen\}/, 'o drawer precisa comunicar quando está modal');
+  assert.match(page, /onClick=\{closeDetail\}/, 'o detalhe precisa poder ser fechado sem alterar dados');
+  assert.match(page, /event\.key === 'Escape'/, 'o drawer precisa fechar no Escape');
+});

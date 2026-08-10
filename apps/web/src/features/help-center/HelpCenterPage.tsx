@@ -98,7 +98,7 @@ export function HelpCenterPage() {
   const [spaces, setSpaces] = useState<HelpCenterSpaceSummary[]>([]);
 
   useHelpCenterDocumentMeta({
-    title: 'GeniusOS | Central de Ajuda B2B',
+    title: 'ConfiOne | Central de Ajuda B2B',
     description:
       'Documentação oficial para clientes B2B, com centrais públicas de configuração, operação e resolução de dúvidas.',
   });
@@ -327,11 +327,11 @@ export function HelpCenterSpaceLayout() {
   );
   const helpCenterTitle = space
     ? buildHelpCenterSeoTitle(space)
-    : 'Central de Ajuda B2B | GeniusOS';
+    : 'Central de Ajuda B2B | ConfiOne';
   const helpCenterDescription = space
     ? seoDefaults?.description ??
       `${space.brand_name} publica guias oficiais de configuração, operação e resolução de dúvidas para clientes B2B.`
-    : 'Guias públicos B2B da plataforma GeniusOS.';
+    : 'Guias públicos B2B da plataforma ConfiOne.';
   const supportContacts = sanitizePublicSupportContacts(space?.support_contacts);
   const portalHref = '/portal';
 

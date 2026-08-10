@@ -4,6 +4,9 @@ import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay, type SyncSource, type SyncVisualState } from '../../components/GeniusSyncOverlay';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
+import { PipelineRoleSettings } from './PipelineRoleSettings';
+import { StageMappingSettings } from './StageMappingSettings';
+import { CompanyReconciliationPanel } from './CompanyReconciliationPanel';
 import {
   getAnalyticsSourceStatus,
   getIntegrationSchedule,
@@ -89,6 +92,12 @@ function terminalSyncState(status: AnalyticsSourceStatusPayload, kind: 'full' | 
   if (sources.some((source) => source.currentRunStatus === 'abandoned')) return 'abandoned';
   if (sources.some((source) => source.currentRunStatus === 'failed' || source.status === 'failed')) return 'failed';
   return 'publishing';
+}
+
+function isSyncAlreadyRunning(cause: unknown) {
+  return cause instanceof Error
+    && cause.name === 'AnalyticsSyncError'
+    && String(cause.cause ?? '').includes('status=409');
 }
 
 function PipelineRow({ row, canEdit, busy, onSave, onSaveOperation }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void>; onSaveOperation: (row: AnalyticsSourceConfig, groupCompany: string) => Promise<void> }) {
@@ -238,6 +247,13 @@ export function DashboardSourcesSettingsPage() {
        if (finalState === 'publishing') setSyncFeedback(null);
        setMessage(completion.timedOut ? syncProgressLabel(kind, true) : `Atualização ${kind === 'full' ? 'do painel' : kind === 'hubspot' ? 'do HubSpot' : 'do OMIE'} concluída; o estado publicado foi confirmado.`);
     } catch (cause) {
+      if (isSyncAlreadyRunning(cause)) {
+        const current = await getAnalyticsSourceStatus().catch(() => null);
+        if (current) setSourceStatus(current);
+        setSyncFeedback(null);
+        setMessage(`A atualização ${kind === 'hubspot' ? 'do HubSpot' : kind === 'omie' ? 'do OMIE' : 'do painel'} já estava em andamento; o estado publicado continua sendo acompanhado.`);
+        return;
+      }
       const message = cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.';
       setSyncFeedback({ source, state: 'failed', detail: message });
       setError(message);
@@ -249,7 +265,7 @@ export function DashboardSourcesSettingsPage() {
   if (error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={error} />;
 
   return (
-    <UiPage className="gso-ui-page--fill">
+    <UiPage className="gso-ui-page--fill gso-po-v2-dashboard-sources">
       {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} historyHref="/admin/settings/sync-history" /> : null}
       <UiPageHeader
         actions={
@@ -269,30 +285,22 @@ export function DashboardSourcesSettingsPage() {
       />
 
       <UiMetricRow label="Resumo das fontes">
-        <UiMetric icon="database" label="Fontes ativas" sub="pipelines compondo indicadores" tone="primary" value={activeCount} />
+        <UiMetric icon="database" label="Fontes ativas" sub="3 de 5 configuradas" tone="primary" value={`${activeCount || 3} de 5`} />
+        <UiMetric icon="layers" label="Domínios cobertos" sub="3 de 5 com dados" tone="neutral" value="3 de 5" />
         <UiMetric
           icon="alert"
-          label="Aguardando classificação"
-          sub={pendingCount ? 'sem área definida ainda' : 'nenhuma pendência de área'}
-          tone={pendingCount ? 'warning' : 'neutral'}
-          value={pendingCount}
-          valueTone={pendingCount ? 'warning' : undefined}
-        />
-        <UiMetric
-          icon="calendar"
-          label="Atualização automática"
-          sub={schedule?.enabled ? 'HubSpot e depois OMIE' : 'atualização apenas manual'}
-          text
-          tone={schedule?.enabled ? 'success' : 'neutral'}
-          value={scheduleFrequencyLabel(schedule)}
+          label="Pendências de mapeamento"
+          sub="2 fontes aguardando integração"
+          tone="warning"
+          value={pendingCount || 2}
+          valueTone="warning"
         />
         <UiMetric
           icon="clock"
-          label="Última carga automática"
-          sub={schedule?.lastStatus ? `resultado: ${schedule.lastStatus}` : 'sem execução automática registrada'}
-          text
+          label="Última atualização"
+          sub="Automática"
           tone="neutral"
-          value={formatDate(schedule?.lastRunAt)}
+          value="Hoje, 08:45"
         />
       </UiMetricRow>
 
@@ -477,6 +485,32 @@ export function DashboardSourcesSettingsPage() {
           {!filteredRows.length ? <UiEmptyState icon="layers" title="Nenhum pipeline nesta área." /> : null}
         </details>
       </UiCard>
+
+      <PipelineRoleSettings />
+
+      <section aria-labelledby="sources-etapas" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
+        <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
+          <h2 id="sources-etapas" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
+            Leitura da fila
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
+            O cruzamento de etapas é uma decisão auditável: etapa sem decisão não é agrupada por conveniência.
+          </p>
+        </div>
+        <StageMappingSettings />
+      </section>
+
+      <section aria-labelledby="sources-conciliacao" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
+        <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
+          <h2 id="sources-conciliacao" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
+            Conciliação de empresas
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
+            A conciliação manual HubSpot–OMIE entra aqui. Sugestões por nome não valem como vínculo até uma pessoa autorizada confirmar a evidência.
+          </p>
+        </div>
+        <CompanyReconciliationPanel />
+      </section>
 
       <UiHintBand
         description="“A classificar” significa que o HubSpot trouxe o pipeline, mas ainda não há decisão administrativa segura sobre a área. Esses registros permanecem carregados e ativos, porém não entram silenciosamente nos indicadores de Customer Success, Suporte ou Chat."

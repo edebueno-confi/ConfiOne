@@ -38,9 +38,10 @@ async function finalizeIdleRuns(client: ReturnType<typeof createServiceClient>) 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse(req);
   if (req.method !== 'POST') return jsonResponse({ error:'Method not allowed.' },{status:405});
-  const client=createServiceClient(); if(!(await authorizeCsRunner(req,client))) return jsonResponse({error:'Acesso negado.'},{status:403});
+  const client=createServiceClient(); const requester = await authorizeCsRunner(req,client); if(!requester) return jsonResponse({error:'Acesso negado.'},{status:403});
   const secret=Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim(); const base=Deno.env.get('SUPABASE_URL')?.replace(/\/$/,''); const key=Deno.env.get('SUPABASE_ANON_KEY')?.trim();
-  if(!secret||!base||!key) return jsonResponse({error:'Runtime sem configuracao segura do dispatcher.'},{status:503});
+  const authorization = requester === 'scheduler' ? null : req.headers.get('authorization');
+  if(!base||!key||(!secret&&!authorization)) return jsonResponse({error:'Runtime sem configuracao segura do dispatcher.'},{status:503});
   try {
     await client.rpc('rpc_analytics_hubspot_abandon_stale_runs', { p_timeout_seconds: 900 });
     const results: WorkerResult[] = [];
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < 12; i += 1) {
       const response = await fetch(`${base}/functions/v1/hubspot-orchestrator-worker`, {
         method: 'POST',
-        headers: { apikey: key, 'Content-Type': 'application/json', 'x-analytics-sync-secret': secret, 'x-hubspot-worker-id': `dispatcher-${crypto.randomUUID()}` },
+        headers: { apikey: key, 'Content-Type': 'application/json', ...(secret ? { 'x-analytics-sync-secret': secret } : {}), ...(authorization ? { Authorization: authorization } : {}), 'x-hubspot-worker-id': `dispatcher-${crypto.randomUUID()}` },
         body: '{}',
       });
       const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     // O ultimo worker pode ter concluido a pagina antes de enxergar que era o
     // ultimo item. Quando a fila fica ociosa, a finalizacao e tentada de novo.
     const finalized = idle ? await finalizeIdleRuns(client) : [];
-    const continuationScheduled = !idle && results.length === 12;
+    const continuationScheduled = Boolean(secret) && !idle && results.length === 12;
     if (continuationScheduled) scheduleContinuation(base, key, secret);
 
     return jsonResponse({

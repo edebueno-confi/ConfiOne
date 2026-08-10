@@ -9,14 +9,17 @@
 .gso-high-density-ui .gso-workspace-tab { position: relative; min-height: 2.35rem; border-radius: 0; background: transparent; padding: 0.55rem 0.75rem; box-shadow: none; transition: color 150ms ease, background-color 150ms ease; }
 .gso-high-density-ui .gso-workspace-tab:hover { background: color-mix(in srgb, var(--minimal-action) 7%, transparent); }
 .gso-high-density-ui .gso-workspace-tab[aria-current='page'] { background: transparent; color: var(--minimal-text); }
-.gso-high-density-ui .gso-workspace-tab[aria-current='page']::after { right: 0.75rem; bottom: -1px; left: 0.75rem; height: 2px; border-radius: 0; background: var(--accent-500, #e63aa8); }
+.gso-high-density-ui .gso-workspace-tab[aria-current='page']::after { right: 0.75rem; bottom: -1px; left: 0.75rem; height: 2px; border-radius: 0; background: var(--selection-accent); }
 .gso-high-density-ui .gso-source-rail { display: none; }
 .gso-high-density-ui .gso-workspace-tab:focus-visible,
 .gso-high-density-ui button:focus-visible,
 .gso-high-density-ui a:focus-visible,
 .gso-high-density-ui select:focus-visible,
 .gso-high-density-ui input:focus-visible { outline: 2px solid var(--minimal-focus); outline-offset: 2px; }
-.gso-high-density-ui .gso-analytics-content { padding: 0 clamp(1rem, 1.8vw, 1.75rem) 1.5rem; }
+/* Regua horizontal unica do produto. O valor literal virou --one-space-page-x
+   em index.css; aqui apenas consumimos, para que Dashboard e demais telas
+   internas comecem exatamente na mesma coordenada. */
+.gso-high-density-ui .gso-analytics-content { padding: 0 var(--one-space-page-x) 1.5rem; }
 .gso-high-density-ui .gso-pilot-summary,
 .gso-high-density-ui .gso-visual-v1-domain-frame { width: 100%; max-width: none; gap: 0.9rem; }
 .gso-high-density-ui .gso-pilot-summary .gso-hd-context { padding: 0.9rem 0 0.65rem; }

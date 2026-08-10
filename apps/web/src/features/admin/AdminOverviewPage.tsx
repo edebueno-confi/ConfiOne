@@ -66,7 +66,7 @@ export function AdminOverviewPage() {
       <header className="gso-screen-header border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Visão geral</h1>
         <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
-          Governança do GeniusOS num relance. Escolha uma área para administrar.
+          Governança do ConfiOne num relance. Escolha uma área para administrar.
         </p>
       </header>
 

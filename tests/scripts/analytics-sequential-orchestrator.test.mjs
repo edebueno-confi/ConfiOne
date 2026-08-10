@@ -32,7 +32,7 @@ test('orquestrador executa HubSpot antes de OMIE', () => {
 test('processamento pendente bloqueia OMIE, mas falha terminal preserva o ciclo parcial', () => {
   assert.match(edge, /if \(hubspot\.status === 'running'\)/);
   assert.match(edge, /return jsonResponse\(\{[\s\S]*omie: \{ status: 'not_started' \}/);
-  assert.match(edge, /callFunction\(config\.baseUrl, config\.anonKey, config\.secret, 'omie-sync'/);
+  assert.match(edge, /callFunction\(config\.baseUrl, config\.anonKey, auth, 'omie-sync'/);
   assert.match(edge, /const status = hubspotOk && omieOk \? 'success' : 'partial'/);
   assert.match(edge, /overall_result/);
   assert.match(edge, /sanitized_error/);
@@ -66,4 +66,15 @@ test('erros de autenticação do HubSpot chegam ao ciclo somente sanitizados', (
   assert.match(runner, /classifyHubSpotError/);
   assert.match(edge, /classifyHubSpotError\(new Error/);
   assert.match(edge, /sanitized_error: classified\.sanitizedMessage/);
+});
+
+test('orquestrador importa o formatador usado nas falhas do OMIE', () => {
+  assert.match(edge, /import \{[^}]*runnerMessage[^}]*\} from '\.\.\/_shared\/hubspot-cs-runner\.ts';/);
+});
+
+test('execução manual delega o JWT já autorizado às funções internas', () => {
+  assert.match(edge, /const requester = await authorizeCsRunner\(req, client\);/);
+  assert.match(edge, /authorization: requester === 'scheduler' \? null : req\.headers\.get\('authorization'\)/);
+  assert.match(edge, /\.\.\.\(auth\.authorization \? \{ Authorization: auth\.authorization \} : \{\}\)/);
+  assert.match(edge, /\.\.\.\(auth\.secret \? \{ 'x-analytics-sync-secret': auth\.secret \} : \{\}\)/);
 });

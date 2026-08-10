@@ -1,5 +1,10 @@
 # Docs
 
+## Decisão visual vigente — Administração e Configurações
+
+- [Contrato Visual de Administração e Configurações V1](./specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md) — precedência local para shell, Usuários, Histórico, Fontes e Integrações a partir de 2026-08-09.
+- [Mapa de componentes do Blueprint V1](./reports/2026-08-09_admin-configuration-blueprint-component-map.md) — matriz REUSE/ADAPT/NEW/OMIT e evidência das referências aprovadas.
+
 ## Branches e release
 
 - [context-handoff/00_CONTEXT_PACK_INDEX.md](./context-handoff/00_CONTEXT_PACK_INDEX.md)

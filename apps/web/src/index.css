@@ -5,14 +5,166 @@
   color-scheme: light;
   font-family: 'Instrument Sans', 'Segoe UI', sans-serif;
   --app-viewport-height: 100dvh;
-  --color-app-bg: #f4f7fc;
-  --color-surface-elevated: #ffffff;
-  --color-divider: #e8eef7;
-  --color-text-primary: #162443;
-  --color-text-secondary: #6b7892;
-  --color-text-muted: #98a3b8;
-  --color-text-label: #6b7892;
-  --color-text-caption: #98a3b8;
+
+  /*
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Light Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #EEF3FA / #F7FAFD
+   * Canvas (Workspace background): #F4F7FB
+   * Surface 1 (Cards, tables, filters, panels): #FFFFFF
+   * Surface 2 (Detail rails, inner areas, contextual selection): #F5F8FC
+   * Surface Interactive (Hover / Focus): #EBF1F9
+   * Borders: Subtle #E2E9F3 | Default #D7E1EE | Strong #BDCBE0
+   * Text: Primary #13233A | Secondary #5E728C | Muted #8295AD | Disabled #A3B3C7
+   * Action Primary: #2D7CFF (Hover #1A6AF0)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #16A34A | Warning #D97706 | Danger #DC2626 | Info #2D7CFF
+   */
+  --one-shell-bg: #EEF3FA;
+  --one-shell-border: #D7E1EE;
+  --one-canvas-bg: #F4F7FB;
+  --one-surface-1: #FFFFFF;
+  --one-surface-2: #F5F8FC;
+  --one-surface-interactive: #EBF1F9;
+  --one-border-subtle: #E2E9F3;
+  --one-border-default: #D7E1EE;
+  --one-border-strong: #BDCBE0;
+  --one-text-primary: #13233A;
+  --one-text-secondary: #5E728C;
+  --one-text-muted: #8295AD;
+  --one-text-disabled: #A3B3C7;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #1A6AF0;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #16A34A;
+  --one-warning: #D97706;
+  --one-danger: #DC2626;
+  --one-info: #2D7CFF;
+
+  /* ==========================================================================
+     CONFI ONE V1 — CONTRATO SEMANTICO ESTRUTURAL (Macro-lote 01)
+     Fonte unica das decisoes visuais estruturais do sistema interno.
+     Extraido do Dashboard Gerencial (golden reference). Paginas consomem;
+     paginas nao definem.
+     ========================================================================== */
+
+  /* -- Surfaces derivadas (papel, nao cor) ---------------------------------- */
+  --one-sidebar-bg: var(--one-shell-bg);
+  --one-topbar-bg: #F7FAFD;
+  --one-page-header-bg: var(--one-surface-1);
+  --one-panel-bg: var(--one-surface-1);
+  --one-panel-elevated-bg: var(--one-surface-2);
+  --one-control-bg: var(--one-surface-1);
+  --one-surface-hover: var(--one-surface-interactive);
+  --one-surface-selected: rgba(45, 124, 255, 0.10);
+  --one-overlay-scrim: rgba(15, 26, 46, 0.42);
+
+  /* -- Texto ----------------------------------------------------------------- */
+  --one-text-subtle: #A3B3C7;
+  --one-text-inverted: #FFFFFF;
+  --one-text-link: #1A63D8;
+
+  /* -- Bordas ---------------------------------------------------------------- */
+  --one-border-focus: rgba(45, 124, 255, 0.45);
+
+  /* -- Spacing estrutural ----------------------------------------------------
+     A regua horizontal canonica e a do CONTEUDO do Dashboard Gerencial
+     (high-density.css: clamp(1rem, 1.8vw, 1.75rem)), nao a do cabecalho.
+     Ate 2026-08-10 o cabecalho do Dashboard usava --app-gutter (2.5vw/2.5rem)
+     e o conteudo usava 1.8vw/1.75rem: titulo e tabela nao comecavam na mesma
+     coordenada. --app-gutter passa a derivar desta regua. */
+  --one-space-page-x: clamp(1rem, 1.8vw, 1.75rem);
+  --one-space-page-y: 1rem;
+  --one-space-section-gap: 1rem;
+  --one-space-component-gap: 0.75rem;
+  --one-space-control-gap: 0.5rem;
+
+  /* -- Layout ---------------------------------------------------------------- */
+  --one-layout-sidebar-expanded: var(--shell-sidebar-width);
+  --one-layout-sidebar-collapsed: var(--shell-sidebar-collapsed);
+  --one-layout-topbar-height: var(--shell-topbar-height);
+  --one-layout-page-header-pad-y: 0.85rem;
+  --one-layout-page-header-pad-bottom: 0.55rem;
+  --one-layout-control-height: 36px;
+  --one-layout-control-height-sm: 32px;
+  --one-layout-tabs-height: 40px;
+  --one-layout-detail-panel: 400px;
+
+  /* -- Radius ---------------------------------------------------------------- */
+  --one-radius-control: 0px;
+  --one-radius-panel: 10px;
+  --one-radius-modal: 12px;
+  --one-radius-pill: 999px;
+
+  /* -- Elevacao -------------------------------------------------------------- */
+  --one-shadow-panel: 0 18px 44px rgba(22, 36, 67, 0.08);
+  --one-shadow-modal: 0 20px 48px rgba(22, 36, 67, 0.18);
+
+  /* -- Escala de z ----------------------------------------------------------- */
+  --one-z-base: 1;
+  --one-z-sticky: 20;
+  --one-z-topbar: 40;
+  --one-z-dropdown: 50;
+  --one-z-flyout: 80;
+  --one-z-overlay: 100;
+
+  /* -- Tipografia canonica (ver secao 12 do DS) ------------------------------
+     Contrato ancorado no Dashboard Gerencial: Page Title e 18px/600, nao 24px.
+     Registrado como excecao consciente em CONFI_ONE_BRAND_SYSTEM_V1. */
+  --one-font-page-title: 18px;
+  --one-line-page-title: 24px;
+  --one-weight-page-title: 600;
+
+  --one-font-page-subtitle: 12px;
+  --one-line-page-subtitle: 18px;
+  --one-weight-page-subtitle: 400;
+
+  --one-font-eyebrow: 10px;
+  --one-line-eyebrow: 14px;
+  --one-weight-eyebrow: 600;
+
+  --one-font-section-title: 16px;
+  --one-line-section-title: 22px;
+  --one-weight-section-title: 600;
+
+  --one-font-card-title: 14px;
+  --one-line-card-title: 20px;
+  --one-weight-card-title: 600;
+
+  --one-font-body: 12px;
+  --one-line-body: 18px;
+  --one-weight-body: 400;
+
+  --one-font-label: 11px;
+  --one-line-label: 16px;
+  --one-weight-label: 500;
+
+  --one-font-helper: 11px;
+  --one-line-helper: 16px;
+  --one-weight-helper: 400;
+
+  --one-font-table-header: 11px;
+  --one-line-table-header: 16px;
+  --one-weight-table-header: 600;
+
+  --one-font-metric: 24px;
+  --one-line-metric: 28px;
+  --one-weight-metric: 700;
+
+  --one-font-meta: 10px;
+  --one-line-meta: 14px;
+  --one-weight-meta: 400;
+
+  /* Alias legado consumido por .gso-ui-tabs; nunca fora definido. */
+  --gso-gutter: var(--app-gutter);
+
+  --color-app-bg: var(--one-canvas-bg);
+  --color-surface-elevated: var(--one-surface-1);
+  --color-divider: var(--one-border-default);
+  --color-text-primary: var(--one-text-primary);
+  --color-text-secondary: var(--one-text-secondary);
+  --color-text-muted: var(--one-text-muted);
+  --color-text-label: var(--one-text-secondary);
+  --color-text-caption: var(--one-text-muted);
   --color-info-surface: #eaf2ff;
   --color-info-border: #d9e9ff;
   --color-info-text: #2f6bff;
@@ -43,13 +195,13 @@
   /* Indicador de posicao ("voce esta aqui"). Magenta da marca, separado do azul
      de acao: azul age, magenta localiza. Vale para aba, trilho da barra lateral
      e marcador de linha selecionada. */
-  --selection-accent: var(--color-brand-magenta);
-  --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 12%, transparent);
+  --selection-accent: var(--one-genius-pink);
+  --selection-accent-soft: color-mix(in srgb, var(--one-genius-pink) 12%, transparent);
 
   /* Margem lateral unica do produto. Regua definida pelo Dashboard Gerencial em
      2026-08-07: toda superficie autenticada encosta na barra lateral a esta
      distancia, em qualquer largura. Nao declarar padding lateral proprio. */
-  --app-gutter: clamp(1rem, 2.5vw, 2.5rem);
+  --app-gutter: var(--one-space-page-x);
 
   --color-surface: #f4f7fc;
   --color-surface-strong: #ffffff;
@@ -68,20 +220,27 @@
   --color-danger-border: rgba(239, 68, 68, 0.2);
   --color-danger-ink: #b91c1c;
   --color-danger-text: #ef4444;
-  --help-surface: #eef5ff;
-  --help-surface-strong: #ffffff;
-  --help-panel: rgba(255, 255, 255, 0.92);
-  --help-ink: #223357;
-  --help-ink-strong: #142042;
-  --help-muted: rgba(20, 32, 66, 0.72);
-  --help-border: rgba(20, 31, 71, 0.12);
-  --help-accent: #307fe2;
-  --help-accent-strong: #141f47;
-  --help-accent-soft: rgba(48, 127, 226, 0.14);
-  --help-link: #1f67c6;
-  --help-link-hover: #153d82;
-  --help-focus: rgba(48, 127, 226, 0.28);
-  --help-skeleton: #dfeaff;
+  /* CENTRAL PUBLICA — contrato proprio de tema CLARO (LIGHT ONLY, DS secao 18).
+     Nao deriva de token do shell interno: e outra experiencia, mesma marca.
+     Correcao 2026-08-10: estes tokens apontavam para --gso-surface-1 e
+     --gso-surface-2, que NUNCA existiram no repositorio. O fallback escuro
+     (#131E33 / #18263F) vazava para o modo claro e produzia texto escuro
+     sobre superficie escura em /help. */
+  --help-surface: #F1F5FB;
+  --help-surface-strong: #FFFFFF;
+  --help-panel: #F7FAFE;
+  --help-ink: #13233A;
+  --help-ink-strong: #0B182C;
+  --help-muted: #5E728C;
+  --help-border: #DCE6F2;
+  --help-border-strong: #C3D3E6;
+  --help-accent: #FF4FA3;
+  --help-accent-strong: #2D7CFF;
+  --help-accent-soft: rgba(255, 79, 163, 0.12);
+  --help-link: #1A63D8;
+  --help-link-hover: #124BA8;
+  --help-focus: rgba(45, 124, 255, 0.35);
+  --help-skeleton: #E4EDF8;
   --help-hero: #071859;
   --help-hero-soft: #0b1f69;
   --help-hero-text: #f5f8ff;
@@ -153,17 +312,18 @@
   --support-composer-min-height: 9.5rem;
   --support-card-radius: 0px;
   /* Shell V3: geometria compartilhada com o blueprint administrativo. */
-  --shell-sidebar-width: 304px;
-  --shell-sidebar-collapsed: 88px;
-  --shell-sidebar-outer-gap: 8px;
+  --shell-sidebar-width: 240px;
+  --shell-sidebar-collapsed: 56px;
+  --shell-sidebar-outer-gap: 0px;
   --shell-sidebar-radius: 0px;
-  --shell-sidebar-padding: 14px;
-  --shell-sidebar-collapsed-padding: 12px;
-  --shell-sidebar-header-height: 56px;
-  --shell-sidebar-search-height: 44px;
-  --shell-sidebar-nav-item-height: 40px;
+  --shell-sidebar-padding: 12px;
+  --shell-sidebar-collapsed-padding: 8px;
+  --shell-sidebar-header-height: 48px;
+  --shell-sidebar-search-height: 36px;
+  --shell-sidebar-nav-item-height: 36px;
   --shell-sidebar-user-height: 112px;
-  --shell-topbar-height: 64px;
+  /* Configuration PO V2.1: a topbar aprovada e uma faixa compacta de 52px. */
+  --shell-topbar-height: 52px;
   --shell-content-gutter: 24px;
   --shell-section-gap: 16px;
   --shell-control-height: 36px;
@@ -261,6 +421,82 @@
   background-color: var(--color-app-bg);
 }
 
+:root[data-theme='light'] {
+  /*
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Light Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #EEF3FA / #F7FAFD
+   * Canvas (Workspace background): #F4F7FB
+   * Surface 1 (Cards, tables, filters, panels): #FFFFFF
+   * Surface 2 (Detail rails, inner areas, contextual selection): #F5F8FC
+   * Surface Interactive (Hover / Focus): #EBF1F9
+   * Borders: Subtle #E2E9F3 | Default #D7E1EE | Strong #BDCBE0
+   * Text: Primary #13233A | Secondary #5E728C | Muted #8295AD | Disabled #A3B3C7
+   * Action Primary: #2D7CFF (Hover #1A6AF0)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #16A34A | Warning #D97706 | Danger #DC2626 | Info #2D7CFF
+   */
+  --one-shell-bg: #EEF3FA;
+  --one-shell-border: #D7E1EE;
+  --one-canvas-bg: #F4F7FB;
+  --one-surface-1: #FFFFFF;
+  --one-surface-2: #F5F8FC;
+  --one-surface-interactive: #EBF1F9;
+  --one-border-subtle: #E2E9F3;
+  --one-border-default: #D7E1EE;
+  --one-border-strong: #BDCBE0;
+  --one-text-primary: #13233A;
+  --one-text-secondary: #5E728C;
+  --one-text-muted: #8295AD;
+  --one-text-disabled: #A3B3C7;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #1A6AF0;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #16A34A;
+  --one-warning: #D97706;
+  --one-danger: #DC2626;
+  --one-info: #2D7CFF;
+
+  --gso-canvas-bg: #F4F7FB;
+  --gso-sidebar-bg: #EEF3FA;
+  --gso-topbar-bg: #F7FAFD;
+  --gso-surface-primary: #FFFFFF;
+  --gso-surface-secondary: #F5F8FC;
+  --gso-border: #D7E1EE;
+  --gso-text-primary: #13233A;
+  --gso-text-secondary: #5E728C;
+  --gso-action-blue: #2D7CFF;
+  --gso-brand-pink: #FF4FA3;
+  --gso-success: #16A34A;
+  --gso-warning: #D97706;
+  --gso-danger: #DC2626;
+
+  --minimal-canvas: #F4F7FB;
+  --minimal-surface: #FFFFFF;
+  --minimal-sidebar: #EEF3FA;
+  --minimal-surface-muted: #F5F8FC;
+  --minimal-text: #13233A;
+  --minimal-text-secondary: #5E728C;
+  --minimal-text-tertiary: #8295AD;
+  --minimal-border: #D7E1EE;
+  --minimal-border-strong: #BDCBE0;
+
+  --color-app-bg: #F4F7FB;
+  --color-surface-elevated: #FFFFFF;
+  --color-divider: #D7E1EE;
+  --color-text-primary: #13233A;
+  --color-text-secondary: #5E728C;
+  --color-text-muted: #8295AD;
+  --color-text-label: #5E728C;
+  --color-text-caption: #8295AD;
+
+  --sidebar-text: #5E728C;
+  --sidebar-text-strong: #13233A;
+  --sidebar-text-muted: #8295AD;
+  --sidebar-item-hover: rgba(45, 124, 255, 0.08);
+
+  color-scheme: light;
+}
+
 /*
  * Tema escuro - Design System V3 (secao 7).
  * Mesma hierarquia, spacing e comportamento do light; apenas os tokens mudam.
@@ -268,175 +504,251 @@
  * e pelo script anti-flash em index.html.
  */
 :root[data-theme='dark'] {
+  /*
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Dark Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #0F1A2E
+   * Canvas (Workspace background): #081220
+   * Surface 1 (Cards, tables, filters, panels): #131E33
+   * Surface 2 (Detail rails, inner areas, contextual selection): #18263F
+   * Surface Interactive (Hover / Focus): #1C2D49
+   * Borders: Subtle #1D2D45 | Default #22324D | Strong #2F4869
+   * Text: Primary #E6ECF5 | Secondary #A6B2C7 | Muted #7789A6 | Disabled #586A85
+   * Action Primary: #2D7CFF (Hover #428AFF)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #22C55E | Warning #F59E0B | Danger #EF4444 | Info #4DA3FF
+   */
+  --one-shell-bg: #0F1A2E;
+  --one-shell-border: #22324D;
+  --one-canvas-bg: #081220;
+  --one-surface-1: #131E33;
+  --one-surface-2: #18263F;
+  --one-surface-interactive: #1C2D49;
+  --one-border-subtle: #1D2D45;
+  --one-border-default: #22324D;
+  --one-border-strong: #2F4869;
+  --one-text-primary: #E6ECF5;
+  --one-text-secondary: #A6B2C7;
+  --one-text-muted: #7789A6;
+  --one-text-disabled: #586A85;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #428AFF;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #22C55E;
+  --one-warning: #F59E0B;
+  --one-danger: #EF4444;
+  --one-info: #4DA3FF;
+
+  /* CONTRATO SEMANTICO ESTRUTURAL — overrides do tema escuro.
+     A tipografia, o spacing, o layout, o radius e a escala de z sao
+     invariantes de tema e vivem apenas em :root. Aqui so muda cor. */
+  --one-sidebar-bg: var(--one-shell-bg);
+  --one-topbar-bg: var(--one-shell-bg);
+  --one-page-header-bg: var(--one-surface-1);
+  --one-panel-bg: var(--one-surface-1);
+  --one-panel-elevated-bg: var(--one-surface-2);
+  --one-control-bg: var(--one-surface-2);
+  --one-surface-hover: var(--one-surface-interactive);
+  --one-surface-selected: rgba(45, 124, 255, 0.16);
+  --one-overlay-scrim: rgba(4, 10, 20, 0.62);
+
+  --one-text-subtle: #586A85;
+  --one-text-inverted: #0B182C;
+  --one-text-link: #7FB4FF;
+
+  --one-border-focus: rgba(45, 124, 255, 0.55);
+
+  --one-shadow-panel: 0 18px 44px rgba(8, 18, 32, 0.65);
+  --one-shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.45);
+
+  /* Aliases para retrocompatibilidade */
+  --gso-canvas-bg: var(--one-canvas-bg);
+  --gso-sidebar-bg: var(--one-shell-bg);
+  --gso-topbar-bg: var(--one-shell-bg);
+  --gso-surface-primary: var(--one-surface-1);
+  --gso-surface-secondary: var(--one-surface-2);
+  --gso-border: var(--one-border-default);
+  --gso-text-primary: var(--one-text-primary);
+  --gso-text-secondary: var(--one-text-secondary);
+  --gso-action-blue: var(--one-action-primary);
+  --gso-brand-pink: var(--one-genius-pink);
+  --gso-success: var(--one-success);
+  --gso-warning: var(--one-warning);
+  --gso-danger: var(--one-danger);
+
   color-scheme: dark;
-  --color-app-bg: #071126;
-  --color-surface-elevated: #0f1d3a;
-  --color-divider: #1e3157;
-  --color-text-primary: #f5f8ff;
-  --color-text-secondary: #b7c3dd;
-  --color-text-muted: #7f8ead;
-  --color-text-label: #b7c3dd;
-  --color-text-caption: #7f8ead;
-  --color-info-surface: rgba(91, 134, 255, 0.16);
-  --color-info-border: rgba(91, 134, 255, 0.34);
-  --color-info-text: #5b86ff;
-  --analytics-chart-grid: rgba(183, 195, 221, 0.24);
-  --analytics-chart-axis: #b7c3dd;
-  --analytics-chart-cursor: rgba(91, 134, 255, 0.18);
-  --color-disabled-surface: #132445;
-  --color-disabled-border: #263a63;
-  --color-disabled-text: #7f8ead;
-  --color-brand-navy: #04133d;
-  --color-brand-blue: #2f6bff;
-  --color-brand-cyan: #74d2e7;
-  --color-brand-magenta: #ff6cbe;
-  --color-brand-pink: #ff6cbe;
-  --genius-site-blue: #22326e;
-  --genius-site-pink: #ff6cbe;
-  --genius-site-cyan: #6ad1e7;
-  --genius-site-soft: #172445;
-  --genius-site-peach: #ffbc7d;
+  --color-app-bg: var(--gso-canvas-bg);
+  --color-surface-elevated: var(--gso-surface-primary);
+  --color-divider: var(--gso-border);
+  --color-text-primary: var(--gso-text-primary);
+  --color-text-secondary: var(--gso-text-secondary);
+  --color-text-muted: #72829D;
+  --color-text-label: var(--gso-text-secondary);
+  --color-text-caption: #72829D;
+  --color-info-surface: rgba(45, 124, 255, 0.16);
+  --color-info-border: rgba(45, 124, 255, 0.34);
+  --color-info-text: var(--gso-action-blue);
+  --analytics-chart-grid: rgba(166, 178, 199, 0.18);
+  --analytics-chart-axis: var(--gso-text-secondary);
+  --analytics-chart-cursor: rgba(45, 124, 255, 0.18);
+  --color-disabled-surface: #101B2E;
+  --color-disabled-border: #1C2B45;
+  --color-disabled-text: #72829D;
+  --color-brand-navy: #0F1A2E;
+  --color-brand-blue: var(--gso-action-blue);
+  --color-brand-cyan: #74D2E7;
+  --color-brand-magenta: var(--gso-brand-pink);
+  --color-brand-pink: var(--gso-brand-pink);
+  --genius-site-blue: #0F1A2E;
+  --genius-site-pink: var(--gso-brand-pink);
+  --genius-site-cyan: #74D2E7;
+  --genius-site-soft: var(--gso-surface-secondary);
+  --genius-site-peach: #FFBC7D;
 
-  /* Mesmo papel no escuro; o magenta clareado ja vem de --color-brand-magenta. */
-  --selection-accent: var(--color-brand-magenta);
-  --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 20%, transparent);
-  --color-surface: #071126;
-  --color-surface-strong: #0f1d3a;
-  --color-border: #263a63;
-  --color-ink: #f5f8ff;
-  --color-muted: #b7c3dd;
-  --color-success-surface: rgba(74, 222, 128, 0.14);
-  --color-success-border: rgba(74, 222, 128, 0.28);
-  --color-success-ink: #4ade80;
-  --color-success-text: #4ade80;
-  --color-warning-surface: rgba(250, 204, 21, 0.14);
-  --color-warning-border: rgba(250, 204, 21, 0.28);
-  --color-warning-ink: #facc15;
-  --color-warning-text: #facc15;
-  --color-danger-surface: rgba(248, 113, 113, 0.14);
-  --color-danger-border: rgba(248, 113, 113, 0.3);
-  --color-danger-ink: #f87171;
-  --color-danger-text: #f87171;
-  --help-surface: #0b1733;
-  --help-surface-strong: #0f1d3a;
-  --help-panel: rgba(15, 29, 58, 0.94);
-  --help-ink: #dbe6ff;
-  --help-ink-strong: #f5f8ff;
-  --help-muted: #b7c3dd;
-  --help-border: #263a63;
-  --help-accent: #5b86ff;
-  --help-accent-strong: #9bb5ff;
-  --help-accent-soft: rgba(91, 134, 255, 0.18);
-  --help-link: #9bb5ff;
-  --help-link-hover: #c2d1ff;
-  --help-focus: rgba(91, 134, 255, 0.5);
-  --help-skeleton: #1c3158;
-  --help-hero: #071859;
-  --help-hero-soft: #0d286f;
-  --help-hero-text: #ffffff;
-  --help-hero-muted: rgba(235, 241, 255, 0.88);
-  --help-hero-border: rgba(255, 255, 255, 0.2);
-  --help-shadow: 0 18px 40px rgba(2, 8, 24, 0.42);
-  --help-consultation-canvas: #0b1733;
-  --help-consultation-surface: #0f1d3a;
-  --help-consultation-soft: #172d58;
-  --help-consultation-ink: var(--help-ink-strong);
-  --help-consultation-muted: var(--help-muted);
-  --help-consultation-border: #29436f;
-  --help-consultation-accent: var(--help-accent);
-  --help-consultation-accent-soft: var(--help-accent-soft);
-  --help-consultation-shadow: 0 18px 40px rgba(2, 8, 24, 0.42);
-  --help-content-code: rgba(255, 255, 255, 0.1);
-  --help-code-surface: #050b21;
-  --help-code-ink: #f7fbff;
-  --help-content-rule: rgba(183, 195, 221, 0.22);
-  --help-content-media: #050b21;
-  --help-content-note: #101f3d;
-  --help-content-note-border: #29436f;
-  --help-content-callout: rgba(91, 134, 255, 0.14);
-  --help-content-callout-border: rgba(91, 134, 255, 0.3);
-  --help-content-shadow: 0 14px 34px rgba(2, 8, 24, 0.35);
-  --color-support-border: #263a63;
-  --color-support-surface: rgba(15, 29, 58, 0.92);
-  --color-support-muted: rgba(11, 23, 51, 0.82);
-  --color-support-selected: rgba(91, 134, 255, 0.16);
-  --color-support-rail: #0f1d3a;
-  --color-support-drawer: #0f1d3a;
-  --color-support-note: #3a2d10;
-  --shadow-panel: 0 18px 44px rgba(2, 8, 24, 0.55);
-  --shadow-support-panel: 0 8px 18px rgba(2, 8, 24, 0.5);
-  --minimal-canvas: oklch(0.19 0.045 264);
-  --minimal-surface: oklch(0.25 0.05 264);
-  --minimal-sidebar: oklch(0.2 0.055 266);
-  --minimal-surface-muted: oklch(0.29 0.05 264);
+  /* Rosa é microacento de seleção/localização (2-3px) */
+  --selection-accent: var(--gso-brand-pink);
+  --selection-accent-soft: rgba(255, 79, 163, 0.18);
+  --color-surface: var(--gso-canvas-bg);
+  --color-surface-strong: var(--gso-surface-primary);
+  --color-border: var(--gso-border);
+  --color-ink: var(--gso-text-primary);
+  --color-muted: var(--gso-text-secondary);
+  --color-success-surface: rgba(34, 197, 94, 0.14);
+  --color-success-border: rgba(34, 197, 94, 0.28);
+  --color-success-ink: var(--gso-success);
+  --color-success-text: var(--gso-success);
+  --color-warning-surface: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.28);
+  --color-warning-ink: var(--gso-warning);
+  --color-warning-text: var(--gso-warning);
+  --color-danger-surface: rgba(239, 68, 68, 0.14);
+  --color-danger-border: rgba(239, 68, 68, 0.3);
+  --color-danger-ink: var(--gso-danger);
+  --color-danger-text: var(--gso-danger);
+  --help-surface: var(--gso-canvas-bg);
+  --help-surface-strong: var(--gso-surface-primary);
+  --help-panel: var(--gso-surface-primary);
+  --help-ink: var(--gso-text-primary);
+  --help-ink-strong: var(--gso-text-primary);
+  --help-muted: var(--gso-text-secondary);
+  --help-border: var(--gso-border);
+  --help-accent: var(--gso-action-blue);
+  --help-accent-strong: #609DFF;
+  --help-accent-soft: rgba(45, 124, 255, 0.18);
+  --help-link: #609DFF;
+  --help-link-hover: #8CBDFF;
+  --help-focus: rgba(45, 124, 255, 0.5);
+  --help-skeleton: #18263F;
+  --help-hero: #0E1627;
+  --help-hero-soft: #131E33;
+  --help-hero-text: #E6ECF5;
+  --help-hero-muted: #A6B2C7;
+  --help-hero-border: #22324D;
+  --help-shadow: 0 18px 40px rgba(8, 18, 32, 0.6);
+  --help-consultation-canvas: var(--gso-canvas-bg);
+  --help-consultation-surface: var(--gso-surface-primary);
+  --help-consultation-soft: var(--gso-surface-secondary);
+  --help-consultation-ink: var(--gso-text-primary);
+  --help-consultation-muted: var(--gso-text-secondary);
+  --help-consultation-border: var(--gso-border);
+  --help-consultation-accent: var(--gso-action-blue);
+  --help-consultation-accent-soft: rgba(45, 124, 255, 0.18);
+  --help-consultation-shadow: 0 18px 40px rgba(8, 18, 32, 0.6);
+  --help-content-code: rgba(230, 236, 245, 0.1);
+  --help-code-surface: #0E1627;
+  --help-code-ink: #E6ECF5;
+  --help-content-rule: #22324D;
+  --help-content-media: #0E1627;
+  --help-content-note: #131E33;
+  --help-content-note-border: #22324D;
+  --help-content-callout: rgba(45, 124, 255, 0.14);
+  --help-content-callout-border: rgba(45, 124, 255, 0.3);
+  --help-content-shadow: 0 14px 34px rgba(8, 18, 32, 0.5);
+  --color-support-border: var(--gso-border);
+  --color-support-surface: var(--gso-surface-primary);
+  --color-support-muted: var(--gso-surface-secondary);
+  --color-support-selected: rgba(45, 124, 255, 0.16);
+  --color-support-rail: var(--gso-sidebar-bg);
+  --color-support-drawer: var(--gso-surface-primary);
+  --color-support-note: #261F10;
+  --shadow-panel: 0 18px 44px rgba(8, 18, 32, 0.65);
+  --shadow-support-panel: 0 8px 18px rgba(8, 18, 32, 0.55);
 
-  /* Barra lateral no escuro: os mesmos valores que vigoravam antes da
-     tokenização, preservados literalmente para não alterar o tema em uso. */
-  --sidebar-text: rgba(226,232,240,0.78);
-  --sidebar-text-strong: #FFFFFF;
-  --sidebar-text-muted: rgba(148,163,184,0.78);
-  --sidebar-item-hover: rgba(99,102,241,0.12);
-  --sidebar-item-active-bg: linear-gradient(90deg, rgba(59,130,246,0.28), rgba(99,102,241,0.16));
-  --sidebar-item-active-text: #FFFFFF;
-  --sidebar-item-active-border: rgba(129,140,248,0.2);
-  --sidebar-item-active-rail: var(--selection-accent);
-  --sidebar-card-bg: rgba(15,31,68,0.78);
-  --sidebar-card-border: rgba(148,163,184,0.16);
-  --sidebar-search-bg: rgba(15,31,68,0.72);
-  --sidebar-search-border: rgba(129,140,248,0.72);
-  --sidebar-search-border-hover: #a78bfa;
-  --sidebar-search-shadow: 0 0 0 1px rgba(236,72,153,0.08), 0 8px 22px rgba(2,8,24,0.16);
-  --sidebar-menu-bg: #0c1a3a;
-  --sidebar-menu-border: rgba(129,140,248,0.3);
-  --sidebar-divider: rgba(148,163,184,0.14);
-  --sidebar-danger-bg: rgba(244,63,94,0.14);
-  --sidebar-danger-text: #fda4af;
-  --minimal-text: oklch(0.97 0.008 264);
-  --minimal-text-secondary: oklch(0.8 0.028 264);
-  --minimal-text-tertiary: oklch(0.64 0.03 264);
-  --minimal-border: oklch(0.36 0.05 264);
-  --minimal-border-strong: oklch(0.44 0.055 264);
-  --minimal-border-hover: oklch(0.56 0.08 264);
-  --minimal-action: oklch(0.62 0.19 262);
-  --minimal-action-hover: oklch(0.56 0.19 262);
-  --minimal-action-ink: oklch(0.98 0.006 264);
-  --minimal-selection: oklch(0.34 0.09 262);
-  --minimal-selection-text: oklch(0.82 0.11 262);
-  --minimal-focus: oklch(0.72 0.12 258 / 0.5);
-  --minimal-overlay: oklch(0.1 0.02 264 / 0.62);
-  --minimal-danger-surface: oklch(0.3 0.08 25);
-  --minimal-danger-border: oklch(0.44 0.12 25);
-  --minimal-danger-text: oklch(0.78 0.14 25);
-  --minimal-warning-surface: oklch(0.32 0.06 80);
-  --minimal-warning-border: oklch(0.46 0.09 82);
-  --minimal-warning-text: oklch(0.84 0.12 85);
-  --minimal-shadow: 0 10px 28px rgba(2, 8, 24, 0.5);
-  --minimal-drawer-shadow: 16px 0 40px rgba(2, 8, 24, 0.55);
-  --brand-50: #12203f;
-  --brand-100: #16264a;
-  --brand-500: #4f6ef7;
-  --brand-600: #3b5bdb;
-  --brand-700: #2f49b0;
-  --action: var(--brand-500);
-  --action-ink: #0b1120;
-  --action-weak: var(--brand-100);
-  --accent-500: #f062bd;
-  --accent-weak: #351028;
-  --surface: #0b1120;
-  --surface-2: #111a2e;
-  --surface-3: #182338;
-  --border: #1f2b45;
-  --border-strong: #2c3a5a;
-  --text: #e7ecf5;
-  --text-2: #9fb0c9;
-  --text-3: #64748b;
-  --success: #22c55e;
-  --success-weak: #0f2a1c;
-  --warning: #f59e0b;
-  --warning-weak: #2a1f08;
-  --danger: #f87171;
-  --danger-weak: #2a1416;
-  --focus: color-mix(in srgb, var(--brand-500) 40%, transparent);
+  --minimal-canvas: var(--gso-canvas-bg);
+  --minimal-surface: var(--gso-surface-primary);
+  --minimal-sidebar: var(--gso-sidebar-bg);
+  --minimal-surface-muted: var(--gso-surface-secondary);
+
+  --sidebar-text: var(--gso-text-secondary);
+  --sidebar-text-strong: var(--gso-text-primary);
+  --sidebar-text-muted: #72829D;
+  --sidebar-item-hover: rgba(45, 124, 255, 0.12);
+  --sidebar-item-active-bg: var(--gso-surface-secondary);
+  --sidebar-item-active-text: var(--gso-text-primary);
+  --sidebar-item-active-border: var(--gso-border);
+  --sidebar-item-active-rail: var(--gso-brand-pink);
+  --sidebar-card-bg: var(--gso-surface-primary);
+  --sidebar-card-border: var(--gso-border);
+  --sidebar-search-bg: var(--gso-surface-primary);
+  --sidebar-search-border: var(--gso-border);
+  --sidebar-search-border-hover: var(--gso-action-blue);
+  --sidebar-search-shadow: 0 8px 22px rgba(8, 18, 32, 0.4);
+  --sidebar-menu-bg: var(--gso-surface-secondary);
+  --sidebar-menu-border: var(--gso-border);
+  --sidebar-divider: var(--gso-border);
+  --sidebar-danger-bg: rgba(239, 68, 68, 0.14);
+  --sidebar-danger-text: #FCA5A5;
+
+  --minimal-text: var(--gso-text-primary);
+  --minimal-text-secondary: var(--gso-text-secondary);
+  --minimal-text-tertiary: #72829D;
+  --minimal-border: var(--gso-border);
+  --minimal-border-strong: #2C3E5E;
+  --minimal-border-hover: #364B70;
+  --minimal-action: var(--gso-action-blue);
+  --minimal-action-hover: #226AE0;
+  --minimal-action-ink: #FFFFFF;
+  --minimal-selection: var(--gso-surface-secondary);
+  --minimal-selection-text: var(--gso-text-primary);
+  --minimal-focus: rgba(45, 124, 255, 0.5);
+  --minimal-overlay: rgba(8, 18, 32, 0.75);
+  --minimal-danger-surface: rgba(239, 68, 68, 0.14);
+  --minimal-danger-border: rgba(239, 68, 68, 0.3);
+  --minimal-danger-text: var(--gso-danger);
+  --minimal-warning-surface: rgba(245, 158, 11, 0.14);
+  --minimal-warning-border: rgba(245, 158, 11, 0.28);
+  --minimal-warning-text: var(--gso-warning);
+  --minimal-shadow: 0 10px 28px rgba(8, 18, 32, 0.55);
+  --minimal-drawer-shadow: 16px 0 40px rgba(8, 18, 32, 0.65);
+
+  --brand-50: #101B2E;
+  --brand-100: #18263F;
+  --brand-500: var(--gso-action-blue);
+  --brand-600: #226AE0;
+  --brand-700: #1954BF;
+  --action: var(--gso-action-blue);
+  --action-ink: #FFFFFF;
+  --action-weak: #18263F;
+  --accent-500: var(--gso-brand-pink);
+  --accent-weak: #381427;
+  --surface: var(--gso-surface-primary);
+  --surface-2: var(--gso-surface-secondary);
+  --surface-3: #1E2D4A;
+  --border: var(--gso-border);
+  --border-strong: #2C3E5E;
+  --text: var(--gso-text-primary);
+  --text-2: var(--gso-text-secondary);
+  --text-3: #72829D;
+  --success: var(--gso-success);
+  --success-weak: #0F2A1C;
+  --warning: var(--gso-warning);
+  --warning-weak: #2A1F08;
+  --danger: var(--gso-danger);
+  --danger-weak: #2A1416;
+  /* Correcao 2026-08-10: este bloco era declarado duas vezes dentro do mesmo
+     seletor. A segunda copia vencia a cascata e reintroduzia valores fora do
+     Brand System (--danger #f87171, --text-3 #64748b, --text #e7ecf5).
+     Mantida uma unica declaracao, derivada dos tokens canonicos --one-*. */
+  --focus: var(--one-border-focus);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
   --radius-sm: 0px;
@@ -1039,8 +1351,285 @@
 .gso-sidebar-account[data-collapsed='true'] [role='radiogroup'] {
   flex-direction: column;
 }
+/* Conhecimento / Artigos (Macro-lote 01).
+   A lista era full-bleed: sem margem lateral, sem margem superior e sem
+   contorno, enquanto todas as demais telas internas apresentam o conteudo em
+   painel com borda de 1px e raio de 10px sobre o canvas. Normalizado por CSS,
+   sem reestruturar o JSX da tela. */
+.gso-knowledge-cockpit-header {
+  border-bottom: 0 !important;
+}
+.gso-knowledge-articles-pane,
+.gso-knowledge-cockpit-grid > aside {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--one-border-default);
+  border-radius: var(--one-radius-panel);
+  background: var(--one-panel-bg);
+  overflow: hidden;
+}
+.gso-knowledge-cockpit-grid {
+  gap: var(--one-space-component-gap);
+  padding-inline: var(--one-space-page-x);
+}
+.gso-knowledge-articles-pane > .gso-knowledge-filter-deck {
+  border-bottom: 1px solid var(--one-border-default) !important;
+  background: var(--one-panel-elevated-bg) !important;
+}
+
+/* Rodape de identidade da barra lateral (Macro-lote 01).
+   A sidebar declara `isolation: isolate`, entao o popover de conta e
+   renderizado em portal no body. Estilo estrutural fica aqui, tokenizado. */
+.gso-sidebar-footer {
+  min-width: 0;
+}
+.gso-sidebar-account-portal {
+  z-index: var(--one-z-overlay);
+  border-radius: var(--one-radius-panel);
+  box-shadow: var(--one-shadow-modal);
+}
+
+/* ===========================================================================
+   PAGE TABS — DEFINICAO UNICA (Macro-lote 01)
+   Ate 2026-08-10 estas mesmas classes eram declaradas duas vezes: aqui e em
+   features/settings/settings-ui.css, com alturas (42px vs 40px), pesos e cores
+   de sublinhado diferentes, e !important na copia de Configuracoes. Quem vencia
+   dependia da ordem de import. A copia foi removida; esta e a fonte unica.
+   Consumida pelo primitive React <PageTabs>.
+   =========================================================================== */
+.gso-ui-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--one-border-default);
+  background: transparent;
+  min-height: var(--one-layout-tabs-height);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gso-ui-tabs::-webkit-scrollbar { display: none; }
+
+/* Quando as abas pertencem ao chrome do shell (faixa colada na topbar), elas
+   herdam a regua horizontal do produto e a superficie da topbar. */
+.gso-ui-shell-chrome > .gso-ui-tabs,
+.gso-topbar + .gso-ui-tabs {
+  padding-inline: var(--one-space-page-x);
+  background: var(--one-topbar-bg);
+}
+
+.gso-ui-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  white-space: nowrap;
+  min-height: var(--one-layout-tabs-height);
+  padding: 0 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 550;
+  color: var(--one-text-secondary);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.gso-ui-tab:hover {
+  color: var(--one-text-primary);
+}
+.gso-ui-tab:focus-visible {
+  outline: 2px solid var(--one-border-focus);
+  outline-offset: -2px;
+}
+.gso-ui-tab[disabled],
+.gso-ui-tab[aria-disabled='true'] {
+  color: var(--one-text-disabled);
+  cursor: not-allowed;
+}
+/* Rosa localiza ("voce esta aqui"); azul age. Microacento de 2px. */
+.gso-ui-tab[aria-current='page'],
+.gso-ui-tab[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--one-text-primary);
+  border-bottom-color: var(--selection-accent);
+}
+
+/* Configuration PO V2.1: a topbar aprovada e transversal as seis telas e por
+   isso volta a existir em desktop. A busca global e o controle de tema migraram
+   da sidebar para ca, conforme o blueprint. */
+.gso-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  flex-shrink: 0;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--gso-border) !important;
+  background: var(--gso-topbar-bg) !important;
+  color: var(--one-text-primary) !important;
+  position: relative;
+  z-index: 40;
+}
+.gso-topbar-icon-button {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--one-text-secondary);
+}
+.gso-topbar-icon-button > svg {
+  height: 16px;
+  width: 16px;
+}
+.gso-topbar-icon-button:hover {
+  background: var(--one-surface-interactive);
+  color: var(--one-text-primary);
+}
+.gso-topbar-icon-button:focus-visible {
+  outline: 2px solid var(--one-action-primary);
+  outline-offset: 2px;
+}
+.gso-topbar-breadcrumb {
+  min-width: 0;
+  flex-shrink: 1;
+}
+.gso-topbar-breadcrumb ol {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gso-topbar-breadcrumb li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.gso-topbar-breadcrumb a,
+.gso-topbar-breadcrumb span {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--one-text-secondary);
+}
+.gso-topbar-breadcrumb a:hover {
+  color: var(--one-text-primary);
+  text-decoration: underline;
+}
+.gso-topbar-breadcrumb a:focus-visible {
+  outline: 2px solid var(--one-action-primary);
+  outline-offset: 2px;
+}
+.gso-topbar-breadcrumb [data-current='true'] {
+  font-weight: 600;
+  color: var(--one-text-primary);
+}
+.gso-topbar-breadcrumb-separator {
+  color: var(--one-text-muted);
+}
+.gso-topbar-search {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+}
+.gso-topbar-search > * {
+  width: 100%;
+  max-width: 360px;
+}
+.gso-topbar-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.gso-topbar-identity {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--minimal-border);
+}
+.gso-topbar-identity-text {
+  max-width: 168px;
+  line-height: 1.15;
+}
+.gso-topbar-identity-text p:first-child {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--minimal-text);
+}
+.gso-topbar-identity-text p:last-child {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--minimal-text-tertiary);
+}
+@media (min-width: 640px) {
+  .gso-topbar-identity { display: flex; }
+}
+@media (max-width: 767px) {
+  .gso-topbar-search { display: none; }
+}
+/* O gatilho mobile e o retorno contextual sao mutuamente exclusivos. Regras
+   dedicadas porque `.gso-topbar-icon-button` declara `display` e venceria as
+   utilidades responsivas por ordem de cascata. */
+.gso-topbar-back-button { display: none; }
 @media (min-width: 1024px) {
-  .gso-topbar { display: none !important; }
+  .gso-topbar-menu-button { display: none; }
+  .gso-topbar-back-button { display: inline-flex; }
+}
+
+
+/* Rodape da sidebar: o controle de recolher volta para a base, conforme o
+   blueprint, sem perder o atalho nem a persistencia. */
+.gso-sidebar-collapse-action {
+  display: flex;
+  height: 32px;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--minimal-text-tertiary);
+}
+.gso-sidebar-collapse-action > svg {
+  height: 16px;
+  width: 16px;
+  flex-shrink: 0;
+}
+.gso-sidebar-collapse-action:hover {
+  background: var(--minimal-surface-muted);
+  color: var(--minimal-text);
+}
+.gso-sidebar-collapse-action:focus-visible {
+  outline: 2px solid var(--minimal-focus);
+  outline-offset: 2px;
+}
+.gso-sidebar[data-collapsed='true'] .gso-sidebar-collapse-action {
+  justify-content: center;
+  padding: 0;
 }
 
 @media (max-width: 1280px) {
@@ -1060,7 +1649,7 @@
   width: var(--shell-sidebar-width) !important;
   height: calc(100dvh - 16px) !important;
   min-height: 0;
-  grid-template-rows: var(--shell-sidebar-header-height) var(--shell-sidebar-search-height) minmax(0, 1fr) auto;
+  grid-template-rows: var(--shell-sidebar-header-height) minmax(0, 1fr) auto;
   gap: 12px;
   overflow: visible;
   padding: var(--shell-sidebar-padding);
@@ -1307,10 +1896,19 @@
 .gso-settings-cockpit-main .gso-settings-source-note { font-size: 0.68rem; line-height: 1.45; }
 
 .gso-knowledge-cockpit { --knowledge-rail-width: 290px; }
+.gso-knowledge-cockpit,
+.gso-knowledge-manager-page,
+.knowledge-editor-page {
+  background: var(--minimal-canvas) !important;
+}
 .gso-knowledge-cockpit-header { padding: 0.85rem 1.25rem !important; }
 .gso-knowledge-cockpit-header h1 { font-size: 1rem; }
 .gso-knowledge-cockpit-header p { font-size: 0.72rem; }
-.gso-knowledge-cockpit-grid { background: var(--minimal-surface); }
+.gso-knowledge-cockpit-grid,
+.gso-knowledge-manager-content,
+.knowledge-editor-page .gso-knowledge-editor-shell { background: var(--minimal-canvas) !important; }
+.gso-knowledge-manager-header,
+.knowledge-editor-page .knowledge-editor-header { background: var(--minimal-surface) !important; }
 .gso-knowledge-filter-deck { background: var(--minimal-surface-muted) !important; padding: 0.75rem 1rem !important; }
 .gso-knowledge-filter-deck label { font-size: 0.68rem; }
 .gso-knowledge-filter-deck input,
@@ -1324,7 +1922,7 @@
 .gso-knowledge-article-table tbody tr:hover { background: var(--minimal-surface-muted) !important; }
 .gso-knowledge-article-table th:last-child,
 .gso-knowledge-article-table td:last-child { width: 5.8rem; min-width: 5.8rem; }
-.gso-knowledge-category-rail { position: relative; min-height: 0; background: var(--minimal-sidebar) !important; }
+.gso-knowledge-category-rail { position: relative; min-height: 0; background: var(--minimal-surface) !important; }
 .gso-knowledge-category-rail > section { padding: 0.85rem 0.9rem !important; }
 .gso-knowledge-category-rail h2 { font-size: 0.78rem; }
 .gso-knowledge-category-rail button { max-width: 100%; }
@@ -1333,6 +1931,20 @@
 .gso-knowledge-category-rail .truncate { min-width: 0; }
 .gso-knowledge-category-rail .gso-category-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gso-knowledge-category-rail .gso-knowledge-alert { border-radius: 0.55rem; background: var(--minimal-surface-muted); }
+
+/* O fluxo interno de criar/editar artigo ainda usa componentes editoriais
+   legados. Ele recebe o mesmo canvas do Dashboard: header e paineis usam
+   surface; a area entre eles nunca reaproveita a cor da sidebar. */
+.gso-knowledge-inline-editor {
+  background: var(--minimal-canvas);
+  padding: var(--shell-section-gap) var(--app-gutter);
+}
+.gso-knowledge-inline-editor > section:first-child,
+.gso-knowledge-inline-editor > form > section {
+  border-color: var(--minimal-border) !important;
+  background: var(--minimal-surface) !important;
+  box-shadow: none !important;
+}
 
 /* The editor has historical inline light-mode rules. These selectors keep the
    entire properties rail readable when the product theme is dark. */
@@ -2101,13 +2713,13 @@
   --minimal-action: #2f6bff;
   --minimal-action-hover: #235cf0;
   --minimal-focus: rgba(47, 107, 255, 0.28);
-  --help-surface: #eef5ff;
-  --help-surface-strong: #ffffff;
-  --help-panel: rgba(255, 255, 255, 0.92);
-  --help-ink: #223357;
-  --help-ink-strong: #142042;
-  --help-muted: rgba(20, 32, 66, 0.72);
-  --help-border: rgba(20, 31, 71, 0.12);
+  --help-surface: var(--gso-canvas-bg, #081220);
+  --help-surface-strong: var(--gso-surface-1, #131E33);
+  --help-panel: var(--gso-surface-2, #18263F);
+  --help-ink: var(--one-text-primary, #E6ECF5);
+  --help-ink-strong: #ffffff;
+  --help-muted: var(--one-text-secondary, #A6B2C7);
+  --help-border: var(--one-border-default, #22324D);
   --help-accent: #307fe2;
   --help-accent-strong: #141f47;
   --help-accent-soft: rgba(48, 127, 226, 0.14);
@@ -5523,9 +6135,7 @@ table {
 .gso-app-shell {
   position: relative;
   isolation: isolate;
-  background-image:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--genius-site-cyan) 9%, transparent), transparent 24rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--genius-site-blue) 2%, transparent), transparent 36%);
+  background: var(--minimal-canvas);
 }
 
 /* A sidebar segue o sistema visual claro: superfície plana e traço único.
@@ -5534,18 +6144,11 @@ table {
 .gso-topbar {
   position: relative;
   isolation: isolate;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--genius-site-cyan) 11%, transparent);
+  box-shadow: none;
 }
 
 .gso-topbar::before {
-  position: absolute;
-  top: 0;
-  right: 1rem;
-  left: 1rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 56%, transparent), color-mix(in srgb, var(--genius-site-pink) 42%, transparent), transparent);
-  content: '';
-  pointer-events: none;
+  display: none;
 }
 
 .gso-brand-lockup .genius-mascot {
@@ -5561,7 +6164,7 @@ table {
 
 .gso-main-canvas {
   position: relative;
-  background-image: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--genius-site-cyan) 5%, transparent), transparent 22rem);
+  background: var(--minimal-canvas);
 }
 
 .gso-panel,
@@ -6264,7 +6867,7 @@ table {
 .gso-sidebar .gso-sidebar-account-card { background: var(--minimal-surface-muted) !important; }
 .gso-sidebar .gso-sidebar-account-menu { z-index: 100; background: var(--minimal-surface) !important; color: var(--minimal-text); box-shadow: var(--minimal-shadow); }
 .gso-sidebar .gso-sidebar-menu-action--danger:hover { background: var(--minimal-danger-surface); color: var(--color-danger-text); }
-:root[data-theme='dark'] .gso-sidebar { background: linear-gradient(180deg, #08142e 0%, #061128 100%) !important; border-color: rgba(148, 163, 184, 0.14) !important; }
+:root[data-theme='dark'] .gso-sidebar { background: var(--gso-sidebar-bg, #0F1A2E) !important; border-color: rgba(148, 163, 184, 0.14) !important; }
 :root:not([data-theme='dark']) .gso-sidebar {
   --minimal-text: oklch(0.27 0.035 255);
   --minimal-text-secondary: oklch(0.39 0.025 255);
@@ -6616,13 +7219,13 @@ table {
 .gso-ui.gso-sidebar {
   border: 1px solid var(--ui-border) !important;
   border-radius: var(--ui-radius-lg);
-  background: var(--ui-surface) !important;
+  background: var(--gso-sidebar-bg, #0F1A2E) !important;
   box-shadow: var(--ui-shadow) !important;
   color: var(--ui-text);
 }
 :root[data-theme='dark'] .gso-ui.gso-sidebar {
   border-color: var(--ui-border) !important;
-  background: var(--ui-surface) !important;
+  background: var(--gso-sidebar-bg, #0F1A2E) !important;
 }
 
 /* Cabeçalho: marca e o botão de recolher. */
@@ -6787,4 +7390,301 @@ table {
 :where(.gso-ui, .gso-analytics-shell, .support-operational-shell, .gso-settings-shell, .gso-knowledge-cockpit)
   :is(button, input:not([type='checkbox']):not([type='radio']), select, textarea, [class*='rounded-']):not([class*='rounded-full']) {
   border-radius: 0 !important;
+}
+
+/* Admin Configuration Visual Contract V1 — 2026-08-09.
+   O shell continua usando os mesmos guards e catálogo; esta camada muda somente
+   geometria e a apresentação do submenu colapsado. */
+.gso-ui.gso-sidebar {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.gso-ui.gso-sidebar .gso-sidebar-header,
+.gso-ui.gso-sidebar .gso-sidebar-account-card,
+.gso-ui.gso-sidebar .gso-sidebar-search .gso-genius-trigger,
+.gso-ui.gso-sidebar .gso-sidebar-account-menu,
+.gso-ui.gso-sidebar .gso-nav-link,
+.gso-nav-group-rail-button,
+.gso-nav-flyout,
+.gso-nav-flyout button {
+  border-radius: 8px !important;
+}
+
+.gso-ui.gso-sidebar .gso-sidebar-nav nav { gap: 8px; padding: 4px 0; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-group-toggle {
+  min-height: 28px;
+  padding-inline: 8px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link {
+  min-height: 38px;
+  height: 38px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link--active {
+  box-shadow: inset 2px 0 0 var(--genius-site-pink) !important;
+}
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav section { padding-top: 0; border: 0; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav nav { gap: 6px; }
+
+.gso-nav-group-rail-button {
+  display: inline-grid;
+  width: 42px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid transparent;
+  color: var(--ui-text-secondary);
+}
+.gso-nav-group-rail-button:hover,
+.gso-nav-group-rail-button--active {
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-ink);
+}
+.gso-nav-group-rail-button--active { box-shadow: inset 2px 0 0 var(--genius-site-pink); }
+.gso-nav-group-rail-button:focus-visible,
+.gso-nav-flyout button:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+.gso-nav-flyout-scrim {
+  position: fixed;
+  z-index: 75;
+  inset: 0;
+  border: 0;
+  background: var(--one-overlay-scrim, rgba(2, 8, 18, 0.56));
+  pointer-events: none;
+  animation: gso-scrim-fade-in 140ms ease-out both;
+}
+
+@keyframes gso-scrim-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.gso-nav-flyout {
+  position: fixed;
+  z-index: 71;
+  top: 76px;
+  bottom: 16px;
+  left: 64px;
+  display: grid;
+  align-content: start;
+  width: min(280px, calc(100vw - 80px));
+  overflow: auto;
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-lifted);
+  animation: gso-nav-flyout-enter 180ms ease-out both;
+}
+.gso-nav-flyout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--ui-border);
+}
+.gso-nav-flyout-heading p {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.gso-nav-flyout-heading button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text-secondary);
+}
+.gso-nav-flyout-items { display: grid; gap: 4px; padding: 8px; }
+.gso-nav-flyout-items .gso-nav-link { min-height: 38px; height: 38px; padding-inline: 10px; font-size: 12px; }
+@keyframes gso-nav-flyout-enter { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+
+/* Sidebar blueprint V1: a navegação é uma coluna integrada ao shell, não um
+   card solto. Este bloco final também neutraliza regras históricas que ainda
+   aumentavam os ícones e a densidade em algumas telas administrativas. */
+.gso-ui.gso-sidebar {
+  width: var(--shell-sidebar-width) !important;
+  height: 100dvh !important;
+  padding: var(--shell-sidebar-padding) !important;
+  grid-template-rows: var(--shell-sidebar-header-height) minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 0 !important;
+  border-right: 1px solid var(--ui-border) !important;
+  border-radius: 0 !important;
+  background: var(--minimal-sidebar) !important;
+  box-shadow: none !important;
+}
+.gso-ui.gso-sidebar--collapsed {
+  width: var(--shell-sidebar-collapsed) !important;
+  padding: var(--shell-sidebar-collapsed-padding) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-header {
+  height: var(--shell-sidebar-header-height);
+  min-height: var(--shell-sidebar-header-height);
+  padding: 0 2px;
+}
+.gso-ui.gso-sidebar .gso-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1;
+}
+.gso-ui.gso-sidebar .gso-sidebar-icon-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-secondary);
+}
+.gso-ui.gso-sidebar .gso-sidebar-icon-button:hover { background: var(--ui-surface-muted); color: var(--ui-text); }
+.gso-ui.gso-sidebar .gso-sidebar-icon-button > svg { width: 16px; height: 16px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-header { justify-content: center; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-icon-button { width: 36px; height: 36px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-icon-button .genius-lamp { width: 24px; height: 24px; }
+
+.gso-ui.gso-sidebar .gso-sidebar-search,
+.gso-ui.gso-sidebar .gso-sidebar-search .gso-genius-trigger {
+  height: var(--shell-sidebar-search-height);
+  min-height: var(--shell-sidebar-search-height);
+}
+.gso-ui.gso-sidebar .gso-sidebar-search .gso-genius-trigger {
+  padding-inline: 10px;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 6px !important;
+  background: var(--ui-surface-muted) !important;
+  box-shadow: none;
+}
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-search .gso-genius-trigger { width: 36px; height: 36px; min-height: 36px; border-radius: 6px !important; }
+
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-sidebar-navigation { display: grid; gap: 0; padding: 0; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section {
+  padding: 10px 0;
+  border-top: 1px solid var(--ui-border);
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section:first-child { padding-top: 0; border-top: 0; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section-items { display: grid; gap: 2px; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-group-toggle {
+  min-height: 26px;
+  margin-bottom: 4px;
+  padding-inline: 6px;
+  color: var(--ui-text-tertiary) !important;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link,
+.gso-nav-flyout-items .gso-nav-link {
+  min-height: var(--shell-sidebar-nav-item-height);
+  height: var(--shell-sidebar-nav-item-height);
+  gap: 8px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: 6px !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link > span:first-child,
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link > span:first-child svg,
+.gso-nav-group-rail-button > span:first-child svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link--active {
+  border: 0 !important;
+  background: var(--ui-primary-soft) !important;
+  box-shadow: inset 2px 0 0 var(--genius-site-pink) !important;
+  color: var(--ui-primary-ink) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link--nested { padding-left: 8px !important; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav .gso-sidebar-navigation { gap: 6px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav .gso-nav-section {
+  display: grid;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+}
+.gso-nav-group-rail-button {
+  width: 40px;
+  height: var(--shell-sidebar-nav-item-height);
+  border-radius: 6px !important;
+}
+
+.gso-ui.gso-sidebar .gso-sidebar-account-card {
+  min-height: 0 !important;
+  padding: 6px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 6px !important;
+  background: var(--ui-surface-muted) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-account-trigger {
+  height: 38px !important;
+  padding-inline: 4px;
+  border-radius: 4px;
+}
+.gso-ui.gso-sidebar .gso-sidebar-account-identity strong { font-size: 12px; }
+.gso-ui.gso-sidebar .gso-sidebar-account-identity small { font-size: 10px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-card { padding: 4px !important; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-trigger,
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-trigger .genius-avatar { width: 36px; height: 36px; }
+
+.gso-nav-flyout {
+  top: 80px;
+  bottom: auto;
+  left: var(--shell-sidebar-collapsed);
+  width: min(280px, calc(100vw - var(--shell-sidebar-collapsed)));
+  max-height: min(420px, calc(100dvh - 16px));
+  overflow-y: auto;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+/* Configuration PO V2.1 — gate do shell.
+   O submenu flutuante precisa ser um overlay opaco acima do conteudo. A
+   sidebar cria contexto de empilhamento proprio (`isolation: isolate`), entao
+   a superficie do flyout e fixada aqui, no fim da cascata, com cor solida. */
+.gso-nav-flyout {
+  z-index: 80 !important;
+  background-color: var(--minimal-sidebar) !important;
+  background-image: none !important;
+  border: 1px solid var(--minimal-border) !important;
+  box-shadow: 0 20px 48px rgba(2, 8, 24, 0.55) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+.gso-nav-flyout::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -16px;
+  width: 16px;
+  background: transparent;
+}
+.gso-nav-flyout-scrim {
+  z-index: 79 !important;
+}
+/* Os itens do flyout vivem no DOM da sidebar recolhida e por isso herdavam a
+   largura de 56px do rail. Dentro do overlay eles voltam a ser itens plenos. */
+.gso-sidebar--collapsed .gso-sidebar-nav .gso-nav-flyout .gso-nav-link,
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav .gso-nav-flyout .gso-nav-link {
+  width: 100% !important;
+  justify-content: flex-start !important;
+  padding: 0 10px !important;
 }

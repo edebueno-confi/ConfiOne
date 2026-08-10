@@ -1,5 +1,7 @@
 # Configurações — refatoração para o blueprint V4 — 2026-08-07
 
+> **Superado neste recorte — 2026-08-09.** Para Usuários e acesso, Histórico, Fontes e Integrações, a referência visual, o baseline e a composição vigentes são os do `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e de `docs/design/blueprint/Configuration PO/`. O conteúdo abaixo permanece como histórico de decisões, campos e capacidades já auditadas.
+
 Especificação do lote de refatoração das seis telas de Configurações a partir dos
 blueprints aprovados pelo operador em 2026-08-07.
 

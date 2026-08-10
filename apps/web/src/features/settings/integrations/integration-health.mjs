@@ -135,3 +135,84 @@ export function summarizeIntegrations(items) {
     tone,
   };
 }
+
+/**
+ * Rotulos de dominio publicados pela propria tela ao gravar a integracao.
+ * Nao ha inferencia: uma chave desconhecida e exibida como veio do read model.
+ */
+const DOMAIN_LABEL = {
+  commercial: 'Comercial',
+  customer_success: 'Customer Success',
+  support: 'Suporte',
+  finance: 'Financeiro',
+  product: 'Produto',
+  development: 'Desenvolvimento',
+};
+
+/**
+ * Escopos sincronizados de uma integracao, lidos apenas das chaves que a
+ * propria aplicacao grava em `config`. Quando o read model nao publica escopo,
+ * a funcao devolve lista vazia e a interface diz que a leitura nao existe.
+ * Nenhum escopo e inventado nem completado com valor padrao.
+ * @param {{ config?: Record<string, unknown> }} item
+ * @returns {string[]}
+ */
+export function integrationScopes(item) {
+  const config = item && typeof item.config === 'object' && item.config ? item.config : {};
+  const domains = Array.isArray(config.domains) ? config.domains : [];
+  const scopes = domains
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => DOMAIN_LABEL[value] ?? value);
+  const resource = typeof config.resource_label === 'string' && config.resource_label.trim()
+    ? config.resource_label.trim()
+    : null;
+  if (resource && !scopes.includes(resource)) scopes.push(resource);
+  return scopes;
+}
+
+/**
+ * As tres metricas do painel de provedor, na ordem do blueprint aprovado.
+ *
+ * O read model publica uma unica execucao (`last_run_status` + `last_run_at`),
+ * entao "ultimo sucesso" e "ultima falha" so podem afirmar algo sobre essa
+ * execucao. Quando ela nao qualifica a posicao, a metrica devolve o rotulo de
+ * indisponibilidade em vez de um valor que pareceria uma serie historica.
+ * @param {IntegrationHealthInput & { credentialUpdatedAt: string | null, lastErrorMessage: string | null }} item
+ */
+export function providerMetrics(item) {
+  const succeeded = item.lastRunStatus === 'success';
+  const failed = item.lastRunStatus === 'error' || item.lastRunStatus === 'partial';
+  const credential = credentialState(item);
+
+  return [
+    {
+      key: 'last-success',
+      label: 'Último sucesso',
+      at: succeeded ? item.lastRunAt : null,
+      value: succeeded ? null : UNAVAILABLE_LABEL,
+      detail: succeeded ? 'Última execução registrada.' : 'Nenhuma execução concluída registrada.',
+      tone: succeeded ? 'success' : 'muted',
+    },
+    {
+      key: 'last-failure',
+      label: 'Última falha',
+      at: failed ? item.lastRunAt : null,
+      value: failed ? null : '—',
+      detail: failed
+        ? (item.lastErrorMessage ? String(item.lastErrorMessage) : 'Última execução não concluiu integralmente.')
+        : 'Nenhuma falha registrada.',
+      tone: failed ? (item.lastRunStatus === 'error' ? 'danger' : 'warning') : 'muted',
+    },
+    {
+      key: 'credential-health',
+      label: 'Saúde das credenciais',
+      at: null,
+      value: credential.label,
+      detail: item.credentialUpdatedAt
+        ? 'Credencial atualizada nesta data.'
+        : 'Data de atualização indisponível.',
+      detailAt: item.credentialUpdatedAt,
+      tone: credential.tone,
+    },
+  ];
+}

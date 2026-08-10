@@ -1,7 +1,19 @@
 # Especificação — Matching HubSpot ↔ OMIE V1
 
-Status: análise somente leitura; nenhuma aplicação automática de vínculo ou
-merge é autorizada neste lote.
+Status: correção local implementada e validada; nenhuma aplicação automática de
+vínculo, merge ou escrita em HubSpot/OMIE é autorizada neste lote.
+
+## Correção de identidade — 2026-08-09
+
+- O enriquecimento de títulos OMIE agora lê `codigo_cliente_fornecedor` tanto
+  no registro quanto em `detalhes`, formato retornado pela API. Com isso, nome,
+  CNPJ e nome fantasia do índice OMIE voltam a compor o título financeiro.
+- A carga compartilhada de Companies do HubSpot passa a preservar `razao_social`,
+  `nome_fantasia___aftersale` e `cnpj__chave_unica_` no cache local.
+- A fila e a lista de pendências pesquisam nome principal, razão social e nome
+  fantasia normalizados. Esses sinais criam candidatas auditáveis, mas não
+  conciliam títulos automaticamente: somente CNPJ único, grupo resolvido ou
+  decisão humana confirmada produz vínculo executivo.
 
 ## Mapa do que já existe
 

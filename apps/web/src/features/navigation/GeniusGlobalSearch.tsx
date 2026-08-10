@@ -227,20 +227,20 @@ export function GeniusGlobalSearch({
         ref={triggerRef}
         aria-haspopup="dialog"
         className={cx(
-          'gso-genius-trigger group hidden w-full items-center gap-2.5 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-1.5 text-left transition hover:border-[color:var(--minimal-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] md:flex',
+          'gso-genius-trigger group hidden h-[32px] w-full items-center gap-2 rounded-[7px] border border-[color:var(--one-border-default)] bg-[color:var(--one-surface-1)] px-2.5 text-left transition hover:border-[color:var(--one-border-strong)] hover:bg-[color:var(--one-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary)] md:flex',
           compact && 'gso-genius-trigger--compact justify-center px-1.5',
         )}
         onClick={() => setOpen(true)}
         title="Pergunte ao Gênio · Ctrl+K"
         type="button"
       >
-        <svg aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[color:var(--minimal-action)]" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-[color:var(--one-action-primary)]" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.5 15.5 20 20" />
         </svg>
-        <span className="truncate text-sm text-[color:var(--minimal-text-tertiary)]">
+        <span className="truncate text-xs text-[color:var(--one-text-muted)] group-hover:text-[color:var(--one-text-primary)] transition-colors">
           Pergunte ao Gênio
         </span>
-        <kbd className="ml-auto hidden shrink-0 rounded border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--minimal-text-tertiary)] lg:inline">
+        <kbd className="ml-auto hidden shrink-0 rounded border border-[color:var(--one-border-default)] bg-[color:var(--one-surface-2)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--one-text-muted)] lg:inline">
           Ctrl K
         </kbd>
       </button>
@@ -274,7 +274,7 @@ export function GeniusGlobalSearch({
           <div className="gso-genius-panel relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl">
             <div className="gso-genius-panel-glow" aria-hidden="true" />
             <div className="relative flex items-center gap-3 border-b border-[color:var(--minimal-border)] px-4 py-3">
-              <GeniusLamp alt="Lâmpada do GeniusOS" size="md" />
+              <GeniusLamp alt="Lâmpada do ConfiOne" size="md" />
               <input
                 ref={inputRef}
                 aria-label="Pergunte ao Gênio"

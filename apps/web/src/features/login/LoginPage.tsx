@@ -181,17 +181,17 @@ export function LoginPage() {
       <div className="gso-login-shell">
         <section className="gso-login-brand-panel" aria-labelledby="login-brand-title">
           <div className="gso-login-brand-lockup">
-            <GeniusMascot size="lg" alt="Gênio, mascote do GeniusOS" />
+            <GeniusMascot size="lg" alt="Gênio, mascote do ConfiOne" />
             <div>
               <p className="gso-login-brand-name">
-                Genius<span>OS</span>
+                Confi<span>One</span>
               </p>
               <p className="gso-login-brand-caption">Suporte, conhecimento e operação</p>
             </div>
           </div>
 
           <div className="gso-login-brand-copy">
-            <p className="gso-login-eyebrow">PLATAFORMA GENIUS</p>
+            <p className="gso-login-eyebrow">PLATAFORMA CONFI ONE</p>
             <h1 id="login-brand-title">Tudo o que sua operação precisa, em um só lugar</h1>
             <p>
               Acompanhe atendimentos, consulte o conhecimento e acesse os recursos
@@ -219,7 +219,7 @@ export function LoginPage() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <h2 id="login-title" className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-                Entrar na GeniusOS
+                Entrar na ConfiOne
               </h2>
               <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">
                 Use sua conta para continuar. Os recursos disponíveis seguem o seu perfil de acesso.

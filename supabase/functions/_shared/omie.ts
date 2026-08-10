@@ -553,7 +553,8 @@ export function enrichReceivablesWithClients<T extends { client_name: string | n
   let fieldsUpdated = 0;
   for (const row of rows) {
     const raw = (row.raw_payload && typeof row.raw_payload === 'object' ? row.raw_payload : {}) as Record<string, unknown>;
-    const code = valueAt(raw, 'codigo_cliente_fornecedor', 'codigo_cliente_omie');
+    const details = (raw.detalhes && typeof raw.detalhes === 'object' ? raw.detalhes : raw) as Record<string, unknown>;
+    const code = valueAt(details, 'codigo_cliente_fornecedor', 'codigo_cliente_omie', 'codigo_cliente');
     const key = code === null ? '' : String(code).trim();
     if (!key) { unmatched += 1; continue; }
     const info = clients.get(key);
