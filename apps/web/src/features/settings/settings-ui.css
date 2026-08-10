@@ -151,6 +151,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   min-width: 0;
+  border-radius: 0 !important;
 }
 .gso-ui-header-heading { min-width: 0; }
 .gso-ui-crumbs {
@@ -164,22 +165,23 @@
 .gso-ui-crumbs a { color: var(--ui-text-secondary); border-radius: var(--ui-radius-sm); }
 .gso-ui-crumbs a:hover { color: var(--ui-primary-ink); text-decoration: underline; }
 .gso-ui-crumbs [aria-current='page'] { color: var(--ui-primary-ink); font-weight: 600; }
+.gso-ui-header-heading h1,
 .gso-ui-header-heading h2 {
   margin: 0;
   color: var(--one-text-primary, #E6ECF5);
   font-family: inherit;
-  font-size: var(--one-font-page-title, 24px);
-  font-weight: var(--one-weight-page-title, 700);
-  line-height: var(--one-line-page-title, 30px);
-  letter-spacing: -0.015em;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
 }
 .gso-ui-header-heading > p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   max-width: 92ch;
   color: var(--one-text-secondary, #A6B2C7);
-  font-size: var(--one-font-page-subtitle, 12px);
-  font-weight: var(--one-weight-page-subtitle, 400);
-  line-height: var(--one-line-page-subtitle, 18px);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 .gso-ui-header-side { display: grid; justify-items: end; gap: 0.5rem; }
 .gso-ui-header-meta {
@@ -736,7 +738,7 @@
 /* O título da tela usa a faixa aprovada de 22–26px; o padrão de 30px do
    cabeçalho compartilhado empurrava as quatro regiões para fora da dobra. */
 .gso-po-v2-integrations > .gso-ui-header { padding-block: 0.55rem; }
-.gso-po-v2-integrations > .gso-ui-header h2 { margin-top: 0; font-size: 24px; line-height: 1.2; }
+.gso-po-v2-integrations > .gso-ui-header h2 { margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.02em; }
 .gso-po-v2-integrations > .gso-ui-header .gso-ui-header-heading > p { margin-top: 0.2rem; font-size: 13px; line-height: 1.4; }
 .gso-po-v2-integrations .gso-po-policy-list { gap: 6px; }
 .gso-po-v2-integrations .gso-po-region-head p { margin-top: 1px; }
