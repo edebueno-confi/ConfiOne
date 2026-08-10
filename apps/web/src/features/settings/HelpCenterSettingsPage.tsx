@@ -191,21 +191,56 @@ export function HelpCenterSettingsPage({
   const items = state.phase === 'ready' ? state.items : [];
   const [contactsExpanded, setContactsExpanded] = useState(false);
 
-  const summary = items.reduce(
+  /**
+   * Consolidacao das centrais. Os seeds anteriores eram 1248 artigos e 48
+   * categorias, e qualquer central sem contagem no contrato reescrevia o
+   * acumulado para esses mesmos literais — ou seja, a tela exibia numeros
+   * inventados mesmo com o backend respondendo. Aqui a contagem so soma o que
+   * o contrato entrega; se nenhuma central expoe a metrica, fica `null` e a
+   * UI mostra "Indisponivel".
+   */
+  const summary = items.reduce<{
+    configuredContacts: number;
+    articles: number | null;
+    publishedArticles: number | null;
+    categories: number | null;
+  }>(
     (current, item) => {
       const profile = profileForSlug(profiles, item.knowledgeSpaceSlug);
-      const articleCount = profile?.articleCount;
-      const publishedArticleCount = profile?.publishedArticleCount;
-      const categoryCount = profile?.categoryCount;
+      const add = (accumulated: number | null, value: number | null | undefined) =>
+        typeof value === 'number' ? (accumulated ?? 0) + value : accumulated;
       return {
         configuredContacts: current.configuredContacts + (hasPublicContact(item) ? 1 : 0),
-        articles: current.articles === null || articleCount === null || articleCount === undefined ? 1248 : current.articles + articleCount,
-        publishedArticles: current.publishedArticles === null || publishedArticleCount === null || publishedArticleCount === undefined ? 1248 : current.publishedArticles + publishedArticleCount,
-        categories: current.categories === null || categoryCount === null || categoryCount === undefined ? 48 : current.categories + categoryCount,
+        articles: add(current.articles, profile?.articleCount),
+        publishedArticles: add(current.publishedArticles, profile?.publishedArticleCount),
+        categories: add(current.categories, profile?.categoryCount),
       };
     },
-    { configuredContacts: 0, articles: 1248, publishedArticles: 1248, categories: 48 },
+    { configuredContacts: 0, articles: null, publishedArticles: null, categories: null },
   );
+
+  const draftArticles =
+    summary.articles !== null && summary.publishedArticles !== null
+      ? Math.max(summary.articles - summary.publishedArticles, 0)
+      : null;
+  const metricValue = (value: number | null) => (value === null ? 'Indisponível' : value.toLocaleString('pt-BR'));
+
+  /** Centrais com as contagens que o contrato realmente expoe. */
+  const spaces = items.map((item) => {
+    const profile = profileForSlug(profiles, item.knowledgeSpaceSlug);
+    return {
+      id: item.knowledgeSpaceId,
+      slug: item.knowledgeSpaceSlug,
+      displayName: item.knowledgeSpaceDisplayName,
+      brandName: item.brandName,
+      locale: profile?.defaultLocale ?? null,
+      domain: profile?.primaryDomain ?? null,
+      articles: profile?.articleCount ?? null,
+      published: profile?.publishedArticleCount ?? null,
+      categories: profile?.categoryCount ?? null,
+      hasContact: hasPublicContact(item),
+    };
+  });
 
   return (
     <UiPage className="gso-po-v2-help-center space-y-4">
@@ -227,351 +262,155 @@ export function HelpCenterSettingsPage({
       />
 
       {/* B. SUMMARY RAIL (5 KPI Cards Blueprint) */}
+      {/* Saíram daqui "Autores ativos" (27) e "Tempo médio de atualização"
+          (5,2 dias): nenhuma das duas existe em contrato. As variações
+          ("+12% vs. mês anterior", "18 aguardando revisão", "+3 novos este
+          mês") também eram literais — não há série histórica por trás. Ficam
+          as três contagens que vw_admin_knowledge_spaces entrega, mais
+          rascunhos derivado de total menos publicados. */}
       <UiMetricRow label="Resumo editorial da central de ajuda">
-        <UiMetric
-          icon="list"
-          label="Artigos publicados"
-          sub="+12% vs. mês anterior"
-          tone="primary"
-          value={summary.publishedArticles ? summary.publishedArticles.toLocaleString('pt-BR') : '1.248'}
-        />
-        <UiMetric
-          icon="archive"
-          label="Rascunhos"
-          sub="18 aguardando revisão"
-          tone="neutral"
-          value="156"
-        />
-        <UiMetric
-          icon="layers"
-          label="Categorias"
-          sub="12 coleções ativas"
-          tone="neutral"
-          value={summary.categories ? summary.categories.toString() : '48'}
-        />
-        <UiMetric
-          icon="users"
-          label="Autores ativos"
-          sub="+3 novos este mês"
-          tone="neutral"
-          value="27"
-        />
-        <UiMetric
-          icon="clock"
-          label="Tempo médio de atualização"
-          sub="-0,8 dias vs. mês anterior"
-          tone="neutral"
-          value="5,2 dias"
-        />
+        <UiMetric icon="list" label="Artigos publicados" tone="primary" value={metricValue(summary.publishedArticles)} />
+        <UiMetric icon="archive" label="Rascunhos" tone="neutral" value={metricValue(draftArticles)} />
+        <UiMetric icon="layers" label="Categorias" tone="neutral" value={metricValue(summary.categories)} />
+        <UiMetric icon="help" label="Centrais publicadas" tone="neutral" value={items.length} />
+        <UiMetric icon="mail" label="Centrais com canal de contato" tone="neutral" value={summary.configuredContacts} />
       </UiMetricRow>
 
-      {/* C. LINHA PRINCIPAL (2 COLUNAS: Configuração Editorial | Publicação e Canais) */}
+      {/* C. CENTRAIS PUBLICADAS
+          Substitui a tabela "Categorias e coleções" e os cards de configuração
+          editorial do blueprint. Aquela tabela trazia cinco categorias fixas
+          (Comece por aqui, Funcionalidades, Integrações, Administração, Boas
+          práticas) com contagens e datas literais, paginação falsa ("1 a 5 de
+          48 categorias") e nenhuma leitura de backend. Aqui ficam apenas as
+          centrais reais e as contagens que vw_admin_knowledge_spaces entrega. */}
+      <UiCard labelledBy="help-center-spaces-title">
+        <UiCardHeader
+          description="Centrais publicadas, endereço público e volume de conteúdo por central."
+          icon="layers"
+          title="Centrais de ajuda"
+          titleId="help-center-spaces-title"
+          tone="primary"
+        />
+        <div className="gso-ui-card-body pt-2 overflow-x-auto">
+          {spaces.length === 0 ? (
+            <UiEmptyState
+              description="Nenhuma central de ajuda publicada foi retornada pelo backend para este contexto."
+              icon="help"
+              title="Sem centrais publicadas"
+            />
+          ) : (
+            <table className="w-full text-xs text-left text-[color:var(--gso-text-primary,#E6ECF5)]">
+              <thead>
+                <tr className="border-b border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-text-secondary,#A6B2C7)]">
+                  <th className="p-2.5 font-semibold">Central</th>
+                  <th className="p-2.5 font-semibold">Marca</th>
+                  <th className="p-2.5 font-semibold">Endereço público</th>
+                  <th className="p-2.5 font-semibold">Idioma</th>
+                  <th className="p-2.5 font-semibold text-center">Artigos</th>
+                  <th className="p-2.5 font-semibold text-center">Publicados</th>
+                  <th className="p-2.5 font-semibold text-center">Categorias</th>
+                  <th className="p-2.5 font-semibold">Contato</th>
+                </tr>
+              </thead>
+              <tbody>
+                {spaces.map((space) => (
+                  <tr className="border-b border-[color:var(--gso-border,#22324D)] hover:bg-[color:var(--gso-surface-secondary,#18263F)]" key={space.id}>
+                    <td className="p-2.5 font-semibold">
+                      <span className="flex items-center gap-2">
+                        <span className="text-[color:var(--gso-brand-pink,#FF4FA3)]"><UiIcon name="layers" /></span>
+                        {space.displayName}
+                      </span>
+                    </td>
+                    <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{space.brandName || 'Indisponível'}</td>
+                    <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{space.domain || `/${space.slug}`}</td>
+                    <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{space.locale || 'Indisponível'}</td>
+                    <td className="p-2.5 text-center font-mono">{metricValue(space.articles)}</td>
+                    <td className="p-2.5 text-center font-mono">{metricValue(space.published)}</td>
+                    <td className="p-2.5 text-center font-mono">{metricValue(space.categories)}</td>
+                    <td className="p-2.5">
+                      <UiBadge dot tone={space.hasContact ? 'success' : 'warning'}>
+                        {space.hasContact ? 'Publicado' : 'Sem contato'}
+                      </UiBadge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </UiCard>
+
+      {/* D. GOVERNANÇA EDITORIAL
+          O blueprint trazia aqui seletores de status padrão, fluxo de revisão,
+          visibilidade, comentários, versionamento e SLAs, além de badges fixas
+          "Configurado / Completo / Online". Nenhum desses controles lia ou
+          gravava estado: eram selects sem onChange e sem contrato. Enquanto o
+          backend não expõe política editorial, a tela declara a lacuna em vez
+          de simular configuração. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Configuração editorial */}
         <UiCard labelledBy="editorial-config-title">
           <UiCardHeader
-            description="Políticas de produção, revisão e publicação do conhecimento."
+            description="Status padrão, fluxo de revisão, visibilidade, comentários, versionamento e SLAs."
             icon="shield"
             title="Configuração editorial"
             titleId="editorial-config-title"
-            tone="primary"
+            tone="neutral"
           />
-          <div className="gso-ui-card-body space-y-3 pt-2">
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-brand-pink,#FF4FA3)]"><UiIcon name="list" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary,#E6ECF5)]">Publicação (padrões)</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary,#A6B2C7)] leading-tight">Defina o status padrão, visibilidade e comportamento na publicação.</p>
-                </div>
-              </div>
-              <select className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] focus:outline-none">
-                <option value="publicado">Publicado</option>
-                <option value="rascunho">Rascunho</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="users" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Revisão</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)] leading-tight">Configure fluxo de revisão, aprovadores e etapas obrigatórias.</p>
-                </div>
-              </div>
-              <select className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] focus:outline-none">
-                <option value="2-etapas">2 etapas</option>
-                <option value="1-etapa">1 etapa</option>
-                <option value="sem-revisao">Direta</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="shield" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Visibilidade</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)] leading-tight">Defina quem pode visualizar os conteúdos e categorias.</p>
-                </div>
-              </div>
-              <select className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] focus:outline-none">
-                <option value="publico-logado">Público e logado</option>
-                <option value="apenas-logado">Apenas logado</option>
-                <option value="publico">Apenas público</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="archive" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Comentários</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)] leading-tight">Permitir e moderar comentários dos usuários na Central de Ajuda.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] px-2 py-0.5 rounded bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] text-[color:var(--gso-text-secondary)]">Moderados</span>
-                <UiBadge tone="success" dot>Ativo</UiBadge>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="clock" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Versionamento</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)] leading-tight">Controle de versões e histórico de alterações dos artigos.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] px-2 py-0.5 rounded bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] text-[color:var(--gso-text-secondary)]">Ativado</span>
-                <UiBadge tone="success" dot>Ativo</UiBadge>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="list" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">SLAs editoriais</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)] leading-tight">Prazos de revisão, publicação e atualização de conteúdos.</p>
-                </div>
-              </div>
-              <button className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] hover:bg-[color:var(--gso-surface-secondary)] transition-colors" type="button">
-                Configurar SLAs ˅
-              </button>
+          <div className="gso-ui-card-body pt-2 space-y-3">
+            <p className="gso-ui-alert gso-ui-alert--warning" role="status">
+              BACKEND_CAPABILITY_REQUIRED — não existe contrato de política editorial
+              (status padrão, etapas de revisão, visibilidade, moderação, versionamento
+              ou SLA) para leitura ou gravação. Os controles foram removidos para não
+              sugerir uma configuração que a plataforma não persiste.
+            </p>
+            <p className="text-[11px] text-[color:var(--gso-text-secondary)]">
+              O que já é configurável hoje: identidade e canais de contato de cada
+              central, no bloco abaixo, e o ciclo de vida de cada artigo na Central de
+              Conhecimento.
+            </p>
+            <div className="gso-ui-actions">
+              <Link className="gso-ui-button gso-ui-button--secondary" to="/admin/knowledge">
+                Abrir Central de Conhecimento
+              </Link>
             </div>
           </div>
         </UiCard>
 
-        {/* Publicação e canais */}
-        <UiCard labelledBy="publication-channels-title">
+        {/* Permissões editoriais: o blueprint listava papéis inventados
+            ("Autores, Editores", "Revisores", "Publicadores") e contagens
+            literais (24, 11, 8, 5 usuários). As capabilities abaixo são as que
+            existem de fato em public.internal_capabilities; quem as concede é
+            Usuários e acessos. */}
+        <UiCard labelledBy="editorial-permissions-title">
           <UiCardHeader
-            description="Canais de contato e status de publicação do portal."
-            icon="globe"
-            title="Publicação e canais"
-            titleId="publication-channels-title"
-            tone="primary"
+            description="Permissões de conhecimento concedidas por perfil de acesso."
+            icon="users"
+            title="Permissões editoriais"
+            titleId="editorial-permissions-title"
+            tone="neutral"
           />
-          <div className="gso-ui-card-body space-y-3 pt-2">
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-action-blue,#2D7CFF)]"><UiIcon name="globe" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Portal público</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Configure o acesso e a experiência para visitantes não logados.</p>
-                </div>
+          <div className="gso-ui-card-body space-y-3 pt-2 text-xs">
+            {[
+              ['knowledge.create', 'Criar artigo'],
+              ['knowledge.edit', 'Editar artigo'],
+              ['knowledge.review', 'Revisar artigo'],
+              ['knowledge.publish', 'Publicar artigo'],
+              ['knowledge.configure', 'Configurar conteúdo'],
+            ].map(([key, label]) => (
+              <div className="p-3 rounded-lg border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] flex items-center justify-between" key={key}>
+                <strong className="font-semibold text-[color:var(--gso-text-primary,#E6ECF5)]">{label}</strong>
+                <code className="text-[11px] text-[color:var(--gso-text-secondary)]">{key}</code>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Central de Ajuda pública</span>
-                <UiBadge tone="success" dot>Ativo</UiBadge>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="users" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Área logada</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Personalize a experiência para usuários autenticados.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Habilitada</span>
-                <UiBadge tone="success" dot>Ativo</UiBadge>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="brand" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Marcas vinculadas</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Selecione as marcas/domínios que exibirão a Central de Ajuda.</p>
-                </div>
-              </div>
-              <select className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] focus:outline-none">
-                <option value="3-marcas">{items.length > 0 ? `${items.length} marcas` : '3 marcas'}</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="globe" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Idioma</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Defina o idioma padrão e opções disponíveis.</p>
-                </div>
-              </div>
-              <select className="bg-[color:var(--gso-surface-primary)] border border-[color:var(--gso-border)] rounded-md px-2.5 py-1 text-xs text-[color:var(--gso-text-primary)] focus:outline-none">
-                <option value="pt-BR">Português (BR)</option>
-                <option value="en-US">English (US)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="link" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">SEO básico</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Configure título, descrição e metadados da Central de Ajuda.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Configurado</span>
-                <UiBadge tone="success">Completo</UiBadge>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] text-xs">
-              <div className="flex items-start gap-3 min-w-0 pr-2">
-                <span className="mt-0.5 text-[color:var(--gso-text-secondary)]"><UiIcon name="check" /></span>
-                <div className="min-w-0">
-                  <strong className="block font-semibold text-[color:var(--gso-text-primary)]">Status de publicação</strong>
-                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Controle geral de publicação da base de conhecimento.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Online</span>
-                <UiBadge tone="success" dot>Ativo</UiBadge>
-              </div>
+            ))}
+            <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)]">
+              <Link className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline inline-flex items-center gap-1" to="/admin/access?tab=permissions">
+                Atribuir estas permissões em Usuários e acessos →
+              </Link>
             </div>
           </div>
         </UiCard>
       </div>
 
-      {/* D. LINHA INFERIOR (2 COLUNAS: Categorias e Coleções 2/3 | Permissões Editoriais 1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Categorias e coleções (2/3 width) */}
-        <div className="lg:col-span-2">
-          <UiCard labelledBy="categories-collections-title">
-            <div className="flex items-center justify-between p-4 border-b border-[color:var(--gso-border,#22324D)]">
-              <UiCardHeader
-                description="Taxonomia e organização dos tópicos da Central de Ajuda."
-                icon="layers"
-                title="Categorias e coleções"
-                titleId="categories-collections-title"
-                tone="primary"
-              />
-              <div className="flex items-center gap-2">
-                <button className="bg-[color:var(--gso-surface-secondary,#18263F)] border border-[color:var(--gso-border,#22324D)] rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--gso-text-primary)] hover:bg-[color:var(--gso-surface-primary)] transition-colors" type="button">
-                  + Nova categoria
-                </button>
-                <button className="p-1.5 text-[color:var(--gso-text-secondary)] hover:text-[color:var(--gso-text-primary)]" type="button">
-                  ⋮
-                </button>
-              </div>
-            </div>
-            <div className="gso-ui-card-body pt-2 overflow-x-auto">
-              <table className="w-full text-xs text-left text-[color:var(--gso-text-primary,#E6ECF5)]">
-                <thead>
-                  <tr className="border-b border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-text-secondary,#A6B2C7)]">
-                    <th className="w-8 p-2.5 text-center">::</th>
-                    <th className="p-2.5 font-semibold">Categoria / Coleção</th>
-                    <th className="p-2.5 font-semibold">Descrição</th>
-                    <th className="p-2.5 font-semibold text-center">Artigos</th>
-                    <th className="p-2.5 font-semibold">Visibilidade</th>
-                    <th className="p-2.5 font-semibold">Atualização</th>
-                    <th className="p-2.5 font-semibold">Status</th>
-                    <th className="w-8 p-2.5 text-center"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ['Comece por aqui', 'Guias iniciais e primeiros passos', '12', '🔓 Público', '23/07/2026', 'Ativo'],
-                    ['Funcionalidades', 'Recursos e funcionalidades do sistema', '156', '🔒 Público e logado', '25/07/2026', 'Ativo'],
-                    ['Integrações', 'Integrações e APIs disponíveis', '84', '🔒 Público e logado', '20/07/2026', 'Ativo'],
-                    ['Administração', 'Configurações e gestão da plataforma', '198', '🔒 Apenas logado', '24/07/2026', 'Ativo'],
-                    ['Boas práticas', 'Dicas, tutoriais e recomendações', '64', '🔓 Público', '18/07/2026', 'Ativo'],
-                  ].map(([cat, desc, count, vis, date, status], idx) => (
-                    <tr key={idx} className="border-b border-[color:var(--gso-border,#22324D)] hover:bg-[color:var(--gso-surface-secondary,#18263F)]">
-                      <td className="p-2.5 text-center text-[color:var(--gso-text-secondary)]">::</td>
-                      <td className="p-2.5 font-semibold flex items-center gap-2">
-                        <span className="text-[color:var(--gso-brand-pink,#FF4FA3)]"><UiIcon name="layers" /></span>
-                        {cat}
-                      </td>
-                      <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{desc}</td>
-                      <td className="p-2.5 text-center font-mono">{count}</td>
-                      <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{vis}</td>
-                      <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{date}</td>
-                      <td className="p-2.5"><UiBadge tone="success" dot>{status}</UiBadge></td>
-                      <td className="p-2.5 text-center text-[color:var(--gso-text-secondary)]">...</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="flex items-center justify-between pt-3 text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">
-                <span>Exibindo 1 a 5 de 48 categorias</span>
-                <div className="flex gap-1 items-center">
-                  <button className="px-2 py-1 rounded border border-[color:var(--gso-border)] opacity-60 hover:opacity-100">&lt;</button>
-                  <button className="px-2.5 py-1 rounded border border-[color:var(--gso-action-blue)] bg-[color:var(--gso-action-blue)] text-white font-medium">1</button>
-                  <button className="px-2.5 py-1 rounded border border-[color:var(--gso-border)] hover:bg-[color:var(--gso-surface-secondary)]">2</button>
-                  <button className="px-2.5 py-1 rounded border border-[color:var(--gso-border)] hover:bg-[color:var(--gso-surface-secondary)]">3</button>
-                  <span className="px-1">...</span>
-                  <button className="px-2.5 py-1 rounded border border-[color:var(--gso-border)] hover:bg-[color:var(--gso-surface-secondary)]">10</button>
-                  <button className="px-2 py-1 rounded border border-[color:var(--gso-border)] opacity-60 hover:opacity-100">&gt;</button>
-                </div>
-              </div>
-            </div>
-          </UiCard>
-        </div>
-
-        {/* Permissões editoriais (1/3 width) */}
-        <div>
-          <UiCard labelledBy="editorial-permissions-title">
-            <UiCardHeader
-              description="Atribuições de criação, edição e publicação."
-              icon="users"
-              title="Permissões editoriais"
-              titleId="editorial-permissions-title"
-              tone="neutral"
-            />
-            <div className="gso-ui-card-body space-y-3 pt-2 text-xs">
-              {[
-                ['Criar artigos', 'Autores, Editores', '24 usuários'],
-                ['Revisar artigos', 'Editores, Revisores', '11 usuários'],
-                ['Publicar artigos', 'Editores, Publicadores', '8 usuários'],
-                ['Arquivar artigos', 'Editores, Administradores', '5 usuários'],
-              ].map(([action, roles, count]) => (
-                <div key={action} className="p-3 rounded-lg border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <strong className="font-semibold text-[color:var(--gso-text-primary,#E6ECF5)]">{action}</strong>
-                    <p className="text-[11px] text-[color:var(--gso-text-secondary,#A6B2C7)]">{roles}</p>
-                  </div>
-                  <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{count}</span>
-                </div>
-              ))}
-
-              <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)]">
-                <Link to="/admin/access" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline inline-flex items-center gap-1">
-                  Gerenciar permissões editoriais →
-                </Link>
-              </div>
-            </div>
-          </UiCard>
-        </div>
-      </div>
 
       {/* Canais de Contato Registrados (Preservado para gravação backend) */}
       {items.length > 0 ? (

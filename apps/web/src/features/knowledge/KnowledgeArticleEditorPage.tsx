@@ -1312,7 +1312,14 @@ function RichTextArticleEditor({
   const editor = useEditor({
     editable: !isReadOnly,
     extensions: [
+      // StarterKit v3 ja embarca `link` e `underline`. Mantemos as versoes
+      // explicitas abaixo (o link precisa do validate/isSafeEditorHref) e
+      // desligamos as do StarterKit para eliminar o warning de extensao
+      // duplicada — que, alem do ruido, registra dois plugins ProseMirror
+      // concorrentes para a mesma mark.
       StarterKit.configure({
+        link: false,
+        underline: false,
         horizontalRule: {
           HTMLAttributes: {
             'data-divider-style': 'dashed',

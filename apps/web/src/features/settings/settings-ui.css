@@ -745,6 +745,9 @@
 /* Lista + detalhe (Marcas). */
 .gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); align-items: start; gap: 1.25rem; min-width: 0; }
 .gso-ui-split > * { min-width: 0; }
+/* Usuários e acessos: o painel de contexto carrega metricas, abas e listas, e
+   nao cabe nos 21rem do detalhe de Marcas. A tabela cede a largura. */
+.gso-ui-split--wide-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 27rem); }
 .gso-ui-stack { display: grid; gap: 1.25rem; min-width: 0; align-content: start; }
 
 /* Corpo da tela de Integrações: cards + coluna de governança. */

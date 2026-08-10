@@ -83,6 +83,16 @@ const STATUS_LABELS: Record<string, string> = {
   failed: 'Falhou',
 };
 
+// Rotulos dos dominios de capability (public.internal_capabilities.domain).
+const DOMAIN_LABELS: Record<string, string> = {
+  access: 'Usuários e acessos',
+  administration: 'Administração do sistema',
+  analytics: 'Dashboard gerencial',
+  knowledge: 'Central de conhecimento',
+  settings: 'Configurações',
+  workspace: 'Espaço de trabalho',
+};
+
 function statusLabel(status: string) {
   return STATUS_LABELS[status] ?? status;
 }
@@ -424,6 +434,7 @@ export function InternalControlPlanePage() {
               profiles={profiles}
               setAreaForm={setAreaForm}
               setFunctionForm={setFunctionForm}
+              users={users}
             />
           ) : null}
 
@@ -439,6 +450,7 @@ export function InternalControlPlanePage() {
                 profileForm={profileForm}
                 profiles={profiles}
                 setProfileForm={setProfileForm}
+                users={users}
               />
               <ProfileScreenAccessPanel
                 busy={busy}
@@ -692,14 +704,19 @@ function UsersPanel(props: {
 
   return (
     <>
+      {/* Esta faixa exibia numeros inventados: "9" gestores, "6" convidados e "3"
+          acessos pendentes eram literais, e os dois primeiros caiam em `|| 27` e
+          `|| 4` quando a lista vinha vazia. As variacoes ("+3 este mes",
+          "2 aguardando aprovacao") tambem eram fixas — nao existe serie historica
+          por tras delas. Ficam apenas os valores derivaveis da lista real. */}
       <UiMetricRow label="Resumo de usuários internos">
-        <UiMetric icon="users" label="Usuários ativos" sub="+3 este mês" tone="primary" value={users.filter(u => u.access_status === 'active').length || 27} />
-        <UiMetric icon="shield" label="Administradores" sub="0 alterações" tone="neutral" value={users.filter(u => u.platform_roles.includes('platform_admin')).length || 4} />
-        <UiMetric icon="users" label="Gestores" sub="+1 este mês" tone="neutral" value="9" />
-        <UiMetric icon="users" label="Convidados / externos" sub="+2 este mês" tone="neutral" value="6" />
-        <UiMetric icon="alert" label="Acessos pendentes" sub="2 aguardando aprovação" tone="danger" value="3" />
+        <UiMetric icon="users" label="Usuários ativos" tone="primary" value={users.filter((u) => u.access_status === 'active').length} />
+        <UiMetric icon="shield" label="Administradores" tone="neutral" value={users.filter((u) => u.platform_roles.includes('platform_admin')).length} />
+        {/* O contrato so expoe active | suspended | inactive: nao existe estado
+            "pendente" para acesso interno. */}
+        <UiMetric icon="alert" label="Acessos suspensos ou inativos" tone="danger" value={users.filter((u) => u.access_status !== 'active').length} />
       </UiMetricRow>
-      <div className="gso-ui-split gso-ui-grow mt-4">
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow mt-4">
         <UiCard flush label="Usuários internos">
         <UiToolbar label="Filtros da lista de usuários">
           <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
@@ -937,23 +954,23 @@ function StructurePanel(props: {
   profiles: AdminInternalProfileRow[];
   setAreaForm: React.Dispatch<React.SetStateAction<{ areaKey: string; displayName: string; description: string }>>;
   setFunctionForm: React.Dispatch<React.SetStateAction<{ areaKey: string; name: string; description: string; profileId: string }>>;
+  users: AdminInternalAccessUserRow[];
 }) {
-  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm } = props;
-  const [selectedAreaKey, setSelectedAreaKey] = useState<string>(areas[0]?.area_key ?? 'customer_success');
+  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm, users } = props;
+  const [selectedAreaKey, setSelectedAreaKey] = useState<string>(areas[0]?.area_key ?? '');
   const [areaSearch, setAreaSearch] = useState('');
   const [structureTab, setStructureTab] = useState<'overview' | 'functions' | 'users'>('overview');
 
-  const selectedArea = areas.find((a) => a.area_key === selectedAreaKey) ?? areas[0] ?? {
-    area_key: 'customer_success',
-    display_name: 'Customer Success',
-    description: 'Responsável por gestão de carteira, saúde, retenção e expansão de clientes.',
-    is_active: true,
-    active_user_count: 18,
-    active_function_count: 4,
-    manager_user_id: null,
-  };
+  // Nao existe area "Customer Success" fabricada como fallback: sem areas no
+  // contrato, o painel de detalhe entra em estado vazio explicito.
+  const selectedArea = areas.find((a) => a.area_key === selectedAreaKey) ?? areas[0] ?? null;
 
-  const areaFunctions = functions.filter((f) => f.area_key === (selectedArea.area_key ?? selectedAreaKey));
+  const areaFunctions = functions.filter((f) => f.area_key === (selectedArea?.area_key ?? selectedAreaKey));
+
+  // Colaboradores realmente vinculados a area selecionada.
+  const areaUsers = !selectedArea
+    ? []
+    : users.filter((user) => user.areas.some((area) => String(area.area_key ?? '') === selectedArea.area_key));
 
   const filteredAreas = areas.filter((a) =>
     !areaSearch.trim() || a.display_name.toLowerCase().includes(areaSearch.trim().toLowerCase()),
@@ -961,15 +978,17 @@ function StructurePanel(props: {
 
   return (
     <div className="space-y-4">
+      {/* "87" vinculados, "2" sem estrutura e "5" pendencias eram literais, e os
+          dois primeiros indicadores caiam em `|| 8` e `|| 24`. Ficam apenas os
+          valores contados das listas reais. */}
       <UiMetricRow label="Resumo da estrutura organizacional">
-        <UiMetric icon="layers" label="Áreas ativas" sub="+1 este mês" tone="primary" value={areas.filter(a => a.is_active).length || 8} />
-        <UiMetric icon="list" label="Funções cadastradas" sub="+3 este mês" tone="neutral" value={functions.length || 24} />
-        <UiMetric icon="users" label="Usuários vinculados" sub="+6 este mês" tone="neutral" value="87" />
-        <UiMetric icon="users" label="Usuários sem estrutura" sub="-1 este mês" tone="neutral" value="2" />
-        <UiMetric icon="alert" label="Pendências" sub="Requerem ação" tone="danger" value="5" />
+        <UiMetric icon="layers" label="Áreas ativas" tone="primary" value={areas.filter((a) => a.is_active).length} />
+        <UiMetric icon="list" label="Funções cadastradas" tone="neutral" value={functions.length} />
+        <UiMetric icon="users" label="Usuários vinculados" tone="neutral" value={users.filter((u) => u.areas.length > 0).length} />
+        <UiMetric icon="users" label="Usuários sem estrutura" tone="neutral" value={users.filter((u) => u.areas.length === 0).length} />
       </UiMetricRow>
 
-      <div className="gso-ui-split gso-ui-grow">
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow">
         <UiCard flush label="Áreas da organização">
           <UiToolbar label="Filtros de áreas">
             <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
@@ -987,12 +1006,14 @@ function StructurePanel(props: {
           <UiTable label="Tabela de áreas">
             <thead>
               <tr>
+                {/* A coluna "Atualizado em" foi removida: vw_admin_access_areas nao
+                    expoe data de atualizacao, e a tela exibia a literal 22/07/2026
+                    em todas as linhas. Coluna sem fonte nao vira coluna vazia — sai. */}
                 <th scope="col">Área</th>
                 <th scope="col">Responsável</th>
                 <th scope="col" className="text-center">Funções</th>
                 <th scope="col" className="text-center">Usuários</th>
                 <th scope="col">Status</th>
-                <th scope="col">Atualizado em</th>
                 <th className="gso-ui-table-actions--head" scope="col">Ações</th>
               </tr>
             </thead>
@@ -1013,11 +1034,15 @@ function StructurePanel(props: {
                         {area.display_name}
                       </button>
                     </td>
-                    <td className="text-xs text-[color:var(--gso-text-secondary)]">Marina Souza</td>
-                    <td className="text-center font-mono text-xs">{area.active_function_count || 4}</td>
-                    <td className="text-center font-mono text-xs">{area.active_user_count || 18}</td>
+                    {/* manager_name vem de vw_admin_access_areas. A tela exibia a
+                        literal "Marina Souza" em todas as linhas, ignorando o campo
+                        real. E os contadores usavam `|| 4` e `|| 18`: quando o
+                        backend devolvia 0 ou null, o fallback inventava um numero
+                        plausivel no lugar do dado. Zero e um valor legitimo. */}
+                    <td className="text-xs text-[color:var(--gso-text-secondary)]">{area.manager_name || 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof area.active_function_count === 'number' ? area.active_function_count : 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof area.active_user_count === 'number' ? area.active_user_count : 'Indisponível'}</td>
                     <td><UiBadge dot tone={area.is_active ? 'success' : 'neutral'}>{area.is_active ? 'Ativa' : 'Inativa'}</UiBadge></td>
-                    <td className="text-xs text-[color:var(--gso-text-secondary)]">22/07/2026</td>
                     <td>
                       <UiButton compact disabled={busy} onClick={() => onToggleArea(area)} variant="ghost">
                         {area.is_active ? 'Desativar' : 'Ativar'}
@@ -1050,7 +1075,14 @@ function StructurePanel(props: {
         </UiCard>
 
         {/* Master-Detail Side Panel para Área Selecionada */}
-        <aside className="gso-ui-aside w-full lg:w-[400px] shrink-0">
+        <aside className="gso-ui-aside">
+          {!selectedArea ? (
+            <UiCard label="Detalhe da área">
+              <div className="gso-ui-card-body">
+                <p className="gso-ui-note">Nenhuma área organizacional disponível para exibir.</p>
+              </div>
+            </UiCard>
+          ) : (
           <UiCard labelledBy="area-detail-title">
             <div className="p-4 border-b border-[color:var(--gso-border)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1061,7 +1093,7 @@ function StructurePanel(props: {
                   <h3 id="area-detail-title" className="text-base font-semibold text-[color:var(--gso-text-primary)] leading-tight">
                     {selectedArea.display_name}
                   </h3>
-                  <p className="text-xs text-[color:var(--gso-text-secondary)]">Responsável pela área: Marina Souza</p>
+                  <p className="text-xs text-[color:var(--gso-text-secondary)]">Responsável pela área: {selectedArea.manager_name || 'Indisponível'}</p>
                 </div>
               </div>
               <UiBadge dot tone={selectedArea.is_active ? 'success' : 'neutral'}>{selectedArea.is_active ? 'Ativa' : 'Inativa'}</UiBadge>
@@ -1069,16 +1101,12 @@ function StructurePanel(props: {
 
             <div className="flex items-center gap-6 px-4 py-3 border-b border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-xs">
               <div>
-                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{selectedArea.active_function_count || 4}</strong>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.active_function_count === 'number' ? selectedArea.active_function_count : 'Indisponível'}</strong>
                 <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Funções</span>
               </div>
               <div>
-                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{selectedArea.active_user_count || 18}</strong>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.active_user_count === 'number' ? selectedArea.active_user_count : 'Indisponível'}</strong>
                 <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Usuários vinculados</span>
-              </div>
-              <div>
-                <span className="block text-[11px] text-[color:var(--gso-text-secondary)]">Atualização</span>
-                <strong className="text-xs font-medium text-[color:var(--gso-text-primary)]">22/07/2026</strong>
               </div>
             </div>
 
@@ -1104,33 +1132,35 @@ function StructurePanel(props: {
                 <>
                   <div className="space-y-2">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Informações da área</h4>
+                    {/* A descricao caia num texto generico sobre carteira de clientes
+                        quando a area nao tinha descricao — o que fazia toda area sem
+                        descricao parecer ser de Customer Success. E as datas eram
+                        literais: a view nao expoe criacao nem atualizacao. */}
                     <p className="text-[color:var(--gso-text-secondary)] leading-relaxed">
-                      {selectedArea.description || 'Responsável por gestão de carteira, saúde, retenção e expansão de clientes.'}
+                      {selectedArea.description || 'Sem descrição cadastrada.'}
                     </p>
-                    <div className="pt-2 grid grid-cols-2 gap-2 text-[11px] text-[color:var(--gso-text-secondary)]">
-                      <div>Criada em: <strong>12/05/2025</strong></div>
-                      <div>Atualizada em: <strong>22/07/2026, 10:32</strong></div>
-                    </div>
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-[color:var(--gso-border)]">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Funções da área ({areaFunctions.length || 4})</h4>
+                      <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Funções da área ({areaFunctions.length})</h4>
                       <button className="text-[11px] font-semibold text-[color:var(--gso-action-blue)] hover:underline" onClick={() => setStructureTab('functions')} type="button">+ Criar função</button>
                     </div>
+                    {/* Havia aqui um array de fallback com funcoes de Customer Success
+                        (Gestor de CS, Analista de CS, CSM, Assistente de CS). Qualquer
+                        area sem funcoes cadastradas — inclusive Comercial, Financeiro e
+                        Engenharia — exibia essa lista como se fosse sua. Estado vazio
+                        honesto no lugar. */}
                     <div className="space-y-1.5">
-                      {(areaFunctions.length > 0 ? areaFunctions : [
-                        { function_id: '1', name: 'Gestor de CS', default_access_profile_name: 'Gestor de CS (Padrão)', user_count: 4 },
-                        { function_id: '2', name: 'Analista de CS', default_access_profile_name: 'Analista de CS (Padrão)', user_count: 8 },
-                        { function_id: '3', name: 'CSM', default_access_profile_name: 'CSM (Padrão)', user_count: 5 },
-                        { function_id: '4', name: 'Assistente de CS', default_access_profile_name: 'Assistente de CS (Padrão)', user_count: 1 },
-                      ]).map((fn, idx) => (
+                      {areaFunctions.length === 0 ? (
+                        <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Nenhuma função cadastrada nesta área.</p>
+                      ) : areaFunctions.map((fn, idx) => (
                         <div className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] flex items-center justify-between" key={fn.function_id || idx}>
                           <div>
                             <strong className="font-semibold text-[color:var(--gso-text-primary)]">{fn.name}</strong>
                             <p className="text-[11px] text-[color:var(--gso-text-secondary)]">{fn.default_access_profile_name ?? 'Sem perfil padrão'}</p>
                           </div>
-                          <span className="font-mono text-[11px] text-[color:var(--gso-text-secondary)]">{(fn as unknown as Record<string, number>).user_count ?? 4} usuários</span>
+                          <span className="font-mono text-[11px] text-[color:var(--gso-text-secondary)]">{(() => { const count = (fn as unknown as Record<string, unknown>).user_count; return typeof count === 'number' ? `${count} usuários` : 'Indisponível'; })()}</span>
                         </div>
                       ))}
                     </div>
@@ -1167,25 +1197,33 @@ function StructurePanel(props: {
                 <div className="space-y-2">
                   <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários vinculados à área</h4>
                   <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Colaboradores associados a {selectedArea.display_name}.</p>
-                  <div className="divide-y divide-[color:var(--gso-border)]">
-                    {[
-                      ['Marina Souza', 'marina.souza@confi.com.vc', 'Gestor de CS', 'Gestor de CS (Padrão)'],
-                      ['Ana Martins', 'ana.martins@confi.com.vc', 'CSM', 'CSM (Padrão)'],
-                      ['João Pereira', 'joao.pereira@confi.com.vc', 'Analista de CS', 'Analista de CS (Padrão)'],
-                    ].map(([name, email, func, prof], idx) => (
-                      <div className="py-2 flex items-center justify-between" key={idx}>
-                        <div>
-                          <strong className="block font-medium text-[color:var(--gso-text-primary)]">{name}</strong>
-                          <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{func} · {prof}</span>
-                        </div>
-                        <UiBadge dot tone="success">Ativa</UiBadge>
-                      </div>
-                    ))}
-                  </div>
+                  {/* Lista real vinda de vw_admin_internal_access_users. A versao
+                      anterior repetia tres pessoas fixas de CS em qualquer area. */}
+                  {areaUsers.length === 0 ? (
+                    <p className="gso-ui-note">Nenhum colaborador vinculado a esta área.</p>
+                  ) : (
+                    <div className="divide-y divide-[color:var(--gso-border)]">
+                      {areaUsers.map((user) => {
+                        const membership = user.areas.find((area) => String(area.area_key ?? '') === selectedArea.area_key) ?? {};
+                        const functionName = String(membership.function_name ?? '') || 'Sem função';
+                        const profileName = String(membership.access_profile_name ?? '') || 'Sem perfil';
+                        return (
+                          <div className="py-2 flex items-center justify-between" key={user.user_id}>
+                            <div>
+                              <strong className="block font-medium text-[color:var(--gso-text-primary)]">{user.full_name || user.email || 'Colaborador'}</strong>
+                              <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{functionName} · {profileName}</span>
+                            </div>
+                            <UiBadge dot tone={statusTone(user.access_status)}>{statusLabel(user.access_status)}</UiBadge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </UiCard>
+          )}
         </aside>
       </div>
     </div>
@@ -1202,8 +1240,9 @@ function PermissionsCapabilityPanel(props: {
   profileForm: { name: string; description: string };
   profiles: AdminInternalProfileRow[];
   setProfileForm: React.Dispatch<React.SetStateAction<{ name: string; description: string }>>;
+  users: AdminInternalAccessUserRow[];
 }) {
-  const { busy, capabilities, onCreate, onSaveCapabilities, onToggle, profileCapabilities, profileForm, profiles, setProfileForm } = props;
+  const { busy, capabilities, onCreate, onSaveCapabilities, onToggle, profileCapabilities, profileForm, profiles, setProfileForm, users } = props;
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.access_profile_id ?? '');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [profileSearch, setProfileSearch] = useState('');
@@ -1217,20 +1256,45 @@ function PermissionsCapabilityPanel(props: {
     setSelectedKeys(profileCapabilities.filter((item) => item.access_profile_id === selectedProfileId).map((item) => item.capability_key));
   }, [profileCapabilities, selectedProfileId]);
 
-  const selectedProfile = profiles.find((p) => p.access_profile_id === selectedProfileId) ?? profiles[0] ?? {
-    access_profile_id: 'gestor_cs',
-    name: 'Gestor de CS',
-    description: 'Perfil padrão para gestores de Customer Success.',
-    is_active: true,
-    is_system: true,
-    user_count: 8,
-    capability_count: 12,
-    screen_count: 5,
-  };
+  // Nao existe perfil "Gestor de CS" fabricado como fallback: quando o contrato
+  // nao retorna perfis, o painel de detalhe entra em estado vazio explicito.
+  const selectedProfile = profiles.find((p) => p.access_profile_id === selectedProfileId) ?? profiles[0] ?? null;
 
   const toggleCapability = (key: string) => setSelectedKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const viewCapabilities = capabilities.filter((capability) => capability.capability_key.endsWith('.view'));
   const actionCapabilities = capabilities.filter((capability) => !capability.capability_key.endsWith('.view'));
+
+  // Nivel de acesso por dominio, derivado do catalogo de capabilities e das
+  // capabilities efetivamente atribuidas ao perfil selecionado.
+  const profileModuleAccess = Array.from(
+    capabilities.reduce<Map<string, { granted: number; grantedAction: number }>>((acc, capability) => {
+      const entry = acc.get(capability.domain) ?? { granted: 0, grantedAction: 0 };
+      if (selectedKeys.includes(capability.capability_key)) {
+        entry.granted += 1;
+        if (!capability.capability_key.endsWith('.view')) entry.grantedAction += 1;
+      }
+      acc.set(capability.domain, entry);
+      return acc;
+    }, new Map()),
+  )
+    .map(([domain, entry]) => ({
+      domain,
+      label: DOMAIN_LABELS[domain] ?? domain,
+      status: entry.grantedAction > 0 ? 'Permitido' : entry.granted > 0 ? 'Somente leitura' : 'Bloqueado',
+      tone: (entry.grantedAction > 0 ? 'success' : entry.granted > 0 ? 'neutral' : 'danger') as 'success' | 'neutral' | 'danger',
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+  // Colaboradores realmente vinculados ao perfil selecionado, via areas.
+  const profileUsers = users
+    .filter((user) => user.areas.some((area) => String(area.access_profile_id ?? '') === selectedProfileId))
+    .map((user) => ({
+      user_id: user.user_id,
+      full_name: user.full_name,
+      email: user.email,
+      status: user.access_status as string,
+    }));
+
   const capabilityOption = (capability: (typeof capabilities)[number]) => (
     <label className="gso-ui-toggle flex items-center justify-between py-1.5 px-2 rounded hover:bg-[color:var(--gso-surface-2)]" key={capability.capability_key}>
       <span className="text-xs text-[color:var(--gso-text-primary)]">
@@ -1249,15 +1313,16 @@ function PermissionsCapabilityPanel(props: {
 
   return (
     <div className="space-y-4">
+      {/* "2" em revisao e "87" vinculados eram literais; os tres primeiros caiam
+          em `|| 12`, `|| 4` e `|| 8`. Nao existe estado "em revisao" no contrato
+          de perfis, entao o indicador sai em vez de exibir um numero inventado. */}
       <UiMetricRow label="Resumo de perfis de acesso">
-        <UiMetric icon="shield" label="Perfis ativos" sub="+2 este mês" tone="primary" value={profiles.filter(p => p.is_active).length || 12} />
-        <UiMetric icon="check" label="Padrão" sub="sem alteração" tone="neutral" value={profiles.filter(p => p.is_system).length || 4} />
-        <UiMetric icon="users" label="Customizados" sub="+1 este mês" tone="neutral" value={profiles.filter(p => !p.is_system).length || 8} />
-        <UiMetric icon="alert" label="Em revisão" sub="+1 este mês" tone="danger" value="2" />
-        <UiMetric icon="users" label="Usuários vinculados" sub="+5 este mês" tone="neutral" value="87" />
+        <UiMetric icon="shield" label="Perfis ativos" tone="primary" value={profiles.filter((p) => p.is_active).length} />
+        <UiMetric icon="check" label="Padrão" tone="neutral" value={profiles.filter((p) => p.is_system).length} />
+        <UiMetric icon="users" label="Customizados" tone="neutral" value={profiles.filter((p) => !p.is_system).length} />
       </UiMetricRow>
 
-      <div className="gso-ui-split gso-ui-grow">
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow">
         <UiCard flush label="Perfis e permissões">
           <UiToolbar label="Filtros de perfis">
             <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
@@ -1275,12 +1340,13 @@ function PermissionsCapabilityPanel(props: {
           <UiTable label="Tabela de perfis">
             <thead>
               <tr>
+                {/* "Atualizado em" removida: o contrato de perfis nao expoe data
+                    de atualizacao e a coluna exibia 22/07/2026 em todas as linhas. */}
                 <th scope="col">Perfil</th>
                 <th scope="col">Tipo</th>
                 <th scope="col" className="text-center">Usuários</th>
                 <th scope="col" className="text-center">Permissões</th>
                 <th scope="col">Status</th>
-                <th scope="col">Atualizado em</th>
                 <th className="gso-ui-table-actions--head" scope="col">Ações</th>
               </tr>
             </thead>
@@ -1306,10 +1372,9 @@ function PermissionsCapabilityPanel(props: {
                         {profile.is_system ? 'Padrão' : 'Customizado'}
                       </UiBadge>
                     </td>
-                    <td className="text-center font-mono text-xs">{profile.user_count || 8}</td>
-                    <td className="text-center font-mono text-xs">{profile.capability_count || 12}</td>
+                    <td className="text-center font-mono text-xs">{typeof profile.user_count === 'number' ? profile.user_count : 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof profile.capability_count === 'number' ? profile.capability_count : 'Indisponível'}</td>
                     <td><UiBadge dot tone={profile.is_active ? 'success' : 'neutral'}>{profile.is_active ? 'Ativo' : 'Inativo'}</UiBadge></td>
-                    <td className="text-xs text-[color:var(--gso-text-secondary)]">22/07/2026</td>
                     <td>
                       {!profile.is_system ? (
                         <UiButton compact disabled={busy} onClick={() => onToggle(profile)} variant="ghost">
@@ -1343,7 +1408,14 @@ function PermissionsCapabilityPanel(props: {
         </UiCard>
 
         {/* Master-Detail Side Panel para Perfil Selecionado */}
-        <aside className="gso-ui-aside w-full lg:w-[400px] shrink-0">
+        <aside className="gso-ui-aside">
+          {!selectedProfile ? (
+            <UiCard label="Detalhe do perfil">
+              <div className="gso-ui-card-body">
+                <p className="gso-ui-note">Nenhum perfil de acesso disponível para exibir.</p>
+              </div>
+            </UiCard>
+          ) : (
           <UiCard labelledBy="profile-detail-title">
             <div className="p-4 border-b border-[color:var(--gso-border)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1364,15 +1436,11 @@ function PermissionsCapabilityPanel(props: {
 
             <div className="flex items-center gap-6 px-4 py-3 border-b border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-xs">
               <div>
-                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{selectedProfile.user_count || 8}</strong>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedProfile.user_count === 'number' ? selectedProfile.user_count : 'Indisponível'}</strong>
                 <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Usuários</span>
               </div>
               <div>
-                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">5</strong>
-                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Grupos de permissão</span>
-              </div>
-              <div>
-                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{selectedProfile.capability_count || 12}</strong>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedProfile.capability_count === 'number' ? selectedProfile.capability_count : 'Indisponível'}</strong>
                 <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Regras de acesso</span>
               </div>
             </div>
@@ -1399,22 +1467,21 @@ function PermissionsCapabilityPanel(props: {
                 <>
                   <div className="space-y-2">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Módulos e níveis de acesso</h4>
-                    <div className="divide-y divide-[color:var(--gso-border)] text-xs">
-                      {[
-                        ['Dashboard gerencial', 'Permitido', 'success'],
-                        ['Customer Success', 'Permitido', 'success'],
-                        ['Clientes B2B', 'Somente Leitura', 'neutral'],
-                        ['Suporte e Atendimento', 'Permitido', 'success'],
-                        ['Central de Conhecimento', 'Somente Leitura', 'neutral'],
-                        ['Configurações', 'Bloqueado', 'danger'],
-                        ['Administração de Acessos', 'Bloqueado', 'danger'],
-                      ].map(([mod, status, tone], idx) => (
-                        <div className="py-2 flex items-center justify-between" key={idx}>
-                          <span className="font-medium text-[color:var(--gso-text-primary)]">{mod}</span>
-                          <UiBadge tone={tone as 'success' | 'neutral' | 'danger'}>{status}</UiBadge>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Derivado das capabilities reais do perfil. A lista fixa
+                        anterior mostrava os mesmos 7 modulos com o mesmo status
+                        para qualquer perfil selecionado. */}
+                    {profileModuleAccess.length === 0 ? (
+                      <p className="gso-ui-note">Nenhuma permissão atribuída a este perfil.</p>
+                    ) : (
+                      <div className="divide-y divide-[color:var(--gso-border)] text-xs">
+                        {profileModuleAccess.map((module) => (
+                          <div className="py-2 flex items-center justify-between" key={module.domain}>
+                            <span className="font-medium text-[color:var(--gso-text-primary)]">{module.label}</span>
+                            <UiBadge tone={module.tone}>{module.status}</UiBadge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-[color:var(--gso-border)] space-y-2">
@@ -1450,25 +1517,28 @@ function PermissionsCapabilityPanel(props: {
               ) : (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários com o perfil {selectedProfile.name}</h4>
-                  <div className="divide-y divide-[color:var(--gso-border)]">
-                    {[
-                      ['Carla Santos', 'carla.santos@confi.com.vc', 'Gestor de CS'],
-                      ['Marina Souza', 'marina.souza@confi.com.vc', 'Gestor de CS'],
-                      ['Felipe Ramos', 'felipe.ramos@confi.com.vc', 'Gestor de CS'],
-                    ].map(([name, email, role], idx) => (
-                      <div className="py-2 flex items-center justify-between" key={idx}>
-                        <div>
-                          <strong className="block font-medium text-[color:var(--gso-text-primary)]">{name}</strong>
-                          <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{email}</span>
+                  {/* Lista real derivada dos vinculos de area. A versao anterior
+                      exibia tres pessoas fixas para qualquer perfil. */}
+                  {profileUsers.length === 0 ? (
+                    <p className="gso-ui-note">Nenhum colaborador vinculado a este perfil.</p>
+                  ) : (
+                    <div className="divide-y divide-[color:var(--gso-border)]">
+                      {profileUsers.map((user) => (
+                        <div className="py-2 flex items-center justify-between" key={user.user_id}>
+                          <div>
+                            <strong className="block font-medium text-[color:var(--gso-text-primary)]">{user.full_name || 'Colaborador'}</strong>
+                            <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{user.email || 'Indisponível'}</span>
+                          </div>
+                          <UiBadge dot tone={statusTone(user.status)}>{statusLabel(user.status)}</UiBadge>
                         </div>
-                        <UiBadge dot tone="success">Ativo</UiBadge>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </UiCard>
+          )}
         </aside>
       </div>
     </div>
