@@ -1,4 +1,4 @@
-# Genius Support OS
+# ConfiOne
 
 Ponto de entrada curto do repositório. A documentação canônica fica em `docs/`.
 
