@@ -4,7 +4,7 @@ import type {
   AnalyticsDataStatus,
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
-} from "@genius-support-os/contracts";
+} from '@genius-support-os/contracts';
 import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2 } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,

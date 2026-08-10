@@ -174,7 +174,7 @@ export function MyProfilePage() {
             </p>
 
             <form
-              className="gso-ui-grid"
+              className="gso-ui-grid max-w-[640px]"
               onSubmit={(event) => {
                 event.preventDefault();
                 void run(() => updateSelfProfile(userId, { fullName }), 'Perfil atualizado.');
@@ -297,7 +297,7 @@ function SelfPasswordCard() {
         titleId="my-profile-password-title"
         tone="warning"
       />
-      <form className="gso-ui-card-body" onSubmit={(event) => void submit(event)}>
+      <form className="gso-ui-card-body max-w-[640px]" onSubmit={(event) => void submit(event)}>
         <div className="gso-ui-grid">
           <UiField label="Senha atual">
             <input

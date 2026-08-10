@@ -270,29 +270,86 @@
  */
 :root[data-theme='dark'] {
   /*
-   * GeniusOS Global Shell V3 — Tokens Cromáticos (Dark Approved)
-   * Nível 0: Canvas Global #081220
-   * Nível 1A: Sidebar #0F1A2E
-   * Nível 1B: Topbar #0E1627
-   * Nível 2: Superfície Primária #131E33
-   * Nível 3: Superfície Secundária #18263F
-   * Divisor / Borda: #22324D
-   * Texto Primário: #E6ECF5 | Texto Secundário: #A6B2C7
-   * Azul Funcional: #2D7CFF | Rosa Microacento: #FF4FA3
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Dark Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #0F1A2E
+   * Canvas (Workspace background): #081220
+   * Surface 1 (Cards, tables, filters, panels): #131E33
+   * Surface 2 (Detail rails, inner areas, contextual selection): #18263F
+   * Surface Interactive (Hover / Focus): #1C2D49
+   * Borders: Subtle #1D2D45 | Default #22324D | Strong #2F4869
+   * Text: Primary #E6ECF5 | Secondary #A6B2C7 | Muted #7789A6 | Disabled #586A85
+   * Action Primary: #2D7CFF (Hover #428AFF)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #22C55E | Warning #F59E0B | Danger #EF4444 | Info #4DA3FF
    */
-  --gso-canvas-bg: #081220;
-  --gso-sidebar-bg: #0F1A2E;
-  --gso-topbar-bg: #0E1627;
-  --gso-surface-primary: #131E33;
-  --gso-surface-secondary: #18263F;
-  --gso-border: #22324D;
-  --gso-text-primary: #E6ECF5;
-  --gso-text-secondary: #A6B2C7;
-  --gso-action-blue: #2D7CFF;
-  --gso-brand-pink: #FF4FA3;
-  --gso-success: #22C55E;
-  --gso-warning: #F59E0B;
-  --gso-danger: #EF4444;
+  --one-shell-bg: #0F1A2E;
+  --one-shell-border: #22324D;
+  --one-canvas-bg: #081220;
+  --one-surface-1: #131E33;
+  --one-surface-2: #18263F;
+  --one-surface-interactive: #1C2D49;
+  --one-border-subtle: #1D2D45;
+  --one-border-default: #22324D;
+  --one-border-strong: #2F4869;
+  --one-text-primary: #E6ECF5;
+  --one-text-secondary: #A6B2C7;
+  --one-text-muted: #7789A6;
+  --one-text-disabled: #586A85;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #428AFF;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #22C55E;
+  --one-warning: #F59E0B;
+  --one-danger: #EF4444;
+  --one-info: #4DA3FF;
+
+  /* Confi One V1 Canonical Typography Tokens */
+  --one-font-page-title: 24px;
+  --one-line-page-title: 30px;
+  --one-weight-page-title: 700;
+
+  --one-font-page-subtitle: 12px;
+  --one-line-page-subtitle: 18px;
+  --one-weight-page-subtitle: 400;
+
+  --one-font-eyebrow: 10px;
+  --one-line-eyebrow: 14px;
+  --one-weight-eyebrow: 600;
+
+  --one-font-section-title: 16px;
+  --one-line-section-title: 22px;
+  --one-weight-section-title: 600;
+
+  --one-font-card-title: 14px;
+  --one-line-card-title: 20px;
+  --one-weight-card-title: 600;
+
+  --one-font-body: 12px;
+  --one-line-body: 18px;
+  --one-weight-body: 400;
+
+  --one-font-label: 11px;
+  --one-line-label: 16px;
+  --one-weight-label: 500;
+
+  --one-font-meta: 10px;
+  --one-line-meta: 14px;
+  --one-weight-meta: 400;
+
+  /* Aliases para retrocompatibilidade */
+  --gso-canvas-bg: var(--one-canvas-bg);
+  --gso-sidebar-bg: var(--one-shell-bg);
+  --gso-topbar-bg: var(--one-shell-bg);
+  --gso-surface-primary: var(--one-surface-1);
+  --gso-surface-secondary: var(--one-surface-2);
+  --gso-border: var(--one-border-default);
+  --gso-text-primary: var(--one-text-primary);
+  --gso-text-secondary: var(--one-text-secondary);
+  --gso-action-blue: var(--one-action-primary);
+  --gso-brand-pink: var(--one-genius-pink);
+  --gso-success: var(--one-success);
+  --gso-warning: var(--one-warning);
+  --gso-danger: var(--one-danger);
 
   color-scheme: dark;
   --color-app-bg: var(--gso-canvas-bg);
