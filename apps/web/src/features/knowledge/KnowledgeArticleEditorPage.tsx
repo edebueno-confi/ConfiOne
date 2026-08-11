@@ -4785,7 +4785,11 @@ export function KnowledgeArticleEditorPage() {
         ) : null}
 
         {/* Em desktop, escrita e propriedades compartilham a mesma superfície. */}
-        <div className={cx('gso-knowledge-editor-shell grid min-h-0 w-full flex-1 px-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-4', propertiesOpen ? '' : 'xl:grid-cols-1')}>
+        {/* Coluna de propriedades: 320px espremia "Classificação, publicação e
+            revisão" a ponto de os campos quebrarem em duas linhas e o painel
+            precisar rolar. Passa a 380px — a área de escrita cede a diferença,
+            como pedido. Em 1366px o conteúdo ainda fica com ~840px úteis. */}
+        <div className={cx('gso-knowledge-editor-shell grid min-h-0 w-full flex-1 px-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-4', propertiesOpen ? '' : 'xl:grid-cols-1')}>
         <main className="min-h-0 min-w-0 pb-4 pt-3 xl:grid xl:grid-rows-[minmax(0,1fr)]">
           <div className="contents">
               <section className="knowledge-editor-content-grid min-h-0 min-w-0">
