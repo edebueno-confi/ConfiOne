@@ -159,11 +159,11 @@ export function SupportStageChart({ rows }: { rows: StageBreakdownRow[] }) {
   }
 
   return (
-    <ChartFrame height={Math.max(220, points.length * 42)}>
-      <BarChart data={points} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+    <ChartFrame height={Math.max(180, Math.min(280, points.length * 30))}>
+      <BarChart data={points} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 4 }}>
         <CartesianGrid horizontal={false} stroke={PALETTE.grid} />
         <XAxis type="number" allowDecimals={false} tick={AXIS_STYLE} />
-        <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
+        <YAxis type="category" dataKey="name" width={126} tick={AXIS_STYLE} />
         <Tooltip
           cursor={{ fill: PALETTE.cursor }}
           content={({ active, payload }) => {

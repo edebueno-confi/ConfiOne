@@ -5,7 +5,7 @@ import type {
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
 } from '@genius-support-os/contracts';
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getCommercialKpisV2, getCsSnapshot, getExecutiveKpisV2, getSupportKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
@@ -15,6 +15,7 @@ import {
   type AnalyticsSourceConfig,
   type CeoHistory,
   type CeoSnapshot,
+  type CsSnapshot,
 } from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import { AnalyticsOperationScope } from "./AnalyticsOperationScope";
@@ -33,6 +34,7 @@ import { analyticsHref } from "./analytics-navigation";
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./AnalyticsKpiBoard";
 import { AnalyticsDataCoveragePanel, analyticsCoverageStatus, type AnalyticsCoverageItem } from './AnalyticsDataCoveragePanel';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
+import { readKpi } from './analytics-kpi-contract.mjs';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -115,6 +117,7 @@ export function AnalyticsCeoPage({
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
   const [executiveKpis, setExecutiveKpis] = useState<unknown>(null);
+  const [operationKpis, setOperationKpis] = useState<{ commercial: unknown; support: unknown; supportSnapshot: CsSnapshot } | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [groupCompany, setGroupCompany] = useState<string>('');
@@ -131,6 +134,7 @@ export function AnalyticsCeoPage({
   );
   useEffect(() => {
     let cancelled = false;
+    setOperationKpis(null);
     setRefreshing(true);
     setResult((current) =>
       current.data
@@ -140,6 +144,20 @@ export function AnalyticsCeoPage({
     void getExecutiveKpisV2(filters)
       .then((payload) => setExecutiveKpis(payload))
       .catch(() => setExecutiveKpis(null));
+
+    if (groupCompany) {
+      void Promise.all([
+        getCommercialKpisV2(filters, groupCompany),
+        getSupportKpisV2(filters, groupCompany),
+        getCsSnapshot(filters, [], groupCompany),
+      ])
+        .then(([commercial, support, supportSnapshot]) => {
+          if (!cancelled) setOperationKpis({ commercial, support, supportSnapshot });
+        })
+        .catch(() => {
+          if (!cancelled) setOperationKpis(null);
+        });
+    }
 
     Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
       .then(([data, history, liveSourceStatus]) => {
@@ -175,7 +193,8 @@ export function AnalyticsCeoPage({
       />
     );
 
-  const data = result.data;
+  const scopedExecutiveKpis = operationKpis ? mergeOperationKpis(executiveKpis, operationKpis) : executiveKpis;
+  const data = operationKpis ? applyOperationScope(result.data, operationKpis) : result.data;
   const currentSourceStatus = result.sourceStatus ?? sourceStatus;
   const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
   const exceptions = buildExecutiveExceptions(data);
@@ -193,7 +212,7 @@ export function AnalyticsCeoPage({
   const omieUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.omie.status, currentSourceStatus.omie.lastSuccessAt, currentSourceStatus.omie.hasValidSnapshot) : snapshotUnavailable;
   const history = result.history;
   const comparison =
-    history && !hubspotUnavailable
+    history && !hubspotUnavailable && !groupCompany
       ? {
           revenue: buildDelta(
             data.commercial.wonRevenue,
@@ -234,7 +253,7 @@ export function AnalyticsCeoPage({
   return (
     <ExecutiveHdCanvas
       data={data}
-      executiveKpis={executiveKpis}
+      executiveKpis={scopedExecutiveKpis}
       state={state}
       filters={filters}
       domainCards={domainCards}
@@ -258,6 +277,49 @@ export function AnalyticsCeoPage({
       canOpenGovernance={canSyncSources}
     />
   );
+}
+
+function publishedKpiValue(payload: unknown, key: string): number | null {
+  const entry = readKpi(payload, key);
+  return entry.value;
+}
+
+function mergeOperationKpis(base: unknown, scoped: { commercial: unknown; support: unknown }): unknown {
+  const baseObject = base && typeof base === 'object' ? base as Record<string, unknown> : {};
+  const baseKpis = baseObject.kpis && typeof baseObject.kpis === 'object' ? baseObject.kpis as Record<string, unknown> : {};
+  const mergedKpis = { ...baseKpis } as Record<string, unknown>;
+  const replace = (payload: unknown, keys: string[]) => {
+    const source = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
+    const sourceKpis = source.kpis && typeof source.kpis === 'object' ? source.kpis as Record<string, unknown> : {};
+    for (const key of keys) {
+      if (sourceKpis[key] && typeof sourceKpis[key] === 'object') mergedKpis[key] = sourceKpis[key];
+    }
+  };
+  replace(scoped.commercial, ['open_pipeline_amount', 'open_deals', 'won_deals', 'lost_deals', 'won_amount', 'win_rate']);
+  replace(scoped.support, ['open_backlog', 'created_tickets', 'resolved_tickets']);
+  return { ...baseObject, kpis: mergedKpis };
+}
+
+function applyOperationScope(data: CeoSnapshot, scoped: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot }): CeoSnapshot {
+  const commercial = {
+    ...data.commercial,
+    openPipelineValue: publishedKpiValue(scoped.commercial, 'open_pipeline_amount') ?? data.commercial.openPipelineValue,
+    openDeals: publishedKpiValue(scoped.commercial, 'open_deals') ?? data.commercial.openDeals,
+    wonDeals: publishedKpiValue(scoped.commercial, 'won_deals') ?? data.commercial.wonDeals,
+    lostDeals: publishedKpiValue(scoped.commercial, 'lost_deals') ?? data.commercial.lostDeals,
+    wonRevenue: publishedKpiValue(scoped.commercial, 'won_amount') ?? data.commercial.wonRevenue,
+    conversionRate: publishedKpiValue(scoped.commercial, 'win_rate') ?? data.commercial.conversionRate,
+  };
+  const support = {
+    ...data.support,
+    openTickets: publishedKpiValue(scoped.support, 'open_backlog') ?? data.support.openTickets,
+    createdTickets: publishedKpiValue(scoped.support, 'created_tickets') ?? data.support.createdTickets,
+    bySource: scoped.supportSnapshot.bySource,
+    byPipeline: scoped.supportSnapshot.byPipeline,
+    byOwner: scoped.supportSnapshot.byOwner,
+    latestTicketCreatedAt: scoped.supportSnapshot.latestTicketCreatedAt,
+  };
+  return { ...data, commercial, support };
 }
 
 type DomainCard = {
@@ -476,6 +538,8 @@ function ExecutiveHdCanvas({
           />
         </div>
       </div>
+
+      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte foi espelhado nos read models de Comercial e Suporte. Customer Success e Financeiro permanecem consolidados porque seus contratos atuais não publicam dimensão de operação; nenhum valor desses domínios é atribuído artificialmente.</p> : null}
 
       {executiveKpis ? (
         <>
