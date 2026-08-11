@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { buildHubSpotCompanyUrl } from '../../app/runtime-config';
 import { MinimalState } from '../../components/minimal-states';
 import { decideCompanyReconciliation, getCompanyReconciliationQueue, revokeCompanyReconciliation, type ReconciliationCandidate, type ReconciliationItem, type ReconciliationQueue } from './company-reconciliation-api';
+import { UiBadge } from './ui/UiBadge';
+import { UiButton } from './ui/UiButton';
+import { UiCard } from './ui/UiCard';
+import { UiCardHeader } from './ui/UiCardHeader';
+import { UiEmptyState } from './ui/UiEmptyState';
+import { UiField } from './ui/UiField';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
+import { UiPagination } from './ui/UiPagination';
+import { UiSearchField } from './ui/UiSearchField';
+import { UiSortHeader } from './ui/UiSortHeader';
+import { UiTable } from './ui/UiTable';
+import { UiToolbar } from './ui/UiToolbar';
+import type { UiSortDirection } from './ui/ui-sort';
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const reason: Record<string, string> = {
@@ -12,6 +27,20 @@ const reason: Record<string, string> = {
   nome_similar: 'Nome parecido',
   sem_classificacao: 'Sem classificação',
 };
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+type StatusFilter = 'all' | 'pending' | 'confirmed';
+type SortKey = 'balance' | 'name';
+
+function matchesQuery(item: ReconciliationItem, query: string) {
+  if (!query) return true;
+  return [item.sourceName, item.sourceTradeName, item.sourceTaxId]
+    .filter(Boolean)
+    .some((value) => String(value).toLocaleLowerCase('pt-BR').includes(query));
+}
+
+function candidateDecisionTone(decision: ReconciliationCandidate['decision']) {
+  return decision === 'confirmed' ? 'success' : decision === 'discarded' ? 'neutral' : 'primary';
+}
 
 export function CompanyReconciliationPanel() {
   const [queue, setQueue] = useState<ReconciliationQueue | null>(null);
@@ -21,46 +50,201 @@ export function CompanyReconciliationPanel() {
   const [evidence, setEvidence] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('balance');
+  const [sortDirection, setSortDirection] = useState<UiSortDirection>('desc');
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0]);
 
-  const load = useCallback(async () => {
-    setPhase('loading'); setError(null);
+  const load = useCallback(async (nextPage: number, nextPerPage: number) => {
+    setPhase('loading');
+    setError(null);
     try {
-      const next = await getCompanyReconciliationQueue();
+      const next = await getCompanyReconciliationQueue({ limit: nextPerPage, offset: (nextPage - 1) * nextPerPage });
       setQueue(next);
       setSourceKey((current) => current && next.items.some((item) => item.sourceKey === current) ? current : next.items[0]?.sourceKey ?? null);
       setPhase('ready');
-    } catch (cause) { setPhase('error'); setError(cause instanceof Error ? cause.message : 'Não foi possível carregar a conciliação.'); }
+    } catch (cause) {
+      setPhase('error');
+      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar a conciliação.');
+    }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => { void load(page, perPage); }, [load, page, perPage]);
 
   const item = useMemo(() => queue?.items.find((entry) => entry.sourceKey === sourceKey) ?? null, [queue, sourceKey]);
-  const candidate = item?.candidates.find((entry) => entry.companyId === companyId) ?? item?.candidates.find((entry) => entry.decision === 'confirmed') ?? item?.candidates[0] ?? null;
-  useEffect(() => { setCompanyId(item?.candidates.find((entry) => entry.decision === 'confirmed')?.companyId ?? item?.candidates[0]?.companyId ?? null); setEvidence(''); setError(null); }, [item?.sourceKey]);
+  const candidate = item?.candidates.find((entry) => entry.companyId === companyId) ?? null;
+
+  useEffect(() => {
+    setCompanyId(item?.candidates.find((entry) => entry.decision === 'confirmed')?.companyId ?? null);
+    setEvidence('');
+    setError(null);
+  }, [item?.sourceKey]);
+
+  const visibleItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
+    return [...(queue?.items ?? [])]
+      .filter((entry) => statusFilter === 'all' || entry.status === statusFilter)
+      .filter((entry) => matchesQuery(entry, normalizedQuery))
+      .sort((left, right) => {
+        const comparison = sortKey === 'name'
+          ? left.sourceName.localeCompare(right.sourceName, 'pt-BR')
+          : left.totalBalance - right.totalBalance;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [query, queue?.items, sortDirection, sortKey, statusFilter]);
+
+  const totalForFilter = statusFilter === 'pending' ? queue?.summary.pending ?? 0 : statusFilter === 'confirmed' ? queue?.summary.confirmed ?? 0 : queue?.summary.total ?? 0;
+
+  function sortBy(nextKey: SortKey) {
+    if (sortKey === nextKey) setSortDirection((current) => current === 'desc' ? 'asc' : 'desc');
+    else { setSortKey(nextKey); setSortDirection(nextKey === 'balance' ? 'desc' : 'asc'); }
+  }
 
   async function save(decision: 'confirmed' | 'discarded' | 'revoked') {
-    if (!item || !evidence.trim() || (decision !== 'revoked' && !candidate)) { setError('Selecione uma candidata e informe a evidência usada na decisão.'); return; }
-    setSaving(decision); setError(null);
+    if (!item || !evidence.trim() || (decision !== 'revoked' && !candidate)) {
+      setError('Selecione uma candidata e informe a evidência usada na decisão.');
+      return;
+    }
+    setSaving(decision);
+    setError(null);
     try {
       if (decision === 'revoked') await revokeCompanyReconciliation(item.sourceKey, evidence);
       else await decideCompanyReconciliation({ sourceKey: item.sourceKey, sourceName: item.sourceName, sourceTaxId: item.sourceTaxId, companyId: candidate!.companyId, decision, evidence });
-      await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a decisão.'); } finally { setSaving(null); }
+      await load(page, perPage);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a decisão.');
+    } finally { setSaving(null); }
   }
 
-  if (phase === 'loading' && !queue) return <p className="text-sm text-[color:var(--minimal-text-tertiary)]">Carregando pendências de conciliação...</p>;
+  if (phase === 'loading' && !queue) return <MinimalState loading title="Carregando conciliação" description="Consultando a fila de identidades financeiras." />;
   if (phase === 'error' && !queue) return <MinimalState tone="critical" title="Conciliação indisponível" description={error ?? 'Não foi possível carregar a fila.'} />;
-  if (!queue || queue.items.length === 0) return <MinimalState tone="neutral" title="Nenhuma identidade financeira disponível" description="Quando houver títulos OMIE com uma identidade conciliável, eles aparecerão aqui." />;
+  if (!queue) return null;
 
-  return <section className="space-y-4" aria-label="Conciliação HubSpot e OMIE">
-    <header className="flex flex-wrap items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Uma identidade por vez</h3><p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">Sugestão não é vínculo. A decisão é auditada e não escreve no HubSpot nem na OMIE.</p></div><p className="text-xs tabular-nums text-[color:var(--minimal-text-secondary)]">{queue.summary.confirmed} confirmadas · {queue.summary.pending} pendentes</p></header>
-    <div className="grid gap-px border border-[color:var(--minimal-border)] bg-[color:var(--minimal-border)] lg:grid-cols-[minmax(14rem,.7fr)_minmax(21rem,1.2fr)_minmax(17rem,.8fr)]">
-      <aside className="bg-[color:var(--minimal-surface)]"><p className="border-b border-[color:var(--minimal-border)] px-4 py-3 text-xs text-[color:var(--minimal-text-secondary)]">{queue.summary.total} identidades financeiras</p><ul className="max-h-[28rem] overflow-y-auto">{queue.items.map((entry) => <li key={entry.sourceKey} className="border-b border-[color:var(--minimal-border)] last:border-0"><button type="button" onClick={() => setSourceKey(entry.sourceKey)} aria-pressed={entry.sourceKey === item?.sourceKey} className={`w-full px-4 py-3 text-left ${entry.sourceKey === item?.sourceKey ? 'bg-[color:var(--minimal-surface-muted)]' : 'hover:bg-[color:var(--minimal-surface-muted)]'}`}><span className="block truncate text-sm font-medium text-[color:var(--minimal-text)]">{entry.sourceName}</span><span className="mt-1 block text-[11px] tabular-nums text-[color:var(--minimal-text-tertiary)]">{entry.titleCount} títulos · {money.format(entry.totalBalance)}</span><span className={`mt-1 block text-[10px] font-medium uppercase tracking-wide ${entry.status === 'confirmed' ? 'text-[color:var(--minimal-success-text)]' : 'text-[color:var(--minimal-warning-text)]'}`}>{entry.status === 'confirmed' ? 'confirmado' : 'a decidir'}</span></button></li>)}</ul></aside>
-      {item ? <Comparison item={item} candidate={candidate} choose={setCompanyId} /> : null}
-      <section className="bg-[color:var(--minimal-surface)] p-4"><h4 className="text-sm font-semibold text-[color:var(--minimal-text)]">Registrar decisão</h4><p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">A evidência guarda autoria e data.</p><label className="mt-4 block text-xs font-medium text-[color:var(--minimal-text-secondary)]" htmlFor="reconciliation-evidence">Evidência usada</label><textarea id="reconciliation-evidence" value={evidence} onChange={(event) => setEvidence(event.target.value)} rows={5} placeholder="Ex.: CNPJ conferido no contrato." className="mt-1 w-full border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)] outline-none focus:border-[color:var(--minimal-action)]" />{error ? <p role="alert" className="mt-2 text-xs text-[color:var(--minimal-danger-text)]">{error}</p> : null}<div className="mt-4 grid gap-2">{item?.status === 'confirmed' ? <button type="button" disabled={saving !== null} onClick={() => void save('revoked')} className="min-h-10 border border-[color:var(--minimal-danger-text)] px-3 text-sm font-medium text-[color:var(--minimal-danger-text)] disabled:opacity-50">{saving === 'revoked' ? 'Desfazendo...' : 'Desfazer vínculo'}</button> : <><button type="button" disabled={saving !== null || !candidate} onClick={() => void save('confirmed')} className="min-h-10 bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-50">{saving === 'confirmed' ? 'Confirmando...' : 'Confirmar vínculo'}</button><button type="button" disabled={saving !== null || !candidate} onClick={() => void save('discarded')} className="min-h-10 border border-[color:var(--minimal-border-strong)] px-3 text-sm font-medium text-[color:var(--minimal-text-secondary)] disabled:opacity-50">{saving === 'discarded' ? 'Descartando...' : 'Descartar candidata'}</button></>}</div></section>
-    </div>
-  </section>;
+  return (
+    <section aria-label="Conciliação HubSpot e OMIE" className="gso-ui-stack gso-reconciliation-stack">
+      <UiMetricRow label="Resumo da conciliação">
+        <UiMetric icon="database" label="Total de identidades" value={queue.summary.total} />
+        <UiMetric icon="check" label="Confirmadas" tone="success" value={queue.summary.confirmed} valueTone="success" />
+        <UiMetric icon="alert" label="Pendentes" tone="warning" value={queue.summary.pending} valueTone="warning" />
+      </UiMetricRow>
+
+      <UiToolbar label="Filtros da conciliação">
+        <UiSearchField aria-label="Buscar por razão social, nome fantasia ou CNPJ" onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Buscar por razão social, nome fantasia ou CNPJ…" value={query} />
+        <UiField label="Situação">
+          <select className="gso-ui-control gso-ui-select" onChange={(event) => { setStatusFilter(event.currentTarget.value as StatusFilter); setPage(1); }} value={statusFilter}>
+            <option value="all">Todas</option>
+            <option value="pending">Pendentes</option>
+            <option value="confirmed">Confirmadas</option>
+          </select>
+        </UiField>
+        <UiField label="Ordenar por">
+          <select className="gso-ui-control gso-ui-select" onChange={(event) => { const next = event.currentTarget.value as SortKey; setSortKey(next); setSortDirection(next === 'balance' ? 'desc' : 'asc'); }} value={sortKey}>
+            <option value="balance">Saldo em aberto</option>
+            <option value="name">Nome</option>
+          </select>
+        </UiField>
+      </UiToolbar>
+
+      <p className="gso-ui-reconciliation-callout" role="note"><strong>Sugestão não é vínculo.</strong> A correspondência só será registrada após uma decisão humana com evidência.</p>
+
+      {visibleItems.length ? (
+        <div className="gso-ui-split gso-ui-split--wide-detail gso-reconciliation-split">
+          <UiCard flush labelledBy="reconciliation-queue-title">
+            <aside className="gso-ui-aside" aria-label="Fila de identidades financeiras">
+              <UiCardHeader actions={<UiSortHeader direction={sortKey === 'balance' ? sortDirection : null} label="Saldo em aberto" onSort={() => sortBy('balance')} />} description={`${totalForFilter} identidades no recorte`} icon="list" title="Fila" titleId="reconciliation-queue-title" tone="primary" />
+              <ul className="gso-ui-reconciliation-list">
+                {visibleItems.map((entry) => (
+                  <li key={entry.sourceKey}>
+                    <button aria-pressed={entry.sourceKey === item?.sourceKey} className={`gso-ui-reconciliation-item${entry.sourceKey === item?.sourceKey ? ' is-selected' : ''}`} onClick={() => setSourceKey(entry.sourceKey)} type="button">
+                      <strong>{entry.sourceName}</strong>
+                      {entry.sourceTradeName ? <small>{entry.sourceTradeName}</small> : null}
+                      <small>{entry.sourceTaxId ? `CNPJ: ${entry.sourceTaxId}` : 'CNPJ não informado'}</small>
+                      <span>{entry.titleCount} títulos · {money.format(entry.totalBalance)}</span>
+                      <UiBadge tone={entry.status === 'confirmed' ? 'success' : 'warning'}>{entry.status === 'confirmed' ? 'Confirmada' : 'Pendente'}</UiBadge>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </UiCard>
+
+          {item ? <Comparison item={item} candidate={candidate} choose={setCompanyId} /> : <UiEmptyState title="Selecione uma identidade" />}
+
+          <Decision item={item} candidate={candidate} evidence={evidence} error={error} saving={saving} setEvidence={setEvidence} save={save} />
+        </div>
+      ) : (
+        <UiCard><UiEmptyState description="Nenhuma identidade corresponde ao recorte atual." icon="search" title="Nenhum resultado" /></UiCard>
+      )}
+
+      <UiPagination noun="identidade" nounPlural="identidades" onPageChange={(next) => setPage(next)} onPerPageChange={(next) => { setPerPage(next); setPage(1); }} page={page} perPage={perPage} perPageOptions={PAGE_SIZE_OPTIONS} total={totalForFilter} />
+      {phase === 'error' && queue ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{error}</p> : null}
+    </section>
+  );
 }
 
 function Comparison({ item, candidate, choose }: { item: ReconciliationItem; candidate: ReconciliationCandidate | null; choose: (companyId: string) => void }) {
-  return <section className="bg-[color:var(--minimal-surface)] p-4"><h4 className="text-sm font-semibold text-[color:var(--minimal-text)]">Comparar cadastros</h4><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-[11px] uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">OMIE</dt><dd className="mt-1 font-medium text-[color:var(--minimal-text)]">{item.sourceName}</dd>{item.sourceTradeName ? <dd className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Nome fantasia: {item.sourceTradeName}</dd> : null}<dd className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{item.sourceTaxId ? `CNPJ: ${item.sourceTaxId}` : 'CNPJ não informado'}</dd></div><div><dt className="text-[11px] uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">HubSpot escolhido</dt><dd className="mt-1 font-medium text-[color:var(--minimal-text)]">{candidate?.companyName ?? 'Nenhuma candidata'}</dd><dd className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{candidate?.taxId ? `CNPJ: ${candidate.taxId}` : 'CNPJ não informado'}</dd></div></dl><fieldset className="mt-5 border-t border-[color:var(--minimal-border)] pt-4"><legend className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">Candidatas do HubSpot</legend><div className="mt-2 space-y-2">{item.candidates.length === 0 ? <p className="text-sm text-[color:var(--minimal-text-secondary)]">Não há candidata suficiente para sugerir.</p> : item.candidates.map((entry) => <label key={entry.companyId} className={`flex cursor-pointer gap-3 border px-3 py-3 ${candidate?.companyId === entry.companyId ? 'border-[color:var(--minimal-text)] bg-[color:var(--minimal-surface-muted)]' : 'border-[color:var(--minimal-border)]'}`}><input type="radio" name="reconciliation-candidate" checked={candidate?.companyId === entry.companyId} onChange={() => choose(entry.companyId)} /><span><span className="block text-sm font-medium text-[color:var(--minimal-text)]">{entry.companyName}</span><span className="mt-1 block text-xs text-[color:var(--minimal-text-secondary)]">{entry.taxId ? `CNPJ: ${entry.taxId}` : 'CNPJ não informado'} · {reason[entry.reason] ?? entry.reason}{entry.score !== null ? ` · ${(entry.score * 100).toFixed(0)}%` : ''}</span><span className={`mt-1 block text-[10px] uppercase tracking-wide ${entry.decision === 'confirmed' ? 'text-[color:var(--minimal-success-text)]' : 'text-[color:var(--minimal-text-tertiary)]'}`}>{entry.decision === 'confirmed' ? 'vínculo confirmado' : 'apenas sugestão'}</span></span></label>)}</div></fieldset></section>;
+  const sourceFields = [
+    ['Razão social', item.sourceName],
+    ['Nome fantasia', item.sourceTradeName ?? 'Indisponível'],
+    ['CNPJ', item.sourceTaxId ?? 'Indisponível'],
+    ['Títulos', item.titleCount.toLocaleString('pt-BR')],
+    ['Saldo em aberto', money.format(item.totalBalance)],
+  ];
+  return (
+    <UiCard flush labelledBy="reconciliation-comparison-title">
+      <UiCardHeader description="Compare a identidade financeira com as empresas sugeridas." icon="layers" title="Comparação" titleId="reconciliation-comparison-title" tone="neutral" />
+      <div className="gso-ui-card-body">
+        <dl className="gso-ui-reconciliation-source">
+          {sourceFields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+        </dl>
+        <div className="gso-ui-reconciliation-candidates">
+          <div className="gso-ui-section-heading"><div><h4>Candidatas no HubSpot</h4><p>Escolha uma candidata para revisar; foco não significa confirmação.</p></div></div>
+          {item.candidates.length ? (
+            <UiTable labelledBy="reconciliation-candidates-title">
+              <thead><tr><th scope="col">Empresa</th><th scope="col">Score</th><th scope="col">Decisão atual</th></tr></thead>
+              <tbody>
+                {item.candidates.map((entry) => (
+                  <tr className={candidate?.companyId === entry.companyId ? 'is-selected' : undefined} key={entry.companyId}>
+                    <td><label className="gso-ui-reconciliation-candidate"><input checked={candidate?.companyId === entry.companyId} name="reconciliation-candidate" onChange={() => choose(entry.companyId)} type="radio" /><span><strong>{entry.companyName}</strong><small>{entry.taxId ? `CNPJ: ${entry.taxId}` : 'CNPJ não informado'} · {reason[entry.reason] ?? entry.reason}</small>{buildHubSpotCompanyUrl(entry.companyId) ? <a className="gso-ui-link" href={buildHubSpotCompanyUrl(entry.companyId) ?? undefined} rel="noreferrer" target="_blank">Abrir no HubSpot</a> : null}</span></label></td>
+                    <td className="gso-ui-table-numeric">{entry.score === null ? 'Indisponível' : `${(entry.score * 100).toFixed(0)}%`}</td>
+                    <td><UiBadge tone={candidateDecisionTone(entry.decision)}>{entry.decision === 'confirmed' ? 'Confirmada' : entry.decision === 'discarded' ? 'Descartada' : 'Sugestão'}</UiBadge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </UiTable>
+          ) : <UiEmptyState icon="search" title="Nenhuma candidata suficiente" />}
+        </div>
+      </div>
+    </UiCard>
+  );
+}
+
+function Decision({ item, candidate, evidence, error, saving, setEvidence, save }: { item: ReconciliationItem | null; candidate: ReconciliationCandidate | null; evidence: string; error: string | null; saving: string | null; setEvidence: (value: string) => void; save: (decision: 'confirmed' | 'discarded' | 'revoked') => Promise<void> }) {
+  return (
+    <UiCard labelledBy="reconciliation-decision-title">
+      <UiCardHeader description="A decisão fica registrada com autoria e evidência." icon="check" title="Decisão" titleId="reconciliation-decision-title" tone="primary" />
+      <div className="gso-ui-card-body gso-ui-decision-body">
+        <p className="gso-ui-reconciliation-callout"><strong>Sugestão não é vínculo.</strong> Nenhuma candidata é confirmada automaticamente.</p>
+        <div className="gso-ui-selected-candidate">
+          <span>Candidata selecionada</span>
+          <strong>{candidate?.companyName ?? 'Nenhuma candidata selecionada'}</strong>
+          <small>{candidate?.taxId ? `CNPJ: ${candidate.taxId}` : 'Selecione uma candidata na comparação.'}</small>
+          {candidate && buildHubSpotCompanyUrl(candidate.companyId) ? <a className="gso-ui-link" href={buildHubSpotCompanyUrl(candidate.companyId) ?? undefined} rel="noreferrer" target="_blank">Abrir empresa no HubSpot</a> : null}
+          {candidate && candidate.score !== null ? <small>Score: {(candidate.score * 100).toFixed(0)}% · {reason[candidate.reason] ?? candidate.reason}</small> : null}
+        </div>
+        <UiField label="Evidência da decisão" hint="Obrigatória para registrar qualquer decisão." wide>
+          <textarea aria-label="Evidência da decisão" className="gso-ui-control gso-ui-textarea" onChange={(event) => setEvidence(event.currentTarget.value)} placeholder="Registre o motivo e a evidência utilizada para esta decisão." rows={5} value={evidence} />
+        </UiField>
+        {error ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{error}</p> : null}
+        <div className="gso-ui-decision-actions">
+          {item?.status === 'confirmed' ? <UiButton disabled={saving !== null || !evidence.trim()} icon="link" onClick={() => void save('revoked')} variant="danger">{saving === 'revoked' ? 'Desfazendo…' : 'Desfazer vínculo'}</UiButton> : <>
+            <UiButton disabled={saving !== null || !candidate || !evidence.trim()} icon="check" onClick={() => void save('confirmed')} variant="primary">{saving === 'confirmed' ? 'Confirmando…' : 'Confirmar vínculo'}</UiButton>
+            <UiButton disabled={saving !== null || !candidate || !evidence.trim()} onClick={() => void save('discarded')} variant="danger">{saving === 'discarded' ? 'Descartando…' : 'Descartar sugestão'}</UiButton>
+          </>}
+        </div>
+      </div>
+    </UiCard>
+  );
 }

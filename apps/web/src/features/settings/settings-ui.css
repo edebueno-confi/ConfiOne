@@ -1032,6 +1032,57 @@
   .gso-ui-rowcard-main { display: grid; grid-template-columns: 1fr; }
 }
 
+/* Governança de dados: composição operacional dentro dos primitives existentes. */
+.gso-ui-group { min-width: 0; padding-top: 0.8rem; border-top: 1px solid var(--ui-border); }
+.gso-ui-group:first-child { border-top: 0; }
+.gso-ui-group-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.gso-ui-group-heading h3 { margin: 0; color: var(--ui-text); font-size: 0.9rem; font-weight: 650; }
+.gso-ui-group-heading span { color: var(--ui-text-tertiary); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.gso-ui-check-control { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.35rem; color: var(--ui-text-secondary); font-size: 0.8rem; }
+.gso-ui-check-control input { accent-color: var(--ui-primary); }
+.gso-ui-group .gso-ui-table { min-width: 68rem; }
+.gso-ui-group .gso-ui-table tbody td { padding-block: 0.65rem; }
+.gso-ui-group .gso-ui-table .gso-ui-field { min-width: 8.5rem; }
+.gso-ui-group .gso-ui-table-actions { justify-content: flex-start; }
+.gso-ui-group .gso-ui-table tr.is-muted { opacity: 0.65; }
+.gso-reconciliation-stack { gap: 1rem; }
+.gso-reconciliation-split { grid-template-columns: minmax(15rem, 0.78fr) minmax(24rem, 1.42fr) minmax(19rem, 0.9fr); gap: 1rem; }
+.gso-reconciliation-split > :last-child { grid-column: auto; }
+.gso-ui-aside { min-width: 0; }
+.gso-ui-reconciliation-list { max-height: 34rem; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.gso-ui-reconciliation-list li { border-top: 1px solid var(--ui-border); }
+.gso-ui-reconciliation-item { display: grid; width: 100%; gap: 0.2rem; padding: 0.75rem 1rem; border: 0; background: transparent; color: var(--ui-text-secondary); text-align: left; cursor: pointer; }
+.gso-ui-reconciliation-item:hover, .gso-ui-reconciliation-item.is-selected { background: var(--ui-surface-muted); }
+.gso-ui-reconciliation-item.is-selected { box-shadow: inset 3px 0 var(--ui-primary); }
+.gso-ui-reconciliation-item strong { overflow: hidden; color: var(--ui-text); font-size: 0.84rem; text-overflow: ellipsis; white-space: nowrap; }
+.gso-ui-reconciliation-item small, .gso-ui-reconciliation-item span { color: var(--ui-text-tertiary); font-size: 0.74rem; }
+.gso-ui-reconciliation-item .gso-ui-badge { justify-self: start; margin-top: 0.25rem; }
+.gso-ui-reconciliation-callout { margin: 0; padding: 0.8rem 1rem; border-left: 3px solid var(--ui-primary); background: var(--ui-primary-soft); color: var(--ui-text-secondary); font-size: 0.82rem; line-height: 1.5; }
+.gso-ui-reconciliation-callout strong { color: var(--ui-text); }
+.gso-ui-reconciliation-source { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 1rem; margin: 0; padding: 0 0 1rem; border-bottom: 1px solid var(--ui-border); }
+.gso-ui-reconciliation-source dt { color: var(--ui-text-tertiary); font-size: 0.72rem; }
+.gso-ui-reconciliation-source dd { margin: 0.15rem 0 0; color: var(--ui-text); font-size: 0.83rem; font-weight: 600; }
+.gso-ui-reconciliation-candidates { padding-top: 1rem; }
+.gso-ui-reconciliation-candidates .gso-ui-section-heading { margin-bottom: 0.65rem; }
+.gso-ui-reconciliation-candidate { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; }
+.gso-ui-reconciliation-candidate input { margin-top: 0.2rem; accent-color: var(--ui-primary); }
+.gso-ui-reconciliation-candidate span { min-width: 0; }
+.gso-ui-decision-body { display: grid; gap: 1rem; }
+.gso-ui-selected-candidate { display: grid; gap: 0.2rem; padding: 0.75rem; border: 1px solid var(--ui-border); border-radius: var(--ui-radius); background: var(--ui-surface-muted); }
+.gso-ui-selected-candidate > span, .gso-ui-selected-candidate small { color: var(--ui-text-tertiary); font-size: 0.74rem; }
+.gso-ui-selected-candidate strong { color: var(--ui-text); font-size: 0.86rem; }
+.gso-ui-decision-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+@media (max-width: 1600px) {
+  .gso-reconciliation-split { grid-template-columns: minmax(14rem, 0.85fr) minmax(0, 1.35fr); }
+  .gso-reconciliation-split > :last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  .gso-reconciliation-split { grid-template-columns: minmax(0, 1fr); }
+  .gso-reconciliation-split > :last-child { grid-column: auto; }
+  .gso-ui-reconciliation-source { grid-template-columns: 1fr; }
+}
+
 /* Ciclos do Histórico: um card por execução, com as etapas dentro. */
 .gso-ui-historylist { display: grid; gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
 .gso-ui-historygroup {

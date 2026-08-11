@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay, type SyncSource, type SyncVisualState } from '../../components/GeniusSyncOverlay';
 import { useAuthContext } from '../auth/auth-context';
@@ -34,9 +34,26 @@ import { UiMetric } from './ui/UiMetric';
 import { UiMetricRow } from './ui/UiMetricRow';
 import { UiPage } from './ui/UiPage';
 import { UiPageHeader } from './ui/UiPageHeader';
+import { UiSearchField } from './ui/UiSearchField';
 import { UiTable } from './ui/UiTable';
+import { UiToolbar } from './ui/UiToolbar';
 import type { UiTone } from './ui/ui-types';
 import './settings-ui.css';
+
+type DashboardTab = 'sources' | 'pipelines' | 'stages' | 'reconciliation';
+
+const DASHBOARD_TABS: ReadonlyArray<{ key: DashboardTab; label: string }> = [
+  { key: 'sources', label: 'Fontes' },
+  { key: 'pipelines', label: 'Pipelines' },
+  { key: 'stages', label: 'Etapas' },
+  { key: 'reconciliation', label: 'Conciliação' },
+];
+
+function isDashboardTab(value: string | null): value is DashboardTab {
+  return DASHBOARD_TABS.some((tab) => tab.key === value);
+}
+
+const PUBLISHED_SOURCE_STATES = new Set(['fresh', 'syncing', 'failed', 'partial', 'stale', 'never_synced']);
 
 const AREA_LABELS: Record<AnalyticsSourceConfig['areaKey'], string> = {
   commercial: 'Comercial',
@@ -100,69 +117,65 @@ function isSyncAlreadyRunning(cause: unknown) {
     && String(cause.cause ?? '').includes('status=409');
 }
 
-function PipelineRow({ row, canEdit, busy, onSave, onSaveOperation }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void>; onSaveOperation: (row: AnalyticsSourceConfig, groupCompany: string) => Promise<void> }) {
+function PipelineTableRow({ row, canEdit, busy, onSave, onSaveOperation }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void>; onSaveOperation: (row: AnalyticsSourceConfig, groupCompany: string) => Promise<void> }) {
   const [areaKey, setAreaKey] = useState(row.areaKey);
   const [alias, setAlias] = useState(row.alias ?? '');
   const [groupCompany, setGroupCompany] = useState(row.groupCompany);
   const changed = areaKey !== row.areaKey || alias !== (row.alias ?? '');
   const operationChanged = groupCompany !== row.groupCompany || row.groupCompanySource !== 'confirmed';
+
   return (
-    <li className={row.isArchived ? 'gso-ui-rowcard gso-ui-rowcard--archived' : 'gso-ui-rowcard'}>
-      <div className="gso-ui-rowcard-main">
-        <div>
-          <strong>{row.label}</strong>
-          <p>{row.objectType === 'deal' ? 'Deal · HubSpot' : 'Ticket · HubSpot'} <span aria-hidden="true">·</span> ID {row.pipelineId}</p>
-        </div>
+    <tr className={row.isArchived ? 'is-muted' : undefined}>
+      <td>
+        <strong>{row.label}</strong>
+        <small>{row.objectType === 'deal' ? 'Deal' : 'Ticket'} · HubSpot · ID {row.pipelineId}</small>
+      </td>
+      <td>
         <UiBadge dot tone={row.isArchived ? 'neutral' : row.areaKey === 'a_classificar' ? 'warning' : 'success'}>
           {row.isArchived ? 'Arquivado' : row.areaKey === 'a_classificar' ? 'A classificar' : 'Ativo'}
         </UiBadge>
-      </div>
-      <div className="gso-ui-rowcard-controls">
+        <small>{formatDate(row.lastDiscoveredAt)}</small>
+      </td>
+      <td>
         <UiField label="Área">
-          <select className="gso-ui-control gso-ui-select" disabled={!canEdit || row.isArchived || busy} value={areaKey} onChange={(event) => setAreaKey(event.target.value as AnalyticsSourceConfig['areaKey'])}>
+          <select className="gso-ui-control gso-ui-select" disabled={!canEdit || row.isArchived || busy} onChange={(event) => setAreaKey(event.currentTarget.value as AnalyticsSourceConfig['areaKey'])} value={areaKey}>
             {Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         </UiField>
-        <UiField label="Operação do grupo">
-          <select className="gso-ui-control gso-ui-select" disabled={!canEdit || row.isArchived || busy} value={groupCompany} onChange={(event) => setGroupCompany(event.target.value)}>
+      </td>
+      <td>
+        <UiField label="Operação">
+          <select className="gso-ui-control gso-ui-select" disabled={!canEdit || row.isArchived || busy} onChange={(event) => setGroupCompany(event.currentTarget.value)} value={groupCompany}>
             {GROUP_COMPANY_OPTIONS.map((option) => <option key={option} value={option}>{option === 'a_definir' ? 'A decidir' : option}</option>)}
           </select>
-          <small>{row.groupCompanySource === 'confirmed' ? 'Confirmada por pessoa autorizada.' : 'Sugestão: confirme antes de publicar o recorte.'}</small>
         </UiField>
-        <UiField label={<>Alias interno <small>(opcional)</small></>}>
-          <input className="gso-ui-control" disabled={!canEdit || row.isArchived || busy} value={alias} onChange={(event) => setAlias(event.target.value)} placeholder={row.hubspotLabel ?? 'Nome oficial'} />
+        <small>{row.groupCompanySource === 'confirmed' ? 'Confirmada' : 'Sugestão pendente'}</small>
+      </td>
+      <td>
+        <UiField label="Alias">
+          <input className="gso-ui-control" disabled={!canEdit || row.isArchived || busy} onChange={(event) => setAlias(event.currentTarget.value)} placeholder="Opcional" value={alias} />
         </UiField>
-        <label className="gso-ui-toggle">
-          <span>Usar nos indicadores</span>
-          <input type="checkbox" disabled={!canEdit || row.isArchived || busy} checked={row.isActive && !row.isArchived} onChange={(event) => void onSave(row, areaKey, alias, event.target.checked)} />
-        </label>
-        {canEdit && !row.isArchived ? (
-          <UiButton className="gso-ui-rowcard-save" disabled={busy || !changed} icon="check" onClick={() => void onSave(row, areaKey, alias, row.isActive)}>
-            Salvar linha
-          </UiButton>
-        ) : null}
-        {canEdit && !row.isArchived ? (
-          <UiButton className="gso-ui-rowcard-save" disabled={busy || !operationChanged} icon="check" onClick={() => void onSaveOperation(row, groupCompany)}>
-            Confirmar operação
-          </UiButton>
-        ) : null}
-      </div>
-      <footer className="gso-ui-rowcard-meta">
-        <span>Nome oficial: {row.hubspotLabel ?? 'Indisponível'}</span>
-        <span>Última descoberta: {formatDate(row.lastDiscoveredAt)}</span>
-        <span>Origem: HubSpot</span>
-      </footer>
-    </li>
+      </td>
+      <td>
+        <div className="gso-ui-table-actions">
+          {canEdit && !row.isArchived ? <UiButton compact disabled={busy || !changed} icon="check" onClick={() => void onSave(row, areaKey, alias, row.isActive)}>Salvar</UiButton> : null}
+          {canEdit && !row.isArchived ? <UiButton compact disabled={busy || !operationChanged} onClick={() => void onSaveOperation(row, groupCompany)}>Confirmar operação</UiButton> : null}
+        </div>
+      </td>
+    </tr>
   );
 }
 
 export function DashboardSourcesSettingsPage() {
   const { gate } = useAuthContext();
   const canEdit = canManageAnalyticsIntegration(gate.actor);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState<DashboardTab>(() => isDashboardTab(searchParams.get('tab')) ? searchParams.get('tab') as DashboardTab : 'sources');
   const [rows, setRows] = useState<AnalyticsSourceConfig[]>([]);
   const [schedule, setSchedule] = useState<IntegrationSchedule | null>(null);
   const [sourceStatus, setSourceStatus] = useState<AnalyticsSourceStatusPayload | null>(null);
   const [areaFilter, setAreaFilter] = useState<'all' | AnalyticsSourceConfig['areaKey']>('all');
+  const [pipelineSearch, setPipelineSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [syncingKind, setSyncingKind] = useState<'full' | 'hubspot' | 'omie' | null>(null);
@@ -188,11 +201,32 @@ export function DashboardSourcesSettingsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const filteredRows = useMemo(() => areaFilter === 'all' ? rows : rows.filter((row) => row.areaKey === areaFilter), [areaFilter, rows]);
+  useEffect(() => {
+    const nextTab = searchParams.get('tab');
+    setTab(isDashboardTab(nextTab) ? nextTab : 'sources');
+  }, [searchParams]);
+
+  const selectTab = (nextTab: DashboardTab) => {
+    setTab(nextTab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', nextTab);
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const filteredRows = useMemo(() => {
+    const query = pipelineSearch.trim().toLocaleLowerCase('pt-BR');
+    return rows.filter((row) => {
+      const matchesArea = areaFilter === 'all' || row.areaKey === areaFilter;
+      const matchesQuery = !query || [row.label, row.hubspotLabel, row.alias, row.pipelineId]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('pt-BR').includes(query));
+      return matchesArea && matchesQuery;
+    });
+  }, [areaFilter, pipelineSearch, rows]);
   const groupedRows = useMemo(() => Object.entries(filteredRows.reduce<Record<string, AnalyticsSourceConfig[]>>((groups, row) => { (groups[row.areaKey] ??= []).push(row); return groups; }, {})), [filteredRows]);
   const pendingRows = useMemo(() => rows.filter((row) => !row.isArchived && row.areaKey === 'a_classificar'), [rows]);
   const pendingCount = pendingRows.length;
-  const activeCount = rows.filter((row) => row.isActive && !row.isArchived).length;
+  const activePipelineCount = rows.filter((row) => row.isActive).length;
 
   const savePipeline = async (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => {
     setBusy(true); setError(null); setMessage(null);
@@ -278,29 +312,56 @@ export function DashboardSourcesSettingsPage() {
             </UiButton>
           </>
         }
-        description="Fontes externas que alimentam o Dashboard Gerencial, com o estado publicado de cada uma e a classificação dos pipelines por área."
+        description="Configure, classifique e concilie os dados utilizados pelo Dashboard Gerencial."
         meta={`${rows.length} pipelines no catálogo`}
-        title="Fontes do Dashboard"
+        title="Governança de dados"
         titleId="settings-sources-title"
       />
 
+      <nav aria-label="Seções de governança de dados" className="gso-ui-tabs">
+        {DASHBOARD_TABS.map((item) => (
+          <button
+            aria-current={tab === item.key ? 'page' : undefined}
+            className={`gso-ui-tab${tab === item.key ? ' is-active' : ''}`}
+            key={item.key}
+            onClick={() => selectTab(item.key)}
+            type="button"
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'sources' ? <>
       <UiMetricRow label="Resumo das fontes">
-        <UiMetric icon="database" label="Fontes ativas" sub="3 de 5 configuradas" tone="primary" value={`${activeCount || 3} de 5`} />
-        <UiMetric icon="layers" label="Domínios cobertos" sub="3 de 5 com dados" tone="neutral" value="3 de 5" />
+        <UiMetric
+          icon="database"
+          label="Fontes ativas"
+          sub={sourcePills.length ? `${sourcePills.filter((source) => PUBLISHED_SOURCE_STATES.has(source.status)).length} fontes com estado publicado` : 'Indisponível'}
+          tone="primary"
+          value={sourcePills.length ? sourcePills.filter((source) => PUBLISHED_SOURCE_STATES.has(source.status)).length : 'Indisponível'}
+        />
+        <UiMetric
+          icon="layers"
+          label="Pipelines ativos"
+          sub={rows.length ? `${rows.length} no catálogo` : 'Indisponível'}
+          tone="neutral"
+          value={rows.length ? `${activePipelineCount} de ${rows.length}` : 'Indisponível'}
+        />
         <UiMetric
           icon="alert"
-          label="Pendências de mapeamento"
-          sub="2 fontes aguardando integração"
+          label="Aguardando classificação"
+          sub="Pipelines sem área definida"
           tone="warning"
-          value={pendingCount || 2}
+          value={pendingCount}
           valueTone="warning"
         />
         <UiMetric
           icon="clock"
           label="Última atualização"
-          sub="Automática"
+          sub={sourcePills.some((source) => source.lastSuccessAt) ? 'Estado publicado mais recente' : 'Indisponível'}
           tone="neutral"
-          value="Hoje, 08:45"
+          value={formatDate(sourcePills.map((source) => source.lastSuccessAt).filter((value): value is string => Boolean(value)).sort().at(-1))}
         />
       </UiMetricRow>
 
@@ -362,7 +423,13 @@ export function DashboardSourcesSettingsPage() {
               );
             }) : (
               <tr>
-                <td colSpan={6}>Estado das fontes indisponível nesta leitura.</td>
+                <td colSpan={6}>
+                  <UiEmptyState
+                    description="Conecte ou sincronize uma fonte para que o estado operacional possa ser exibido."
+                    icon="database"
+                    title="Nenhuma fonte disponível para esta leitura."
+                  />
+                </td>
               </tr>
             )}
           </tbody>
@@ -371,6 +438,19 @@ export function DashboardSourcesSettingsPage() {
           Cada atualização avança a partir do último ponto seguro disponível. Quando a origem não informa esse ponto, o sistema confirma a leitura completa e registra volume, duração e chamadas no Histórico.
         </p>
       </UiCard>
+
+      </> : null}
+
+      {tab === 'pipelines' ? <>
+      <UiToolbar label="Filtros de pipelines">
+        <UiSearchField aria-label="Buscar pipeline" onChange={(event) => setPipelineSearch(event.currentTarget.value)} placeholder="Buscar pipeline…" value={pipelineSearch} />
+        <UiField label="Área / operação">
+          <select className="gso-ui-control gso-ui-select" value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}>
+            <option value="all">Todas as áreas</option>
+            {Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          </select>
+        </UiField>
+      </UiToolbar>
 
       <UiCard flush labelledBy="pending-sources-title">
         <UiCardHeader
@@ -411,7 +491,9 @@ export function DashboardSourcesSettingsPage() {
         )}
       </UiCard>
 
-      <UiCard labelledBy="schedule-title">
+      </> : null}
+
+      {tab === 'sources' ? <UiCard labelledBy="schedule-title">
         <UiCardHeader
           description="O Dashboard atualiza primeiro o HubSpot e, em seguida, os dados financeiros do OMIE."
           icon="calendar"
@@ -432,26 +514,18 @@ export function DashboardSourcesSettingsPage() {
               <span>Atualização ativa</span>
               <input type="checkbox" disabled={!canEdit || busy} checked={schedule?.enabled ?? false} onChange={(event) => setSchedule((current) => current ? { ...current, enabled: event.target.checked } : current)} />
             </label>
+            <UiBadge dot tone={schedule?.enabled ? 'success' : 'neutral'}>{scheduleFrequencyLabel(schedule)}</UiBadge>
             <UiButton className="gso-ui-rowcard-save" disabled={!canEdit || busy} icon="check" onClick={() => void saveSchedule()}>
               Salvar
             </UiButton>
           </div>
         </div>
         {!canEdit ? <p className="gso-ui-note">Seu perfil pode consultar as fontes, mas não pode alterar configurações ou iniciar atualizações.</p> : null}
-      </UiCard>
+      </UiCard> : null}
 
+      {tab === 'pipelines' ? <>
       <UiCard labelledBy="catalog-title">
         <UiCardHeader
-          actions={
-            <div className="gso-ui-toolbar-field">
-              <UiField label="Filtrar área">
-                <select className="gso-ui-control gso-ui-select" value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}>
-                  <option value="all">Todas as áreas</option>
-                  {Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-                </select>
-              </UiField>
-            </div>
-          }
           description="Organize as fontes por área sem alterar o nome oficial que aparece na origem."
           icon="layers"
           title="Pipelines usados por área"
@@ -464,42 +538,51 @@ export function DashboardSourcesSettingsPage() {
           </p>
         ) : null}
         {error ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{error}</p> : null}
-        <details className="gso-ui-disclosure" open={areaFilter !== 'all' || filteredRows.length <= 12}>
-          <summary>
-            <span>Editar classificação das fontes</span>
-            <small>{filteredRows.length} pipelines encontrados</small>
-          </summary>
-          <div className="gso-ui-groups">
-            {groupedRows.map(([areaKey, areaRows]) => (
-              <details className="gso-ui-disclosure" key={areaKey} open={areaFilter !== 'all' || areaRows.length <= 8}>
-                <summary>
-                  <span>{AREA_LABELS[areaKey as AnalyticsSourceConfig['areaKey']] ?? 'A classificar'}</span>
-                  <small>{areaRows.length} fontes</small>
-                </summary>
-                <ul className="gso-ui-rowlist">
-                  {areaRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} onSaveOperation={savePipelineOperation} row={row} />)}
-                </ul>
-              </details>
-            ))}
-          </div>
-          {!filteredRows.length ? <UiEmptyState icon="layers" title="Nenhum pipeline nesta área." /> : null}
-        </details>
+        <div className="gso-ui-groups">
+          {groupedRows.map(([areaKey, areaRows]) => (
+            <section className="gso-ui-group" key={areaKey}>
+              <header className="gso-ui-group-heading">
+                <h3>{AREA_LABELS[areaKey as AnalyticsSourceConfig['areaKey']] ?? 'A classificar'}</h3>
+                <span>{areaRows.length} pipelines</span>
+              </header>
+              <UiTable label={`Pipelines da área ${AREA_LABELS[areaKey as AnalyticsSourceConfig['areaKey']] ?? 'A classificar'}`}>
+                <thead>
+                  <tr>
+                    <th scope="col">Pipeline</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Área</th>
+                    <th scope="col">Operação</th>
+                    <th scope="col">Alias</th>
+                    <th className="gso-ui-table-actions--head" scope="col">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {areaRows.map((row) => <PipelineTableRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} onSaveOperation={savePipelineOperation} row={row} />)}
+                </tbody>
+              </UiTable>
+            </section>
+          ))}
+        </div>
+        {!filteredRows.length ? <UiEmptyState icon="layers" title="Nenhum pipeline nesta área." /> : null}
       </UiCard>
 
       <PipelineRoleSettings />
 
-      <section aria-labelledby="sources-etapas" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
-        <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
-          <h2 id="sources-etapas" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
-            Leitura da fila
-          </h2>
-          <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
-            O cruzamento de etapas é uma decisão auditável: etapa sem decisão não é agrupada por conveniência.
-          </p>
-        </div>
-        <StageMappingSettings />
-      </section>
+      <UiHintBand
+        description="“A classificar” significa que o HubSpot trouxe o pipeline, mas ainda não há decisão administrativa segura sobre a área. Esses registros permanecem carregados e ativos, porém não entram silenciosamente nos indicadores de Customer Success, Suporte ou Chat."
+        title="Como ler este catálogo"
+      />
+      </> : null}
 
+      {tab === 'stages' ? <>
+        <StageMappingSettings />
+        <UiHintBand
+          description="O mapeamento define como uma etapa existente é interpretada pelo ConfiOne. Alterar a classificação não cria uma nova etapa no HubSpot."
+          title="Como ler o mapeamento"
+        />
+      </> : null}
+
+      {tab === 'reconciliation' ? <>
       <section aria-labelledby="sources-conciliacao" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
         <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
           <h2 id="sources-conciliacao" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
@@ -511,11 +594,8 @@ export function DashboardSourcesSettingsPage() {
         </div>
         <CompanyReconciliationPanel />
       </section>
+      </> : null}
 
-      <UiHintBand
-        description="“A classificar” significa que o HubSpot trouxe o pipeline, mas ainda não há decisão administrativa segura sobre a área. Esses registros permanecem carregados e ativos, porém não entram silenciosamente nos indicadores de Customer Success, Suporte ou Chat."
-        title="Como ler este catálogo"
-      />
     </UiPage>
   );
 }
