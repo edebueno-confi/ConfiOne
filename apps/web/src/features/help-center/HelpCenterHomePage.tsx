@@ -369,7 +369,7 @@ export function HelpCenterHomePage() {
           <p className="mt-1 text-sm leading-6 text-[var(--help-muted)]">Tente usar outras palavras ou explore as categorias disponíveis.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <GhostButton onClick={clearSearch}>Limpar busca</GhostButton>
-            <Link className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" to="#categorias">Explorar categorias</Link>
+            <Link className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/categories`}>Explorar categorias</Link>
           </div>
         </div>
       );
@@ -500,7 +500,7 @@ export function HelpCenterHomePage() {
             <h2 className="text-[1.65rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">Explore por categoria</h2>
             <p className="mt-1 text-sm leading-6 text-[var(--help-muted)]">Encontre orientações organizadas por tema.</p>
           </div>
-          <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>Ver todas as categorias <HelpIcon className="ml-1 inline-block" kind="chevron-right" /></Link>
+          <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/categories`}>Ver todas as categorias <HelpIcon className="ml-1 inline-block" kind="chevron-right" /></Link>
         </div>
 
         <div className="grid gap-3 md:hidden">

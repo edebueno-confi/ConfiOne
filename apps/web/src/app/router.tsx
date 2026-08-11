@@ -186,6 +186,11 @@ const HelpCenterArticlesPage = lazyRouteModule(
   'HelpCenterArticlesPage',
 );
 
+const HelpCenterCategoriesPage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterCategoriesPage'),
+  'HelpCenterCategoriesPage',
+);
+
 const HelpCenterArticlePage = lazyRouteModule(
   () => import('../features/help-center/HelpCenterArticlePage'),
   'HelpCenterArticlePage',
@@ -350,6 +355,10 @@ export const router = createBrowserRouter([
           {
             path: 'articles',
             element: withSuspense(<HelpCenterArticlesPage />),
+          },
+          {
+            path: 'categories',
+            element: withSuspense(<HelpCenterCategoriesPage />),
           },
           {
             path: 'articles/:articleSlug',

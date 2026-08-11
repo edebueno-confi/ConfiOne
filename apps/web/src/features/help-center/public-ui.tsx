@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 import { GeniusMascot } from '../../components/GeniusMascot';
-import { AppButton, GhostButton, cx } from '../../components/ui';
+import { GhostButton, cx } from '../../components/ui';
 import type { PublicHelpSupportContacts } from '../../contracts/public-contracts';
+import { resolvePublicLogoUrl } from './branding';
 
 export type HelpIconKind =
   | 'search'
@@ -295,6 +297,7 @@ export function PublicSearchStateCard({
 export function PublicHelpHeader({
   brandName,
   spaceSlug,
+  logoAssetUrl,
   active,
   showOtherCenters,
   mobileTitle = 'Central de Ajuda',
@@ -304,6 +307,7 @@ export function PublicHelpHeader({
 }: {
   brandName: string;
   spaceSlug: string;
+  logoAssetUrl?: string | null;
   active: 'overview' | 'articles' | 'directory';
   showOtherCenters: boolean;
   mobileTitle?: string;
@@ -312,6 +316,71 @@ export function PublicHelpHeader({
   portalHref?: string | null;
 }) {
   const [portalNoticeOpen, setPortalNoticeOpen] = useState(false);
+  const portalCloseRef = useRef<HTMLButtonElement | null>(null);
+  const resolvedLogoUrl = resolvePublicLogoUrl(logoAssetUrl) ?? (
+    spaceSlug === 'genius' ? '/brand-assets/genius-returns-help.svg' : null
+  );
+
+  useEffect(() => {
+    if (!portalNoticeOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousActiveElement = document.activeElement;
+    document.body.style.overflow = 'hidden';
+    portalCloseRef.current?.focus();
+
+    function handlePortalKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setPortalNoticeOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handlePortalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handlePortalKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousActiveElement instanceof HTMLElement) {
+        previousActiveElement.focus();
+      }
+    };
+  }, [portalNoticeOpen]);
+
+  const portalNotice = portalNoticeOpen ? (
+    <div
+      className="fixed inset-0 z-[9999] grid place-items-center bg-slate-950/55 p-5 backdrop-blur-[2px]"
+      data-testid="help-portal-notice"
+      role="presentation"
+      onClick={() => setPortalNoticeOpen(false)}
+    >
+      <section
+        aria-describedby="portal-notice-description"
+        aria-labelledby="portal-notice-title"
+        aria-modal="true"
+        className="relative w-full max-w-md rounded-[24px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-6 shadow-[0_24px_80px_rgba(8,20,52,0.28)]"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <button
+          aria-label="Fechar aviso do portal"
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--help-border)] text-lg leading-none text-[var(--help-muted)] transition hover:border-[var(--help-link)] hover:text-[var(--help-link)]"
+          onClick={() => setPortalNoticeOpen(false)}
+          ref={portalCloseRef}
+          type="button"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+        <div className="flex items-start gap-4 pr-8">
+          <GeniusMascot alt="Gênio avisando sobre o portal" expression="happy" pose="magic" size="md" surface="empty" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--help-link)]">Um pouquinho mais</p>
+            <h2 className="mt-1 text-xl font-semibold text-[var(--help-ink-strong)]" id="portal-notice-title">O portal está quase pronto</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--help-muted)]" id="portal-notice-description">O Gênio está preparando esse espaço para você acompanhar tudo com tranquilidade. Em breve, ele estará pronto para receber você.</p>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end"><GhostButton onClick={() => setPortalNoticeOpen(false)}>Entendi</GhostButton></div>
+      </section>
+    </div>
+  ) : null;
   const navLink = (label: string, to: string, isActive: boolean) => (
     <Link
       className={cx(
@@ -334,14 +403,18 @@ export function PublicHelpHeader({
     <header className="gso-help-header border-b border-[var(--help-border)] bg-[var(--help-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--help-accent-strong)] text-sm font-semibold text-[var(--help-hero-text)]">
-            <GeniusMascot
-              alt="Gênio da Central de Ajuda"
-              animated={false}
-              size="sm"
-              surface="avatar"
-            />
-          </div>
+          {resolvedLogoUrl ? (
+            <img alt={brandName} className="h-10 w-10 shrink-0 rounded-[12px] object-cover shadow-sm" src={resolvedLogoUrl} />
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--help-accent-strong)] text-sm font-semibold text-[var(--help-hero-text)]">
+              <GeniusMascot
+                alt="Gênio da Central de Ajuda"
+                animated={false}
+                size="sm"
+                surface="avatar"
+              />
+            </div>
+          )}
           <div className="min-w-0 sm:flex sm:items-center sm:gap-3">
             <p className="truncate text-sm font-semibold text-[var(--help-ink-strong)] sm:text-[1rem]">
               {brandName}
@@ -361,15 +434,15 @@ export function PublicHelpHeader({
           {navLink('Artigos', `/help/${spaceSlug}/articles`, active === 'articles')}
           {tertiaryHref ? (
             <div className="relative">
-              <a
+              <Link
                 className={cx(
                   'relative inline-flex min-h-12 items-center px-1 text-[0.95rem] font-semibold no-underline transition',
                   active === 'directory' ? 'text-[var(--help-link)]' : 'text-[var(--help-ink)] hover:text-[var(--help-link)]',
                 )}
-                href={tertiaryHref}
+                to={tertiaryHref}
               >
                 {tertiaryLabel}
-              </a>
+              </Link>
               <HelpIcon className="pointer-events-none absolute right-[-18px] top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--help-muted)]" kind="chevron-down" />
             </div>
           ) : showOtherCenters ? (
@@ -384,7 +457,17 @@ export function PublicHelpHeader({
             </span>
           )}
           </nav>
-          {portalHref ? <AppButton className="min-h-11 rounded-[14px] px-5" onClick={() => setPortalNoticeOpen(true)}>Entrar no portal</AppButton> : null}
+          {portalHref ? (
+            <Link to={portalHref}
+              className="inline-flex min-h-11 items-center rounded-[14px] bg-[var(--help-link)] px-5 font-semibold text-white no-underline transition hover:bg-[var(--help-link-hover)]"
+              onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                event.preventDefault();
+                setPortalNoticeOpen(true);
+              }}
+            >
+              Entrar no portal
+            </Link>
+          ) : null}
         </div>
 
         <details className="relative md:hidden">
@@ -415,12 +498,12 @@ export function PublicHelpHeader({
               Artigos
             </Link>
             {tertiaryHref ? (
-              <a
+              <Link
                 className="rounded-[12px] px-3 py-2 text-sm font-medium no-underline text-[var(--help-ink)]"
-                href={tertiaryHref}
+                to={tertiaryHref}
               >
                 {tertiaryLabel}
-              </a>
+              </Link>
             ) : showOtherCenters ? (
               <Link
                 className={cx(
@@ -438,11 +521,21 @@ export function PublicHelpHeader({
                 {tertiaryLabel}
               </span>
             )}
-            {portalHref ? <button className="rounded-[12px] bg-[var(--help-link)] px-3 py-2 text-left text-sm font-semibold text-white" onClick={() => setPortalNoticeOpen(true)} type="button">Entrar no portal</button> : null}
+            {portalHref ? (
+              <Link to={portalHref}
+                className="rounded-[12px] bg-[var(--help-link)] px-3 py-2 text-left text-sm font-semibold text-white no-underline"
+                onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                  event.preventDefault();
+                  setPortalNoticeOpen(true);
+                }}
+              >
+                Entrar no portal
+              </Link>
+            ) : null}
           </div>
         </details>
       </div>
-      {portalNoticeOpen ? (
+      {typeof document === 'undefined' && portalNoticeOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-5" role="presentation" onClick={() => setPortalNoticeOpen(false)}>
           <section aria-labelledby="portal-notice-title" aria-modal="true" className="w-full max-w-md rounded-[24px] bg-[var(--help-surface-strong)] p-6 shadow-[var(--help-shadow)]" onClick={(event) => event.stopPropagation()} role="dialog">
             <div className="flex items-start gap-4">
@@ -457,6 +550,7 @@ export function PublicHelpHeader({
           </section>
         </div>
       ) : null}
+      {typeof document !== 'undefined' && portalNotice ? createPortal(portalNotice, document.body) : null}
       </header>
   );
 }
