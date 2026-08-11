@@ -19,7 +19,7 @@ deploy, push, PR ou migration remota.
 - Área com usuários, vínculos, funções, convites ou histórico não é apagada; pode ser desativada e reativada preservando histórico.
 - `rpc_admin_delete_internal_area(area_key, confirmed)` só exclui área não sistêmica sem dependências e exige confirmação explícita.
 - O catálogo de convites históricos voltou a ser consultável em aba própria, sem reabrir convite como caminho atual de criação de acesso e sem expor token.
-- A tela confirma ações sensíveis, mantém o detalhe completo em drawer rolável e cria rolagem vertical real no corpo do shell para não perder conteúdo abaixo da dobra.
+- A tela confirma ações sensíveis, mantém lista e detalhe no mesmo quadro de trabalho, usa tabela compacta com rolagem interna quando necessário e cria rolagem vertical real no corpo do shell para não perder conteúdo abaixo da dobra.
 
 ## Limites e decisões pendentes
 

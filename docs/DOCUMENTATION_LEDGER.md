@@ -7248,3 +7248,22 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   suíte executada; CI da PR #34 não consultado; viewports 1440/1024/390 e tema claro
   fora de escopo até o gate de 1366 passar.
 - Impacto futuro na FAQ: nenhum.
+
+## ACCESS CONTROL V2 — UX operacional e runtime local em 4173 — 2026-08-11
+
+- **Escopo:** `/admin/access` e launcher local do frontend; sem banco remoto,
+  push, deploy ou uso de porta alternativa.
+- **Decisão:** lista e detalhe permanecem lado a lado em Estrutura e Perfis;
+  tabelas usam densidade reduzida e rolagem interna, enquanto o corpo do shell
+  continua rolável para formulários e detalhes completos.
+- **Runtime:** `npm run dev` é o launcher oficial e usa exclusivamente
+  `http://127.0.0.1:4173`. Ele identifica o processo da porta; reinicia apenas
+  a instância marcada como deste worktree e para com diagnóstico quando o
+  processo é desconhecido.
+- **Docs/código:** `COMO-TESTAR.md`, `apps/web/README.md`,
+  `docs/ENVIRONMENT_VARIABLES.md`, `docs/LOCAL_QA_AUTH.md`,
+  `docs/PROMPT_RETOMADA_CODEX_2026-08-08.md`, `package.json`,
+  `scripts/dev/run-web-dev.mjs` e contratos de QA relacionados.
+- **Validação prevista:** typecheck, build, lint, auditoria documental, teste
+  contratual e teste controlado do launcher/porta; QA autenticado depende da
+  sessão local disponível.

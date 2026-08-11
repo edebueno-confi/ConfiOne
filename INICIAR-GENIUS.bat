@@ -66,5 +66,5 @@ echo   MANTENHA ESTA JANELA ABERTA enquanto testa.
 echo ==================================================
 echo.
 
-call npm run web:dev
+call npm run dev
 pause

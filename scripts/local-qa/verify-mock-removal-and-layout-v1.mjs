@@ -16,7 +16,7 @@ import { loadQaEnv } from './assert-local-supabase.mjs';
 
 const qa = loadQaEnv();
 
-const BASE_URL = process.env.LOCAL_QA_WEB_URL || 'http://127.0.0.1:4174';
+const BASE_URL = process.env.LOCAL_QA_WEB_URL || 'http://127.0.0.1:4173';
 const OUTPUT_DIR = path.resolve(process.cwd(), 'output/playwright/2026-08-11-mock-removal-qa');
 
 /** Strings que só existiam como dado fabricado. Nenhuma pode voltar ao DOM. */

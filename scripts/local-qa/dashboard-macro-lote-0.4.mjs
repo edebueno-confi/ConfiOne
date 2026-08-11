@@ -40,7 +40,7 @@ async function waitForServer(url, timeoutMs = 45_000) {
 function startServer(port, env = {}) {
   const logPath = join(outputDir, `web-server-${port}.log`);
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const child = spawn(npm, ['run', 'web:dev', '--', '--host', '127.0.0.1', '--port', String(port)], {
+  const child = spawn(npm, ['run', 'dev', '--workspace', '@genius-support-os/web', '--', '--host', '127.0.0.1', '--port', String(port)], {
     cwd: root,
     env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', 'pipe'],

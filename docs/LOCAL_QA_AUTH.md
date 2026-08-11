@@ -133,9 +133,10 @@ Esperado: `admin`, `dashboard_viewer`, `support_manager`, `support_agent` e
 npm run local:qa:smoke
 ```
 
-O script sobe o próprio Vite, portanto a porta 4173 precisa estar livre. Derrube
-a instância 4173, rode o smoke e suba a instância de novo. A 4174 pode continuar
-de pé. Falha com `LOCAL_QA_WEB_PORT_OCCUPIED` quando a porta está ocupada.
+O script sobe o próprio Vite exclusivamente em `4173`. O launcher verifica o
+processo que ocupa a porta: reinicia automaticamente apenas uma instância
+marcada como deste projeto e falha com a identificação do processo quando o
+serviço é desconhecido. Não há fallback para outra porta.
 
 Saída esperada: 10 cenários, 5 papéis em desktop e mobile, com `consoleErrors`,
 `pageErrors`, `requestFailures` e `unexpectedResponses` em zero. Capturas em

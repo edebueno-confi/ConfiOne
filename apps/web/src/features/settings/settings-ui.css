@@ -150,11 +150,42 @@
 .gso-po-v2-access .gso-ui-split {
   align-items: start;
 }
-/* No desktop, lista e detalhe ocupam a largura total em sequência. A coluna
-   lateral estreita continua existindo apenas como adaptação de viewport menor,
-   evitando que tabelas operacionais comprimam o contexto editável. */
+/* Access Control V2: manter lista e detalhe no mesmo quadro de trabalho. A
+   tabela ganha densidade e rolagem própria; o contexto editável permanece
+   visível ao lado, sem ser empurrado para baixo por uma lista longa. */
 .gso-po-v2-access .gso-ui-split--wide-detail {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 27rem);
+}
+.gso-po-v2-access .gso-ui-split--wide-detail > .gso-ui-card:first-child {
+  min-height: 0;
+}
+.gso-po-v2-access .gso-ui-split--wide-detail > .gso-ui-card:first-child .gso-ui-table-frame {
+  max-height: min(31rem, calc(100vh - 24rem));
+  overflow: auto;
+}
+.gso-po-v2-access .gso-ui-table thead th,
+.gso-po-v2-access .gso-ui-table tbody td {
+  padding: 0.55rem 0.7rem;
+}
+.gso-po-v2-access .gso-ui-table {
+  font-size: 0.78rem;
+}
+@media (max-width: 1180px) {
+  .gso-po-v2-access .gso-ui-split--wide-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 1181px) and (max-width: 1366px) {
+  .gso-po-v2-access .gso-ui-access-drawer {
+    position: static;
+    width: auto;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+  .gso-po-v2-access .gso-ui-access-drawer-scrim { display: none; }
 }
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }

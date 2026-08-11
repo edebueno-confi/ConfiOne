@@ -3653,3 +3653,11 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Evidência: `{"scenario":"settings-dashboard-sources","viewport":"1920x1080","tableRows":2}`
   e `output/local-qa/browser-platform_admin-settings-dashboard-sources-1920.png`.
 - Faltam quatro telas: Marcas, Central de ajuda, Geral e Usuários e acesso.
+## Atualização corrente — Runtime web único em 4173 e UX de acesso — 2026-08-11
+
+- O runtime web local usa exclusivamente `http://127.0.0.1:4173`.
+- `npm run dev` verifica o processo da porta, reinicia apenas a instância
+  marcada como deste projeto e falha sem fallback quando o processo é
+  desconhecido.
+- Em `/admin/access`, Estrutura e Perfis mantêm lista e detalhe no mesmo quadro;
+  as tabelas são compactas e têm rolagem interna quando necessário.
