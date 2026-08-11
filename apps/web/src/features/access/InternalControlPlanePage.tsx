@@ -20,6 +20,7 @@ import { UiToolbar } from '../settings/ui/UiToolbar';
 import '../settings/settings-ui.css';
 import {
   createAdminInternalAccessArea,
+  deleteAdminInternalAccessArea,
   createAdminInternalFunction,
   createAdminInternalUser,
   createAdminAccessProfile,
@@ -50,6 +51,7 @@ import {
 } from '../admin/admin-api';
 import type {
   AdminInternalAccessAreaRow,
+  AdminInternalAccessUserDetail,
   AdminInternalAccessUserRow,
   AdminInternalFunctionRow,
   AdminInternalInviteRow,
@@ -61,14 +63,16 @@ import type {
 import { classifyAdminError } from '../admin/admin-errors';
 import { useAuthContext } from '../auth/auth-context';
 
-type Tab = 'users' | 'structure' | 'permissions';
+type Tab = 'users' | 'structure' | 'permissions' | 'invites';
 type LoadPhase = 'loading' | 'ready' | 'error' | 'denied';
 type Tone = 'positive' | 'warning' | 'critical';
+type ActionConfirmation = { title: string; impact: string };
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'users', label: 'Usuários' },
   { key: 'structure', label: 'Estrutura' },
   { key: 'permissions', label: 'Perfis' },
+  { key: 'invites', label: 'Convites' },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -105,7 +109,7 @@ function statusTone(status: string) {
 }
 
 function isTab(value: string | null): value is Tab {
-  return value === 'users' || value === 'structure' || value === 'permissions';
+  return value === 'users' || value === 'structure' || value === 'permissions' || value === 'invites';
 }
 
 function firstOrMatchingArea(user: AdminInternalAccessUserRow, areaKey?: string) {
@@ -155,7 +159,7 @@ export function InternalControlPlanePage() {
   const [userProfileFilter, setUserProfileFilter] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminInternalAccessUserRow | null>(null);
-  const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [detail, setDetail] = useState<AdminInternalAccessUserDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState({ fullName: '', email: '', areaKey: '', functionId: '', profileId: '' });
@@ -206,7 +210,8 @@ export function InternalControlPlanePage() {
     });
   }, [query, users, userAreaFilter, userFunctionFilter, userProfileFilter, userStatusFilter]);
 
-  async function runAction(action: () => Promise<unknown>, success: string) {
+  async function runAction(action: () => Promise<unknown>, success: string, confirmation?: ActionConfirmation) {
+    if (confirmation && !window.confirm(`${confirmation.title}\n\n${confirmation.impact}\n\nConfirma esta ação?`)) return;
     setBusy(true); setMessage(null);
     try { await action(); setMessage({ text: success, tone: 'positive' }); await load(); }
     catch (error) { const classified = classifyAdminError(error, 'Não foi possível concluir a ação.'); setMessage({ text: classified.message, tone: 'critical' }); }
@@ -219,6 +224,7 @@ export function InternalControlPlanePage() {
    * repete a consulta.
    */
   async function resetPassword(user: AdminInternalAccessUserRow) {
+    if (!window.confirm(`Redefinir a senha de ${user.full_name || user.email || 'este usuário'}?\n\nA senha atual será substituída. O novo valor será exibido uma única vez e a pessoa deverá trocá-lo no próximo acesso.`)) return;
     setBusy(true); setMessage(null); setIssuedCredential(null);
     try {
       const result = await resetAdminInternalUserPassword(user.user_id);
@@ -257,6 +263,7 @@ export function InternalControlPlanePage() {
     if (!createForm.areaKey) nextErrors.areaKey = 'Escolha a área que dará contexto ao acesso.';
     setCreateErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    if (!window.confirm(`Criar acesso interno para ${createForm.fullName.trim()}?\n\nA conta será provisionada no servidor com a área, função e perfil informados. A credencial temporária será exibida uma única vez.`)) return;
 
     setBusy(true); setMessage(null);
     try {
@@ -314,6 +321,9 @@ export function InternalControlPlanePage() {
   const pendingInvites = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent').length;
 
   const ctaLabel =
+    tab === 'invites'
+      ? null
+      :
     tab === 'structure'
       ? 'Criar área'
       : tab === 'permissions'
@@ -324,7 +334,7 @@ export function InternalControlPlanePage() {
     <div className="gso-ui gso-ui-shell gso-po-v2-access">
       <div className="gso-ui-shell-chrome">
         <UiPageHeader
-          actions={
+          actions={ctaLabel ? (
             <UiButton
               icon="plus"
               onClick={() => {
@@ -334,7 +344,7 @@ export function InternalControlPlanePage() {
                 } else if (tab === 'permissions') {
                   const profileNameInput = document.querySelector<HTMLInputElement>('#new-profile-name');
                   profileNameInput?.focus();
-                } else {
+                } else if (tab === 'users') {
                   startCreate();
                 }
               }}
@@ -342,7 +352,7 @@ export function InternalControlPlanePage() {
             >
               {ctaLabel}
             </UiButton>
-          }
+          ) : null}
           description="Gerencie usuários, estrutura organizacional, perfis e permissões da plataforma."
           title="Usuários e acessos"
           titleId="access-title"
@@ -427,10 +437,11 @@ export function InternalControlPlanePage() {
               busy={busy}
               functionForm={functionForm}
               functions={functions}
-              onCreateArea={() => void runAction(() => createAdminInternalAccessArea(areaForm), 'Área criada.')}
-              onCreateFunction={() => void runAction(() => createAdminInternalFunction({ areaKey: functionForm.areaKey, name: functionForm.name, description: functionForm.description, defaultAccessProfileId: functionForm.profileId || null }), 'Função criada.')}
-              onToggleArea={(area) => void runAction(() => updateAdminInternalAccessArea({ areaKey: area.area_key, displayName: area.display_name, description: area.description ?? '', isActive: !area.is_active, managerUserId: area.manager_user_id }), 'Área atualizada.')}
-              onToggleFunction={(item) => void runAction(() => updateAdminInternalFunction({ functionId: item.function_id, name: item.name, description: item.description ?? '', defaultAccessProfileId: item.default_access_profile_id, isActive: !item.is_active }), 'Função atualizada.')}
+              onCreateArea={() => void runAction(() => createAdminInternalAccessArea(areaForm), 'Área criada.', { title: 'Criar área organizacional?', impact: 'A área ficará disponível para novos vínculos de acesso.' })}
+              onCreateFunction={() => void runAction(() => createAdminInternalFunction({ areaKey: functionForm.areaKey, name: functionForm.name, description: functionForm.description, defaultAccessProfileId: functionForm.profileId || null }), 'Função criada.', { title: 'Criar função?', impact: 'A função ficará disponível para atribuições dentro da área escolhida.' })}
+              onToggleArea={(area) => void runAction(() => updateAdminInternalAccessArea({ areaKey: area.area_key, displayName: area.display_name, description: area.description ?? '', isActive: !area.is_active, managerUserId: area.manager_user_id }), area.is_active ? 'Área desativada.' : 'Área reativada.', { title: area.is_active ? 'Desativar área?' : 'Reativar área?', impact: area.is_active ? 'Os vínculos e o histórico serão preservados; a área deixará de aparecer como opção padrão para novos acessos.' : 'A área voltará a aparecer como opção para novos acessos.' })}
+              onDeleteArea={(area) => void runAction(() => deleteAdminInternalAccessArea(area.area_key), 'Área excluída permanentemente.', { title: `Excluir permanentemente ${area.display_name}?`, impact: 'Esta ação remove a área do catálogo. Só é permitida quando não existem vínculos, funções, convites ou referências legadas.' })}
+              onToggleFunction={(item) => void runAction(() => updateAdminInternalFunction({ functionId: item.function_id, name: item.name, description: item.description ?? '', defaultAccessProfileId: item.default_access_profile_id, isActive: !item.is_active }), item.is_active ? 'Função desativada.' : 'Função reativada.', { title: item.is_active ? 'Desativar função?' : 'Reativar função?', impact: 'A alteração será auditada e afeta novas atribuições nessa área.' })}
               profiles={profiles}
               setAreaForm={setAreaForm}
               setFunctionForm={setFunctionForm}
@@ -443,9 +454,9 @@ export function InternalControlPlanePage() {
               <PermissionsCapabilityPanel
                 busy={busy}
                 capabilities={capabilities}
-                onCreate={() => void runAction(() => createAdminAccessProfile(profileForm), 'Perfil criado.')}
-                onSaveCapabilities={(profileId, keys) => void runAction(() => replaceAdminAccessProfileCapabilities(profileId, keys), 'Permissões do perfil atualizadas.')}
-                onToggle={(profile) => void runAction(() => updateAdminAccessProfile({ profileId: profile.access_profile_id, name: profile.name, description: profile.description ?? '', isActive: !profile.is_active }), 'Perfil atualizado.')}
+                onCreate={() => void runAction(() => createAdminAccessProfile(profileForm), 'Perfil criado.', { title: 'Criar perfil?', impact: 'O perfil será criado sem permissões até que sua composição seja salva.' })}
+                onSaveCapabilities={(profileId, keys) => void runAction(() => replaceAdminAccessProfileCapabilities(profileId, keys), 'Permissões do perfil atualizadas.', { title: 'Salvar permissões do perfil?', impact: 'As pessoas vinculadas a este perfil poderão ter suas permissões efetivas alteradas.' })}
+                onToggle={(profile) => void runAction(() => updateAdminAccessProfile({ profileId: profile.access_profile_id, name: profile.name, description: profile.description ?? '', isActive: !profile.is_active }), profile.is_active ? 'Perfil desativado.' : 'Perfil reativado.', { title: profile.is_active ? 'Desativar perfil?' : 'Reativar perfil?', impact: 'A alteração afeta os acessos efetivos das pessoas vinculadas ao perfil.' })}
                 profileCapabilities={profileCapabilities}
                 profileForm={profileForm}
                 profiles={profiles}
@@ -456,21 +467,83 @@ export function InternalControlPlanePage() {
                 busy={busy}
                 catalog={screenCatalog}
                 grants={profileScreenGrants}
-                onSave={(profileId, keys) => void runAction(async () => { await replaceAdminInternalAccessProfileScreens(profileId, keys); setProfileScreenGrants(await listAdminInternalAccessProfileScreenGrants()); }, 'Telas do perfil atualizadas.')}
+                onSave={(profileId, keys) => void runAction(async () => { await replaceAdminInternalAccessProfileScreens(profileId, keys); setProfileScreenGrants(await listAdminInternalAccessProfileScreenGrants()); }, 'Telas do perfil atualizadas.', { title: 'Salvar telas do perfil?', impact: 'As telas liberadas para as pessoas vinculadas a este perfil serão alteradas.' })}
                 profiles={profiles}
               />
               <ScreenAccessPanel
                 busy={busy}
                 catalog={screenCatalog}
                 grants={screenGrants}
-                onSave={(membershipId, keys) => void runAction(async () => { await replaceInternalMembershipScreens({ membershipId, screenKeys: keys }); setScreenGrants(await listAdminInternalMembershipScreenGrants()); }, 'Telas da área atualizadas.')}
+                onSave={(membershipId, keys) => void runAction(async () => { await replaceInternalMembershipScreens({ membershipId, screenKeys: keys }); setScreenGrants(await listAdminInternalMembershipScreenGrants()); }, 'Telas da área atualizadas.', { title: 'Salvar telas do vínculo?', impact: 'As telas disponíveis para o colaborador e a área selecionados serão alteradas.' })}
                 users={users}
               />
             </>
           ) : null}
+
+          {tab === 'invites' ? <InviteHistoryPanel busy={busy} invites={invites} onAction={runAction} /> : null}
         </UiPage>
       </div>
     </div>
+  );
+}
+
+function InviteHistoryPanel(props: {
+  busy: boolean;
+  invites: AdminInternalInviteRow[];
+  onAction: (action: () => Promise<unknown>, success: string, confirmation?: ActionConfirmation) => Promise<void>;
+}) {
+  const { busy, invites, onAction } = props;
+
+  return (
+    <UiCard flush label="Histórico de convites internos">
+      <UiCardHeader
+        description="Histórico somente leitura do fluxo legado. A criação de acesso atual é feita por usuário direto; nenhum token é exibido aqui."
+        icon="mail"
+        title="Convites históricos"
+      />
+      {invites.length === 0 ? (
+        <UiEmptyState description="Nenhum convite histórico foi retornado pelo backend." icon="mail" title="Sem convites" />
+      ) : (
+        <UiTable label="Histórico de convites internos">
+          <thead>
+            <tr>
+              <th scope="col">Pessoa</th>
+              <th scope="col">Área</th>
+              <th scope="col">Perfil</th>
+              <th scope="col">Status</th>
+              <th scope="col">Criado em</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invites.map((invite) => (
+              <tr key={invite.invite_id}>
+                <td>
+                  <strong className="block text-xs">{invite.full_name || 'Sem nome'}</strong>
+                  <small>{invite.email}</small>
+                </td>
+                <td>{invite.area_label}</td>
+                <td>{invite.access_profile_name || 'Personalizado'}</td>
+                <td><UiBadge dot tone={statusTone(invite.status)}>{statusLabel(invite.status)}</UiBadge></td>
+                <td className="gso-ui-table-numeric">{formatDateTime(invite.created_at)}</td>
+                <td>
+                  {invite.status === 'pending' || invite.status === 'sent' ? (
+                    <UiButton
+                      compact
+                      disabled={busy}
+                      onClick={() => void onAction(() => revokeAdminInternalInvitation(invite.invite_id), 'Convite revogado.', { title: 'Revogar convite?', impact: 'O convite histórico deixará de poder ser aceito. O registro permanecerá auditável.' })}
+                      variant="danger"
+                    >
+                      Revogar
+                    </UiButton>
+                  ) : <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Histórico</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </UiTable>
+      )}
+    </UiCard>
   );
 }
 
@@ -636,10 +709,10 @@ function UsersPanel(props: {
   assignment: { areaKey: string; functionId: string; profileId: string };
   busy: boolean;
   capabilities: Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
-  detail: Record<string, unknown> | null;
+  detail: AdminInternalAccessUserDetail | null;
   filters: { area: string; functionId: string; profile: string; status: string };
   functions: AdminInternalFunctionRow[];
-  onAction: (action: () => Promise<unknown>, success: string) => Promise<void>;
+  onAction: (action: () => Promise<unknown>, success: string, confirmation?: ActionConfirmation) => Promise<void>;
   onCreate: () => void;
   onResetPassword: (user: AdminInternalAccessUserRow) => Promise<void>;
   onSelect: (user: AdminInternalAccessUserRow) => void;
@@ -656,7 +729,8 @@ function UsersPanel(props: {
 }) {
   const { areas, assignment, busy, capabilities, detail, filters, functions, onAction, onCreate, onResetPassword, onSelect, overrideForm, overrides, profiles, query, selectedUser, setAssignment, setFilters, setOverrideForm, setQuery, users } = props;
   const visibleFunctions = functions.filter((item) => !assignment.areaKey || item.area_key === assignment.areaKey);
-  const effectiveCapabilities = Array.isArray(detail?.capabilities) ? (detail?.capabilities as unknown[]).length : null;
+  const effectivePermissions = detail?.effective_permissions ?? [];
+  const effectiveCapabilities = detail ? effectivePermissions.length : null;
   const [detailOpen, setDetailOpen] = useState(false);
   const drawerRef = useRef<HTMLElement | null>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -794,7 +868,7 @@ function UsersPanel(props: {
                         <UiButton
                           compact
                           disabled={busy}
-                          onClick={() => void onAction(() => setAdminInternalUserStatus(user.user_id, user.access_status !== 'active'), user.access_status === 'active' ? 'Usuário suspenso.' : 'Usuário reativado.')}
+                          onClick={() => void onAction(() => setAdminInternalUserStatus(user.user_id, user.access_status !== 'active'), user.access_status === 'active' ? 'Usuário suspenso.' : 'Usuário reativado.', { title: user.access_status === 'active' ? 'Suspender usuário?' : 'Reativar usuário?', impact: user.access_status === 'active' ? 'O acesso interno será bloqueado e os vínculos serão preservados para auditoria.' : 'O contexto interno e os vínculos não arquivados voltarão a ficar ativos.' })}
                           variant="ghost"
                         >
                           {user.access_status === 'active' ? 'Suspender' : 'Reativar'}
@@ -842,6 +916,40 @@ function UsersPanel(props: {
                     ]}
                   />
                 </div>
+                <div className="gso-ui-card-body border-t border-[color:var(--gso-border)]">
+                  <UiCardHeader
+                    description="Calculadas pelo backend a partir de papel global, perfil de área e exceções auditáveis. Editar a tela não concede permissão por si só."
+                    icon="shield"
+                    title="Permissões efetivas"
+                    tone="warning"
+                  />
+                  {effectivePermissions.length === 0 ? (
+                    <p className="gso-ui-note mt-3">Nenhuma permissão efetiva disponível para este usuário.</p>
+                  ) : (
+                    <ul className="mt-3 space-y-2">
+                      {effectivePermissions.map((permission) => (
+                        <li className="rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-2" key={permission.capability_key}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <strong className="block text-xs text-[color:var(--gso-text-primary)]">{permission.display_name}</strong>
+                              <span className="block text-[11px] text-[color:var(--gso-text-secondary)]">{DOMAIN_LABELS[permission.domain] ?? permission.domain} · {permission.capability_key}</span>
+                            </div>
+                            <UiBadge tone={permission.effective_effect === 'allow' ? 'success' : 'danger'}>
+                              {permission.effective_effect === 'allow' ? 'Permitida' : 'Bloqueada'}
+                            </UiBadge>
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[color:var(--gso-text-secondary)]">
+                            <span>Origem: {permission.origin}</span>
+                            <span>· Escopo: {permission.scope}</span>
+                            {permission.scope_areas.length > 0 ? <span>· {permission.scope_areas.join(', ')}</span> : null}
+                          </div>
+                          {permission.sources.length > 0 ? <p className="mt-1 text-[11px] text-[color:var(--gso-text-secondary)]">Fontes: {permission.sources.join(' | ')}</p> : null}
+                          {permission.has_conflict ? <p className="mt-1 text-[11px] font-semibold text-[color:var(--gso-danger)]">Conflito detectado: há concessão e bloqueio para esta capability; o bloqueio efetivo prevalece.</p> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <div className="gso-ui-card-body">
                   <UiField label="Área">
                     <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, areaKey: event.target.value, functionId: '' }))} value={assignment.areaKey}>
@@ -864,7 +972,7 @@ function UsersPanel(props: {
                     <UiButton
                       disabled={busy || !assignment.areaKey}
                       icon="check"
-                      onClick={() => void onAction(() => updateAdminInternalAccessAssignment({ userId: selectedUser.user_id, areaKey: assignment.areaKey, functionId: assignment.functionId || null, accessProfileId: assignment.profileId || null }), 'Atribuição atualizada.')}
+                      onClick={() => void onAction(() => updateAdminInternalAccessAssignment({ userId: selectedUser.user_id, areaKey: assignment.areaKey, functionId: assignment.functionId || null, accessProfileId: assignment.profileId || null }), 'Atribuição atualizada.', { title: 'Salvar atribuição?', impact: 'A área, a função e o perfil efetivos deste usuário serão alterados e auditados.' })}
                       variant="primary"
                     >
                       Salvar atribuição
@@ -886,7 +994,7 @@ function UsersPanel(props: {
                         <li key={item.override_id}>
                           {item.capability_name} · {item.effect === 'allow' ? 'conceder' : 'bloquear'}
                           {' '}
-                          <UiButton compact onClick={() => void onAction(() => removeAdminInternalOverride(item.override_id), 'Override removido.')} variant="ghost">
+                          <UiButton compact onClick={() => void onAction(() => removeAdminInternalOverride(item.override_id), 'Override removido.', { title: 'Remover exceção de permissão?', impact: 'A permissão efetiva voltará a ser calculada sem esta exceção individual.' })} variant="ghost">
                             Remover
                           </UiButton>
                         </li>
@@ -911,7 +1019,7 @@ function UsersPanel(props: {
                   <div className="gso-ui-actions">
                     <UiButton
                       disabled={busy || !overrideForm.capabilityKey || !overrideForm.justification}
-                      onClick={() => void onAction(() => upsertAdminInternalOverride({ userId: selectedUser.user_id, capabilityKey: overrideForm.capabilityKey, effect: overrideForm.effect, justification: overrideForm.justification }), 'Override salvo.')}
+                      onClick={() => void onAction(() => upsertAdminInternalOverride({ userId: selectedUser.user_id, capabilityKey: overrideForm.capabilityKey, effect: overrideForm.effect, justification: overrideForm.justification }), 'Override salvo.', { title: 'Salvar exceção de permissão?', impact: 'A permissão selecionada será concedida ou bloqueada individualmente, com justificativa e auditoria.' })}
                     >
                       Salvar override
                     </UiButton>
@@ -949,6 +1057,7 @@ function StructurePanel(props: {
   functions: AdminInternalFunctionRow[];
   onCreateArea: () => void;
   onCreateFunction: () => void;
+  onDeleteArea: (area: AdminInternalAccessAreaRow) => void;
   onToggleArea: (area: AdminInternalAccessAreaRow) => void;
   onToggleFunction: (item: AdminInternalFunctionRow) => void;
   profiles: AdminInternalProfileRow[];
@@ -956,9 +1065,10 @@ function StructurePanel(props: {
   setFunctionForm: React.Dispatch<React.SetStateAction<{ areaKey: string; name: string; description: string; profileId: string }>>;
   users: AdminInternalAccessUserRow[];
 }) {
-  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm, users } = props;
+  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onDeleteArea, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm, users } = props;
   const [selectedAreaKey, setSelectedAreaKey] = useState<string>(areas[0]?.area_key ?? '');
   const [areaSearch, setAreaSearch] = useState('');
+  const [areaStatusFilter, setAreaStatusFilter] = useState<'active' | 'all'>('active');
   const [structureTab, setStructureTab] = useState<'overview' | 'functions' | 'users'>('overview');
 
   // Nao existe area "Customer Success" fabricada como fallback: sem areas no
@@ -973,7 +1083,8 @@ function StructurePanel(props: {
     : users.filter((user) => user.areas.some((area) => String(area.area_key ?? '') === selectedArea.area_key));
 
   const filteredAreas = areas.filter((a) =>
-    !areaSearch.trim() || a.display_name.toLowerCase().includes(areaSearch.trim().toLowerCase()),
+    (areaStatusFilter === 'all' || a.is_active)
+    && (!areaSearch.trim() || a.display_name.toLowerCase().includes(areaSearch.trim().toLowerCase())),
   );
 
   return (
@@ -995,10 +1106,9 @@ function StructurePanel(props: {
               <UiSearchField aria-label="Buscar área" onChange={(event) => setAreaSearch(event.target.value)} placeholder="Buscar área" value={areaSearch} />
             </div>
             <div className="gso-ui-toolbar-field">
-              <select aria-label="Status da área" className="gso-ui-control gso-ui-select" defaultValue="">
-                <option value="">Todos os status</option>
-                <option value="active">Ativa</option>
-                <option value="inactive">Inativa</option>
+              <select aria-label="Status da área" className="gso-ui-control gso-ui-select" onChange={(event) => setAreaStatusFilter(event.target.value as 'active' | 'all')} value={areaStatusFilter}>
+                <option value="active">Ativas por padrão</option>
+                <option value="all">Mostrar também inativas</option>
               </select>
             </div>
           </UiToolbar>
@@ -1013,6 +1123,7 @@ function StructurePanel(props: {
                 <th scope="col">Responsável</th>
                 <th scope="col" className="text-center">Funções</th>
                 <th scope="col" className="text-center">Usuários</th>
+                <th scope="col" className="text-center">Referências</th>
                 <th scope="col">Status</th>
                 <th className="gso-ui-table-actions--head" scope="col">Ações</th>
               </tr>
@@ -1042,11 +1153,15 @@ function StructurePanel(props: {
                     <td className="text-xs text-[color:var(--gso-text-secondary)]">{area.manager_name || 'Indisponível'}</td>
                     <td className="text-center font-mono text-xs">{typeof area.active_function_count === 'number' ? area.active_function_count : 'Indisponível'}</td>
                     <td className="text-center font-mono text-xs">{typeof area.active_user_count === 'number' ? area.active_user_count : 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs" title="Vínculos, funções, convites e referências legadas">{typeof area.dependency_count === 'number' ? area.dependency_count : 'Indisponível'}</td>
                     <td><UiBadge dot tone={area.is_active ? 'success' : 'neutral'}>{area.is_active ? 'Ativa' : 'Inativa'}</UiBadge></td>
                     <td>
-                      <UiButton compact disabled={busy} onClick={() => onToggleArea(area)} variant="ghost">
-                        {area.is_active ? 'Desativar' : 'Ativar'}
-                      </UiButton>
+                      <div className="gso-ui-table-actions">
+                        <UiButton compact disabled={busy} onClick={() => onToggleArea(area)} variant="ghost">
+                          {area.is_active ? 'Desativar' : 'Ativar'}
+                        </UiButton>
+                        {area.can_delete ? <UiButton compact disabled={busy} onClick={() => onDeleteArea(area)} variant="danger">Excluir</UiButton> : null}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -1108,6 +1223,10 @@ function StructurePanel(props: {
                 <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.active_user_count === 'number' ? selectedArea.active_user_count : 'Indisponível'}</strong>
                 <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Usuários vinculados</span>
               </div>
+              <div>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.dependency_count === 'number' ? selectedArea.dependency_count : 'Indisponível'}</strong>
+                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Referências preservadas</span>
+              </div>
             </div>
 
             <div className="flex border-b border-[color:var(--gso-border)] px-4">
@@ -1160,7 +1279,7 @@ function StructurePanel(props: {
                             <strong className="font-semibold text-[color:var(--gso-text-primary)]">{fn.name}</strong>
                             <p className="text-[11px] text-[color:var(--gso-text-secondary)]">{fn.default_access_profile_name ?? 'Sem perfil padrão'}</p>
                           </div>
-                          <span className="font-mono text-[11px] text-[color:var(--gso-text-secondary)]">{(() => { const count = (fn as unknown as Record<string, unknown>).user_count; return typeof count === 'number' ? `${count} usuários` : 'Indisponível'; })()}</span>
+                          <span className="font-mono text-[11px] text-[color:var(--gso-text-secondary)]">Indisponível no contrato de funções</span>
                         </div>
                       ))}
                     </div>
@@ -1169,9 +1288,8 @@ function StructurePanel(props: {
                   <div className="pt-3 border-t border-[color:var(--gso-border)] space-y-2">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Ações rápidas</h4>
                     <div className="grid gap-2">
-                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" type="button">✎ Editar área</button>
                       <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => setStructureTab('functions')} type="button">＋ Adicionar função</button>
-                      <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" type="button">🗑 Inativar área</button>
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" onClick={() => onToggleArea(selectedArea)} type="button">{selectedArea.is_active ? '⏸ Desativar área' : '▶ Reativar área'}</button>
                     </div>
                   </div>
                 </>

@@ -519,6 +519,31 @@ export interface AdminInternalAccessAreaRow {
   active_user_count: number;
   active_function_count: number;
   can_manage: boolean;
+  dependency_count: number;
+  membership_reference_count: number;
+  function_reference_count: number;
+  invite_reference_count: number;
+  legacy_action_area_reference: boolean;
+  can_delete: boolean;
+}
+
+export interface AdminInternalEffectivePermissionRow {
+  capability_key: string;
+  display_name: string;
+  description: string | null;
+  domain: string;
+  effective_effect: InternalCapabilityEffect;
+  has_conflict: boolean;
+  origin: 'sistêmico' | 'área/perfil' | 'exceção';
+  scope: 'sistêmico' | 'área' | 'usuário';
+  scope_areas: string[];
+  sources: string[];
+}
+
+export interface AdminInternalAccessUserDetail extends AdminInternalAccessUserRow {
+  overrides: AdminInternalOverrideRow[];
+  capabilities: AdminInternalEffectivePermissionRow[];
+  effective_permissions: AdminInternalEffectivePermissionRow[];
 }
 
 export interface AdminInternalFunctionRow {

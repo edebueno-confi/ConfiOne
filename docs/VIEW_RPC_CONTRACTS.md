@@ -1,5 +1,20 @@
 # VIEW_RPC_CONTRACTS.md
 
+## ACCESS CONTROL V2 — Ciclo de vida e permissões efetivas — 2026-08-11
+
+- `vw_admin_access_areas` mantém as colunas existentes e acrescenta `dependency_count`,
+  `membership_reference_count`, `function_reference_count`,
+  `invite_reference_count`, `legacy_action_area_reference` e `can_delete`.
+- `rpc_admin_update_internal_area` permite desativar área com referências, preservando
+  vínculos e histórico.
+- `rpc_admin_delete_internal_area(p_area_key, p_confirmed)` exige confirmação, bloqueia
+  área sistêmica ou com qualquer referência e registra a exclusão pelo trigger de audit.
+- `rpc_admin_get_internal_access_user` acrescenta `effective_permissions` e mantém
+  `capabilities` como alias compatível. Cada item traz capability, efeito efetivo,
+  origem, escopo, áreas de escopo, fontes e conflito.
+- O catálogo de convites segue sanitizado; a UI atual só permite consulta histórica e
+  revogação governada, enquanto a criação oficial continua sendo direta no servidor.
+
 ## Contrato CS Portfolio V1 — atribuição operacional por cliente — 2026-07-23
 
 ### Entidades

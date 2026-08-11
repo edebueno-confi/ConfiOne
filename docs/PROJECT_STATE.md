@@ -2,6 +2,14 @@
 
 > **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
 
+## Atualização corrente — ACCESS CONTROL V2 — 2026-08-11
+
+- `/admin/access` permanece limitado a colaboradores internos e continua usando `vw_admin_access_*`/RPCs reais; clientes do Portal não entram na listagem.
+- A estrutura organizacional agora distingue referência ativa de dependência histórica. Áreas ativas são a seleção padrão; áreas com vínculos, funções, convites ou referência legada devem ser desativadas, nunca apagadas fisicamente.
+- O detalhe de usuário recebe `effective_permissions` do backend, com origem, escopo, fontes e conflito. O frontend não calcula precedência nem transforma tela em permissão de ação.
+- A tela exibe convites somente como histórico read-only, confirma mutações sensíveis e mantém rolagem vertical no corpo do shell. Evidência: `docs/reports/ACCESS_CONTROL_V2_2026-08-11.md`.
+- Estado local: implementação e testes estáticos focados; typecheck, build, lint, pgTAP e QA visual aguardam dependências/runtime local. Sem push, deploy, migration remota ou alteração de secret.
+
 ## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
 
 - **Brand Migration ConfiOne**: Nome público do sistema alterado de GeniusOS para ConfiOne em todas as telas visíveis do frontend.
@@ -1042,7 +1050,7 @@ Documentos históricos:
 - A camada pública da KB não expõe `source_path`, `source_hash`, `tenant_id`, autores internos nem HTML legado.
 - A Central Pública mínima agora consome apenas `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list` e `vw_public_knowledge_article_detail`.
 - A Central Pública mínima agora também consulta `rpc_public_search_knowledge_articles` para busca textual simples por `knowledge_space`.
-- A Central Pública mínima renderiza apenas `body_md` com Markdown seguro, sem `dangerouslySetInnerHTML` e sem depender de filtro de visibilidade no frontend.
+- A Central Pública mínima renderiza apenas `body_md` com Markdown seguro, sem HTML bruto e sem depender de filtro de visibilidade no frontend.
 - A identidade visual pública usa os dados públicos do `knowledge_space` e fallback seguro quando branding detalhado não estiver projetado nos read models públicos.
 - O resolver público agora expõe branding sanitizado mínimo (`brand_name`, `logo_asset_url`, `theme_tokens`, `seo_defaults` e `support_contacts` públicos) sem abrir acesso direto a `brand_settings`.
 - A busca pública agora expõe apenas metadados mínimos de resultado e nunca retorna `body_md` completo, `source_path`, `source_hash` ou metadados internos.

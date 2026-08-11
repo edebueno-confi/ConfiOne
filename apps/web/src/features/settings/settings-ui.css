@@ -123,6 +123,30 @@
 .gso-ui-shell-chrome .gso-ui-header {
   padding: var(--one-space-page-y) var(--one-space-page-x) 1rem;
 }
+
+/* ACCESS CONTROL V2: o shell externo preserva o viewport do app, mas o corpo
+   precisa ter uma superfície de rolagem real para listas, formulários e o
+   detalhe completo. O header permanece disponível e a regra fica limitada à
+   tela de acessos. */
+.gso-po-v2-access {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+.gso-po-v2-access .gso-ui-shell-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.gso-po-v2-access .gso-ui-page--fill {
+  min-height: 100%;
+  align-content: start;
+}
+.gso-po-v2-access .gso-ui-split {
+  align-items: start;
+}
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
   .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }

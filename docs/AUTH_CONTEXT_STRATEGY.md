@@ -128,3 +128,15 @@ governando roteamento de acionamentos. A compatibilidade entre ambos é mantida 
 Read models administrativos: `vw_admin_access_internal_users`, `vw_admin_access_invites`,
 `vw_admin_access_areas`, `vw_admin_access_functions`, `vw_admin_access_profiles`,
 `vw_admin_access_overrides` e `vw_admin_access_capabilities`.
+
+## ACCESS CONTROL V2 — Ciclo de vida e evidência — 2026-08-11
+
+`vw_admin_access_areas` expõe `dependency_count`, contagens por tipo de referência,
+`legacy_action_area_reference` e `can_delete`. A desativação não remove vínculos nem
+histórico. A exclusão física usa `rpc_admin_delete_internal_area` e só é permitida
+para área não sistêmica sem qualquer referência, com confirmação explícita e auditoria.
+
+`rpc_admin_get_internal_access_user` devolve `effective_permissions`, incluindo
+`origin`, `scope`, `scope_areas`, `sources`, `effective_effect` e `has_conflict`.
+Esses campos são evidência derivada no backend; não formam um novo motor genérico de
+recurso/ação/escopo e não permitem que o browser decida precedência.

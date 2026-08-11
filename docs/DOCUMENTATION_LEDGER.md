@@ -1,5 +1,13 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## ACCESS CONTROL V2 — ciclo de vida e evidência de permissões — 2026-08-11
+
+- **Escopo:** `/admin/access`, control plane interno; sem Dashboard, governança de dados, integrações, push, deploy ou migration remota.
+- **Entrega:** dependências e `can_delete` no read model de áreas; desativação preserva histórico; exclusão permanente condicionada por RPC e confirmação; permissões efetivas com origem/escopo/conflito; histórico de convites sanitizado; confirmações e rolagem acessível na UI.
+- **Arquivos/documentos:** migration `20260811130000_access_control_v2_lifecycle_effective_permissions.sql`, teste pgTAP `113_access_control_v2_lifecycle_effective_permissions.sql`, teste Node `access-control-v2-contract.test.mjs`, `PROJECT_STATE.md`, `AUTH_CONTEXT_STRATEGY.md`, `VIEW_RPC_CONTRACTS.md` e relatório `docs/reports/ACCESS_CONTROL_V2_2026-08-11.md`.
+- **Validação:** 11 testes Node focados, `git diff --check` e `npm run documentation:validate:internal-docs` passaram; auditoria documental `changed` terminou sem blockers, com ressalvas históricas; typechecks, build, lint, pgTAP e QA visual aguardam `tsc`/dependências/runtime local.
+- **Riscos restantes:** o modelo atual ainda não materializa um catálogo genérico de Resource/Action/Scope; presets nominais e a taxonomia Conteúdo/Conhecimento permanecem decisão de domínio, sem grants implícitos.
+
 ## CONFI-ONE-V1 — Blueprint Alignment & Claude Handoff — 2026-08-10
 
 - **Handoff Claude:** Relatório completo gerado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
