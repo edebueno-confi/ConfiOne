@@ -17,7 +17,8 @@ blueprints aprovados pelo operador em 2026-08-07.
   que não existe ou está com `release_enabled = false`.
 - **Convite:** o blueprint de Usuários mostra "Convidar usuário" como ação
   primária. **Não é reproduzido.** O convite foi aposentado; a ação primária é
-  **Criar usuário** e a aba de convites permanece histórico somente leitura.
+  **Criar usuário** e não existe aba de convites na UI corrente. Registros
+  históricos permanecem preservados fora da superfície operacional.
 - **Dados inexistentes:** todo campo do blueprint sem origem real no backend é
   omitido ou exibido como "Indisponível". Nenhum número, percentual, avatar,
   telefone ou localização é inventado.

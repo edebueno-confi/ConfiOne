@@ -19,8 +19,12 @@ APP_BASE_URL=http://127.0.0.1:4173
 Comando oficial a partir da raiz do repositório:
 
 ```bash
-npm run web:dev
+npm run dev
 ```
+
+O launcher usa exclusivamente `http://127.0.0.1:4173`. Ele reinicia apenas
+uma instância marcada como deste projeto e falha sem usar porta alternativa
+quando o processo da porta é desconhecido.
 
 O wrapper da raiz valida a presença de `VITE_SUPABASE_URL` e
 `VITE_SUPABASE_ANON_KEY` antes de subir o Vite. Se o arquivo não existir em
