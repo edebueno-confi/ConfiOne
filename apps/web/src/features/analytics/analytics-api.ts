@@ -158,7 +158,7 @@ export async function getLatestSyncRun(): Promise<SyncRun | null> {
 export async function getAnalyticsSourceStatus(): Promise<AnalyticsSourceStatusPayload> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_source_status');
-  if (error) throw toAppError(error, 'Falha ao carregar o estado das fontes do dashboard.');
+  if (error) throw toAppError(error, 'Falha ao carregar o estado da Governança de dados.');
   return mapAnalyticsSourceStatus(data);
 }
 

@@ -55,7 +55,7 @@ const REASON_MESSAGES = {
   // Motivos que dependem de decisão humana, e não de dado que falta. A frase
   // precisa dizer o que fazer, porque aqui existe alguém que pode resolver.
   queue_role_unclassified:
-    'Nenhum pipeline teve o papel definido ainda. Enquanto isso, a fila conta todos eles. Defina em Configurações, Fontes do Dashboard.',
+    'Nenhum pipeline teve o papel definido ainda. Enquanto isso, a fila conta todos eles. Defina em Configurações, Governança de dados.',
   ticket_last_activity_missing:
     'Os atendimentos não registram a data da última movimentação, então não é possível separar o que está andando do que está parado.',
   ticket_last_activity_partial:

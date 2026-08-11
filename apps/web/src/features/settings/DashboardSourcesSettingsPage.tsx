@@ -217,7 +217,7 @@ export function DashboardSourcesSettingsPage() {
       setSchedule(nextSchedule);
       setSourceStatus(nextStatus);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar as fontes do Dashboard.');
+      setError(cause instanceof Error ? cause.message : 'Não foi possível carregar a Governança de dados.');
     } finally {
       setLoading(false);
     }
@@ -327,7 +327,7 @@ export function DashboardSourcesSettingsPage() {
   };
 
   const sourcePills = sourceStatus ? [sourceStatus.hubspot, sourceStatus.omie] : [];
-  if (loading && rows.length === 0) return <MinimalState loading title="Carregando fontes do Dashboard" description="Consultando catálogo, atualização automática e estado das conexões." />;
+  if (loading && rows.length === 0) return <MinimalState loading title="Carregando Governança de dados" description="Consultando catálogo, atualização automática e estado das conexões." />;
   if (error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={error} />;
 
   return (
