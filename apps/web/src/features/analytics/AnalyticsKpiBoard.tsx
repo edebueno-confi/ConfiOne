@@ -98,22 +98,22 @@ function Band({
       </header>
 
       <div className="gso-board-band__items" data-density={band.dense ? 'support' : undefined}>
-        {entries.map(({ item, entry }) => (
-          <Item key={item.key} item={item} entry={entry} />
+        {entries.map(({ item, entry }, index) => (
+          <Item key={item.key} item={item} entry={entry} priority={index === 0 ? 'lead' : 'support'} />
         ))}
       </div>
     </section>
   );
 }
 
-function Item({ item, entry }: { item: BoardItem; entry: KpiEntry }) {
+function Item({ item, entry, priority }: { item: BoardItem; entry: KpiEntry; priority: 'lead' | 'support' }) {
   const ausente = entry.value === null || entry.value === undefined;
   const alerta = item.alertWhenPositive === true && (entry.value ?? 0) > 0;
   const limitacao = describeKpiLimitation(entry);
   const coorte = describeKpiBasis(entry);
 
   return (
-    <div className="gso-board-item" data-state={entry.state} data-alert={alerta ? 'true' : undefined}>
+    <div className="gso-board-item" data-state={entry.state} data-alert={alerta ? 'true' : undefined} data-priority={priority}>
       <p className={ausente ? 'gso-board-item__value gso-board-item__value--absent' : 'gso-board-item__value'}>
         {formatKpiValue(entry, item.kind ?? 'count')}
       </p>

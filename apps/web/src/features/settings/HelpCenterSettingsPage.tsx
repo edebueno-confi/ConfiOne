@@ -299,7 +299,7 @@ export function HelpCenterSettingsPage({
               title="Sem centrais publicadas"
             />
           ) : (
-            <table className="w-full text-xs text-left text-[color:var(--gso-text-primary,#E6ECF5)]">
+            <table className="gso-settings-help-table w-full text-xs text-left text-[color:var(--gso-text-primary,#E6ECF5)]">
               <thead>
                 <tr className="border-b border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-text-secondary,#A6B2C7)]">
                   <th className="p-2.5 font-semibold">Central</th>

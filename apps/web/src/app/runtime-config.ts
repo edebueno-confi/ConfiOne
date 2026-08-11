@@ -11,6 +11,7 @@ export interface RuntimeConfig {
   appEnv: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
+  hubspotPortalId: string | null;
   helpCenterIntegrationLinks: HelpCenterIntegrationLinks;
 }
 
@@ -45,6 +46,16 @@ function readSafeExternalUrl(key: string, fallback: string | null, env: Record<s
   } catch {
     return fallback;
   }
+}
+
+export function readHubSpotPortalId(env: Record<string, unknown> = runtimeEnv): string | null {
+  const portalId = readEnvValue('VITE_HUBSPOT_PORTAL_ID', env);
+  return /^\d{1,30}$/.test(portalId) ? portalId : null;
+}
+
+export function buildHubSpotCompanyUrl(companyId: string, portalId = readHubSpotPortalId()): string | null {
+  if (!portalId || !/^\d{1,30}$/.test(companyId)) return null;
+  return `https://app.hubspot.com/contacts/${portalId}/company/${encodeURIComponent(companyId)}`;
 }
 
 export function resolveHelpCenterIntegrationLinks(
@@ -89,6 +100,7 @@ export function readRuntimeConfig():
       appEnv,
       supabaseUrl,
       supabaseAnonKey,
+      hubspotPortalId: readHubSpotPortalId(),
       helpCenterIntegrationLinks: readHelpCenterIntegrationLinks(),
     },
   };

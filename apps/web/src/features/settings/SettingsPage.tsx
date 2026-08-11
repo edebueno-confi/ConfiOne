@@ -102,7 +102,7 @@ const OVERVIEW_MODULES: Array<{
   { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'marcas', icon: 'brand', label: 'Marcas e domínios', to: '/admin/settings/brands' },
   { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'papeis', icon: 'users', label: 'Usuários e acessos', to: '/admin/access' },
   { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'integracoes', icon: 'plug', label: 'Integrações', to: '/admin/settings/integrations' },
-  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'dashboard-fontes', icon: 'database', label: 'Fontes do Dashboard', to: '/admin/settings/dashboard-sources' },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'dashboard-fontes', icon: 'database', label: 'Governança de dados', to: '/admin/settings/dashboard-sources' },
   { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'dashboard-historico', icon: 'clock', label: 'Histórico de sincronizações', to: '/admin/settings/sync-history' },
   { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'central-ajuda', icon: 'help', label: 'Central de ajuda', to: '/admin/settings/help-center' },
   { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'tipos-conversa', icon: 'list', label: 'Tipos de conversa', to: null },
@@ -206,7 +206,7 @@ const GROUPS: SettingsGroup[] = [
   { id: 'segmentos', label: 'Segmentos e clusters', description: 'Como os clientes são agrupados na carteira de CS.', controls: ['Nome do segmento', 'Cor', 'Ordem'], usadoEm: 'Carteira de CS (clusterização)', status: 'ativo', nota: 'Parâmetro gerenciável pela tela; base para a clusterização de CS.' },
   { id: 'canais', label: 'Canais', description: 'Por onde as mensagens entram e saem.', controls: ['Canal', 'Situação', 'Marca'], usadoEm: 'Entrada e saída de mensagens', status: 'existe_hoje', nota: 'Portal do cliente ativo; e-mail e WhatsApp são evolução futura.' },
   { id: 'integracoes', label: 'Integrações', description: 'Fontes externas e credenciais do Dashboard Gerencial.', controls: ['HubSpot', 'OMIE Financeiro', 'Estado da credencial'], usadoEm: 'Dashboard Gerencial e atualizações operacionais', status: 'ativo', nota: 'A tela mostra somente o estado da conexão. O valor da credencial nunca retorna para a interface.' },
-  { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
+  { id: 'dashboard-fontes', label: 'Governança de dados', description: 'Configure, classifique e concilie os dados utilizados pelo Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
   { id: 'dashboard-historico', label: 'Histórico de sincronizações', description: 'Execuções, resultados e erros das integrações gerenciais.', controls: ['Execuções', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'O histórico fica separado das configurações e das ações de atualização.' },
 ];
 
