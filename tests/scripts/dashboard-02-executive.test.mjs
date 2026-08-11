@@ -46,7 +46,7 @@ test('dashboard_viewer recebe somente conteúdo autorizado', () => {
 });
 
 test('rotas internas usam React Router e não links HTML diretos', () => {
-  assert.match(page, /from ["']react-router-dom["']/);
+  assert.match(page, /from ["']react-router["']/);
   assert.match(page, /<Link[\s\S]*?\bto=/);
   assert.doesNotMatch(page, /<a key=/);
 });

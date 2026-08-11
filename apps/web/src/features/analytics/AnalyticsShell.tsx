@@ -106,7 +106,7 @@ export function AnalyticsShell() {
             {isDashboardViewer ? <span className="text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">Visualizador gerencial</span> : null}
           </div>
           <div className="gso-shell-actions flex flex-wrap items-center justify-end gap-3">
-            {isPlatformAdmin ? <Link to="/admin/settings?section=analytics" className="gso-shell-secondary-action" title="Abrir configurações de integração">Integrações</Link> : null}
+            {isPlatformAdmin ? <Link to="/admin/settings/dashboard-sources" className="gso-shell-secondary-action" title="Abrir governança de fontes, pipelines, reconciliação e Integrações">Governança de dados</Link> : null}
             {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="gso-shell-report-action">Exportar</button> : null}
           </div>
         </div>

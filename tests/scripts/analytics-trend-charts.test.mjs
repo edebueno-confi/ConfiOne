@@ -58,5 +58,5 @@ test('a taxa não liga pontos por cima de período sem encerramento', () => {
 });
 
 test('valores monetários usam a formatação em real, não número cru', () => {
-  assert.match(charts, /formatCurrencyBRL\(value\)/);
+  assert.match(charts, /formatCurrencyBRL\(number\)/);
 });

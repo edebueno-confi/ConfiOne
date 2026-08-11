@@ -63,7 +63,7 @@ test('Visão Geral não filtra por domínio e mantém todos os cards executivos'
 test('Comercial segue o padrão de filtros e KPIs de Suporte', () => {
   const commercial = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCommercialPage.tsx'), 'utf8');
   assert.match(commercial, /extraFields=.*AnalyticsPipelineCombobox inline/);
-  assert.match(commercial, /grid-cols-2 gap-3 lg:grid-cols-4/);
+  assert.match(commercial, /AnalyticsDomainTabs/);
   assert.match(commercial, /state=\{displayState\}/);
 });
 
@@ -79,7 +79,7 @@ test('Customer Success não reutiliza snapshot executivo nem dados de tickets', 
   const source = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCustomerSuccessPage.tsx'), 'utf8');
 
   assert.doesNotMatch(source, /getCeoSnapshot|getCsSnapshot/);
-  assert.match(source, /getCustomerSuccessSnapshot/);
+  assert.match(source, /getCustomerSuccessKpisV2/);
   assert.match(source, /KpiCard|AnalyticsRetryAction/);
   assert.match(source, /HubSpot/);
   assert.doesNotMatch(source, /getCeoSnapshot|getCsSnapshot/);

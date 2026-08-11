@@ -70,6 +70,11 @@ function rotuloPeriodo(value: string): string {
 
 const contagem = (value: number) => value.toLocaleString('pt-BR');
 
+function numeroTooltip(value: unknown): number | null {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 /** Compacta valores grandes no eixo sem perder a ordem de grandeza. */
 function moedaCurta(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
@@ -108,7 +113,10 @@ export function SupportTrendChart({ data }: { data: SupportTrendPoint[] }) {
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) => [contagem(value), name]}
+          formatter={(value: unknown, name: unknown) => {
+            const number = numeroTooltip(value);
+            return [number === null ? 'Indisponível' : contagem(number), String(name ?? '')];
+          }}
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <ReferenceLine yAxisId="mes" y={0} stroke="var(--minimal-border-strong)" />
@@ -156,10 +164,12 @@ export function CommercialTrendChart({ data }: { data: CommercialTrendPoint[] })
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) =>
-            name === 'Taxa de ganho'
-              ? [`${value.toLocaleString('pt-BR')}%`, name]
-              : [contagem(value), name]
+          formatter={(value: unknown, name: unknown) =>
+            numeroTooltip(value) === null
+              ? ['Indisponível', String(name ?? '')]
+              : String(name ?? '') === 'Taxa de ganho'
+                ? [`${numeroTooltip(value)?.toLocaleString('pt-BR')}%`, String(name)]
+                : [contagem(numeroTooltip(value) as number), String(name ?? '')]
           }
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
@@ -212,7 +222,10 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) => [formatCurrencyBRL(value), name]}
+          formatter={(value: unknown, name: unknown) => {
+            const number = numeroTooltip(value);
+            return [number === null ? 'Indisponível' : formatCurrencyBRL(number), String(name ?? '')];
+          }}
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <Area

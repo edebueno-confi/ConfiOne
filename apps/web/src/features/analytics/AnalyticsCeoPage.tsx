@@ -31,6 +31,8 @@ import {
 } from "./analytics-executive";
 import { analyticsHref } from "./analytics-navigation";
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./AnalyticsKpiBoard";
+import { AnalyticsDataCoveragePanel, analyticsCoverageStatus, type AnalyticsCoverageItem } from './AnalyticsDataCoveragePanel';
+import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -252,6 +254,8 @@ export function AnalyticsCeoPage({
       configuredPipelines={configuredPipelines}
       groupCompany={groupCompany}
       setGroupCompany={setGroupCompany}
+      coverageItems={buildCoverageItems(data, hubspotUnavailable, omieUnavailable, currentSourceStatus)}
+      canOpenGovernance={canSyncSources}
     />
   );
 }
@@ -364,6 +368,8 @@ function ExecutiveHdCanvas({
   configuredPipelines,
   groupCompany,
   setGroupCompany,
+  coverageItems,
+  canOpenGovernance,
 }: {
   data: CeoSnapshot;
   executiveKpis: unknown;
@@ -391,6 +397,8 @@ function ExecutiveHdCanvas({
   configuredPipelines: AnalyticsSourceConfig[];
   groupCompany: string;
   setGroupCompany: (value: string) => void;
+  coverageItems: AnalyticsCoverageItem[];
+  canOpenGovernance: boolean;
 }) {
   const periodLabel = formatPeriod(filters);
   const qualityExpected = state?.coverage.expected;
@@ -711,8 +719,42 @@ function ExecutiveHdCanvas({
           </p>
         )}
       </section>
+
+      <section className="space-y-4" aria-labelledby="trends-heading">
+        <HdSectionHeading
+          id="trends-heading"
+          title="Evolução por domínio"
+          description="Séries publicadas pelas fontes, com coorte, unidade e estado de cobertura explícitos."
+        />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <AnalyticsTrendPanel domain="commercial" />
+          <AnalyticsTrendPanel domain="support" />
+          <AnalyticsTrendPanel domain="finance" />
+        </div>
+      </section>
+
+      <AnalyticsDataCoveragePanel items={coverageItems} canOpenGovernance={canOpenGovernance} />
     </div>
   );
+}
+
+function buildCoverageItems(
+  data: CeoSnapshot,
+  hubspotUnavailable: boolean,
+  omieUnavailable: boolean,
+  sourceStatus?: AnalyticsSourceStatusPayload,
+): AnalyticsCoverageItem[] {
+  const hubspotStatus = analyticsCoverageStatus(hubspotUnavailable ? 'unavailable' : sourceStatus?.hubspot.status ?? 'fresh');
+  const omieStatus = analyticsCoverageStatus(omieUnavailable ? 'unavailable' : sourceStatus?.omie.status ?? 'fresh');
+  return [
+    { key: 'commercial', label: 'Comercial · funil, pipeline e responsáveis', source: 'HubSpot · Deals', status: hubspotStatus, detail: 'Negócios sincronizados e agregados por contratos comerciais publicados.' },
+    { key: 'customer-success', label: 'Customer Success · carteira, MRR e sinais', source: data.customerSuccess.source, status: analyticsCoverageStatus(data.customerSuccess.state.status), detail: data.customerSuccess.healthAvailable > 0 ? 'Há sinais de carteira retornados pela fonte; health score não é inferido.' : 'Carteira publicada sem health score operacional confirmado.' },
+    { key: 'support', label: 'Suporte · tickets, fila e tempos', source: 'HubSpot · Tickets', status: hubspotStatus, detail: 'Tickets permanecem separados de conversas e chat; os tempos só aparecem quando o campo foi observado.' },
+    { key: 'finance', label: 'Financeiro · recebíveis, aging e conciliação', source: 'OMIE · Contas a Receber', status: omieStatus, detail: 'Somente títulos OMIE atuais entram no snapshot; planilhas não são fallback.' },
+    { key: 'activities', label: 'Atividades · reuniões, tarefas, ligações e e-mails', source: 'HubSpot · Activities', status: 'unavailable', detail: 'Nenhum read model ou ingestão server-side validado para essas atividades; o painel não estima pendências.' },
+    { key: 'conversations', label: 'Conversas e chat', source: 'HubSpot · Conversations', status: 'unavailable', detail: 'Threads e mensagens ainda não estão conectadas ao Analytics. source_type de ticket não prova a existência de um chat.' },
+    { key: 'finance-scope', label: 'Pagar, centros de custo, projetos e contratos', source: 'OMIE · contratos ainda não publicados', status: 'unavailable', detail: 'A integração local publica recebíveis; não há contrato validado para ampliar este recorte.' },
+  ];
 }
 
 function HdStatus({ state }: { state: AnalyticsBlockState }) {

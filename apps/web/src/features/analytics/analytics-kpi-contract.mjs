@@ -72,6 +72,18 @@ const REASON_MESSAGES = {
   no_data_in_period: 'Não há registros no período selecionado.',
   weighted_pipeline_partial_coverage:
     'O valor ponderado do funil cobre apenas parte das negociações em aberto.',
+  reopen_source_missing:
+    'A origem não registra reaberturas suficientes para medir essa taxa com segurança.',
+  reopen_source_partial:
+    'Parte das reaberturas ainda não foi carregada, então a taxa cobre apenas parte da base.',
+  cnpj_exato:
+    'Candidato encontrado por cadastro fiscal exato; o vínculo ainda depende de confirmação humana.',
+  identidade_exata:
+    'Candidato encontrado por identidade exata; a decisão permanece registrada para revisão humana.',
+  identidade_similar:
+    'Candidato encontrado por identidade semelhante; não há aplicação automática do vínculo.',
+  confirmada:
+    'Vínculo confirmado por decisão humana e preservado no histórico de auditoria.',
 };
 
 /** Aviso genérico para um código não mapeado: nunca vaza o código cru. */

@@ -21,7 +21,7 @@ export const ANALYTICS_DOMAINS: AnalyticsDomain[] = [
   { key: 'ceo', label: 'Visão Geral', description: 'Resumo para decisão de CEO', syncDomain: null, Component: AnalyticsCeoPage, enabled: true },
   { key: 'commercial', label: 'Comercial', description: 'Operação Aftersale (Deals HubSpot)', syncDomain: 'commercial', Component: AnalyticsCommercialPage, enabled: true },
   { key: 'customer_success', label: 'Customer Success', description: 'Carteira e relacionamento com clientes', syncDomain: null, Component: AnalyticsCustomerSuccessPage, enabled: true },
-  { key: 'support', label: 'Suporte & Chat', description: 'Tickets, atendimento e Chat com contrato confirmado', syncDomain: 'cs', Component: AnalyticsCsPage, enabled: true },
+  { key: 'support', label: 'Suporte', description: 'Tickets, fila e tempos publicados; conversas ainda não conectadas', syncDomain: 'cs', Component: AnalyticsCsPage, enabled: true },
   { key: 'finance', label: 'Financeiro', description: 'Contas a receber da integração OMIE', syncDomain: null, Component: AnalyticsFinancePage, enabled: true },
   { key: 'product-development', label: 'Produto e Desenvolvimento', description: 'Roadmap, entregas e fluxo técnico aguardando integração', syncDomain: null, Component: AnalyticsProductDevelopmentPage, enabled: true },
 ];

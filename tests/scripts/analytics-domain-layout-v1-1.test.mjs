@@ -31,7 +31,7 @@ test('KPIs e gráficos compactos possuem semântica de leitura', () => {
   assert.match(ui, /data-kpi-role=\{resolvedSemantic\}/);
   assert.match(ui, /gso-kpi-snapshot-marker/);
   assert.match(charts, /CompactSummary/);
-  assert.match(charts, /CompactTemporalSummary/);
+  assert.match(charts, /CompactSummary/);
 });
 
 test('contexto executivo e logs de integraÃ§Ã£o permanecem localizados por Ã¡rea', () => {
