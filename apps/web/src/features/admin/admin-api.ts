@@ -1150,6 +1150,7 @@ export async function listAdminKnowledgeCategoriesV2(knowledgeSpaceId: string) {
     .from('vw_admin_knowledge_categories_v2')
     .select('*')
     .eq('knowledge_space_id', knowledgeSpaceId)
+    .order('category_sort_order', { ascending: true })
     .order('name', { ascending: true });
 
   if (error) {

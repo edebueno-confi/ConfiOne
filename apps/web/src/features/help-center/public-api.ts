@@ -50,7 +50,8 @@ export async function listPublicKnowledgeNavigation(spaceSlug: string) {
     .from('vw_public_knowledge_navigation')
     .select('*')
     .eq('knowledge_space_slug', spaceSlug)
-    .order('parent_category_slug', { ascending: true, nullsFirst: true })
+    .order('parent_category_sort_order', { ascending: true, nullsFirst: true })
+    .order('category_sort_order', { ascending: true })
     .order('category_name', { ascending: true });
 
   if (error) {

@@ -76,6 +76,8 @@ export interface PublicKnowledgeNavigationRow {
   article_count: number;
   subtree_article_count: number;
   articles: PublicKnowledgeNavigationArticleItem[];
+  parent_category_sort_order: number;
+  category_sort_order: number;
 }
 
 export interface PublicKnowledgeArticleListRow {

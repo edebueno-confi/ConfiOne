@@ -1248,7 +1248,7 @@
   min-width: 0;
 }
 .knowledge-editor-page .gso-knowledge-editor-shell {
-  overflow: hidden;
+  overflow: visible;
 }
 .knowledge-editor-page .gso-knowledge-editor-properties > div {
   scrollbar-width: thin;
@@ -6965,7 +6965,8 @@ table {
     line-height: 1.35 !important;
   }
   .knowledge-editor-page .knowledge-editor-content-grid {
-    grid-template-rows: 164px minmax(0, 1fr) !important;
+    grid-template-rows: 164px auto !important;
+    height: auto !important;
   }
   .knowledge-editor-page .gso-knowledge-editor-shell {
     grid-template-columns: minmax(0, 1fr) 344px !important;
