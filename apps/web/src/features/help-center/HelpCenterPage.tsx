@@ -36,6 +36,7 @@ interface HelpCenterSpaceSummary {
   knowledgeSpaceSlug: string;
   displayName: string;
   brandName: string;
+  logoAssetUrl: string | null;
   defaultLocale: string;
   organizationDisplayName: string;
 }
@@ -72,6 +73,7 @@ function buildSpaceSummary(
     knowledgeSpaceSlug: primaryRoute.knowledge_space_slug,
     displayName: primaryRoute.knowledge_space_display_name,
     brandName: primaryRoute.brand_name,
+    logoAssetUrl: primaryRoute.logo_asset_url,
     defaultLocale: primaryRoute.default_locale,
     organizationDisplayName: primaryRoute.organization_display_name,
   };
@@ -181,6 +183,7 @@ export function HelpCenterPage() {
       <PublicHelpHeader
         active="directory"
         brandName={primarySpace?.brandName ?? 'Genius Returns'}
+        logoAssetUrl={primarySpace?.logoAssetUrl}
         showOtherCenters={spaces.length > 1}
         spaceSlug={primarySpace?.knowledgeSpaceSlug ?? 'genius'}
       />
@@ -390,6 +393,8 @@ export function HelpCenterSpaceLayout() {
   const active =
     location.pathname === `/help/${spaceSlug}`
       ? 'overview'
+      : location.pathname.startsWith(`/help/${spaceSlug}/categories`)
+        ? 'directory'
       : location.pathname.startsWith(`/help/${spaceSlug}/articles`)
         ? 'articles'
         : 'directory';
@@ -399,9 +404,10 @@ export function HelpCenterSpaceLayout() {
       <PublicHelpHeader
         active={active}
         brandName={space.brand_name}
+        logoAssetUrl={space.logo_asset_url}
         showOtherCenters={availableSpaces.length > 1}
         spaceSlug={space.knowledge_space_slug}
-        tertiaryHref={`/help/${space.knowledge_space_slug}#categorias`}
+        tertiaryHref={`/help/${space.knowledge_space_slug}/categories`}
         tertiaryLabel="Categorias"
         portalHref={portalHref}
       />
