@@ -2,13 +2,15 @@
 
 > **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
 
-## Atualização corrente — ACCESS CONTROL V2 — 2026-08-11
+## Atualização corrente — ACCESS CONTROL V2 / UX operacional — 2026-08-11
 
 - `/admin/access` permanece limitado a colaboradores internos e continua usando `vw_admin_access_*`/RPCs reais; clientes do Portal não entram na listagem.
 - A estrutura organizacional agora distingue referência ativa de dependência histórica. Áreas ativas são a seleção padrão; áreas com vínculos, funções, convites ou referência legada devem ser desativadas, nunca apagadas fisicamente.
 - O detalhe de usuário recebe `effective_permissions` do backend, com origem, escopo, fontes e conflito. O frontend não calcula precedência nem transforma tela em permissão de ação.
-- A tela exibe convites somente como histórico read-only, confirma mutações sensíveis e mantém rolagem vertical no corpo do shell. Evidência: `docs/reports/ACCESS_CONTROL_V2_2026-08-11.md`.
-- Estado local: implementação e testes estáticos focados; typecheck, build, lint, pgTAP e QA visual aguardam dependências/runtime local. Sem push, deploy, migration remota ou alteração de secret.
+- A UI corrente mantém somente as abas `Usuários`, `Estrutura` e `Perfis`; Convites não é mais uma superfície do produto. O cadastro de usuário ocorre diretamente em Usuários. Registros e APIs históricas permanecem preservados fora da UI.
+- Estrutura e Perfis usam listas compactas no lugar de tabelas largas; seleção e detalhe permanecem no mesmo quadro, e edição de área/perfil abre diálogo contextual com foco e fechamento explícitos.
+- As concessões de telas por perfil e colaborador ficam em painéis compactos lado a lado, com rolagem interna por grupo. O frontend continua consumindo read models e RPCs reais, sem calcular permissões.
+- Runtime local oficial: `npm run dev` em `http://127.0.0.1:4173`, sem fallback de porta. Sem push, deploy, migration remota ou alteração de secret.
 
 ## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
 

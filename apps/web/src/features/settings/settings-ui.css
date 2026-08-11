@@ -170,10 +170,120 @@
 .gso-po-v2-access .gso-ui-table {
   font-size: 0.78rem;
 }
+.gso-po-v2-access .gso-access-list {
+  max-height: min(31rem, calc(100vh - 23rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.gso-po-v2-access .gso-access-list-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(12rem, auto) auto minmax(14rem, auto);
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.6rem;
+  padding: 0.55rem 0.8rem;
+  border-top: 1px solid var(--ui-border);
+  background: transparent;
+}
+.gso-po-v2-access .gso-access-list-row:first-child { border-top: 0; }
+.gso-po-v2-access .gso-access-list-row:hover,
+.gso-po-v2-access .gso-access-list-row.is-selected { background: var(--ui-surface-muted); }
+.gso-po-v2-access .gso-access-list-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text);
+  text-align: left;
+  cursor: pointer;
+}
+.gso-po-v2-access .gso-access-list-primary:focus-visible,
+.gso-po-v2-access .gso-access-modal-close:focus-visible,
+.gso-po-v2-access .gso-access-list-actions button:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.gso-po-v2-access .gso-access-list-primary:hover .gso-access-list-copy strong { color: var(--ui-primary); }
+.gso-po-v2-access .gso-access-list-icon {
+  display: inline-grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--ui-primary);
+  color: #fff;
+  font-size: 0.65rem;
+}
+.gso-po-v2-access .gso-access-list-icon--shield { background: var(--ui-primary); }
+.gso-po-v2-access .gso-access-list-copy { display: grid; min-width: 0; gap: 0.15rem; }
+.gso-po-v2-access .gso-access-list-copy strong,
+.gso-po-v2-access .gso-access-list-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gso-po-v2-access .gso-access-list-copy strong { color: var(--ui-text); font-size: 0.82rem; font-weight: 650; }
+.gso-po-v2-access .gso-access-list-copy small { color: var(--ui-text-secondary); font-size: 0.7rem; }
+.gso-po-v2-access .gso-access-list-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.75rem; color: var(--ui-text-secondary); font-size: 0.7rem; white-space: nowrap; }
+.gso-po-v2-access .gso-access-list-meta span + span { padding-left: 0.75rem; border-left: 1px solid var(--ui-border); }
+.gso-po-v2-access .gso-access-list-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.35rem; }
+.gso-po-v2-access .gso-access-list-system { color: var(--ui-text-tertiary); font-size: 0.7rem; font-style: italic; }
+.gso-po-v2-access .gso-access-list-empty { padding: 1rem; }
+.gso-po-v2-access .gso-access-grants-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; min-width: 0; }
+.gso-po-v2-access .gso-access-grants-grid > .gso-ui-card { min-width: 0; }
+.gso-po-v2-access .gso-ui-groups--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: min(18rem, calc(100vh - 31rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.15rem 0.2rem 0.75rem 0;
+  scrollbar-gutter: stable;
+}
+.gso-po-v2-access .gso-ui-groups--compact .gso-ui-toggle {
+  grid-column: auto;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+}
+.gso-access-summary-block { display: grid; gap: 0.25rem; padding-top: 0.25rem; }
+.gso-access-summary-block strong { color: var(--ui-text); font-size: 0.8rem; }
+.gso-access-summary-block p { margin: 0; color: var(--ui-text-secondary); font-size: 0.72rem; line-height: 1.45; }
+.gso-access-modal-layer { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 1.25rem; }
+.gso-access-modal-scrim { position: absolute; inset: 0; border: 0; background: rgba(3, 10, 24, 0.72); cursor: default; }
+.gso-access-modal {
+  position: relative;
+  width: min(42rem, 100%);
+  max-height: min(42rem, calc(100vh - 2.5rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--one-radius-panel);
+  background: var(--one-panel-bg);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.35);
+}
+.gso-access-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--ui-border); }
+.gso-access-modal-header h2 { margin: 0.15rem 0 0; color: var(--ui-text); font-size: 1rem; font-weight: 650; }
+.gso-access-modal-header p { max-width: 34rem; margin: 0.35rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.gso-access-modal-header .gso-access-modal-kicker { margin: 0; color: var(--ui-primary); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.gso-access-modal-close { display: inline-grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--ui-border); border-radius: 0.45rem; background: transparent; color: var(--ui-text-secondary); font-size: 1.15rem; line-height: 1; cursor: pointer; }
+.gso-access-modal-close:hover { border-color: var(--ui-border-strong); color: var(--ui-text); }
+.gso-access-modal-body { padding: 1.25rem; }
 @media (max-width: 1180px) {
   .gso-po-v2-access .gso-ui-split--wide-detail {
     grid-template-columns: minmax(0, 1fr);
   }
+  .gso-po-v2-access .gso-access-grants-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .gso-po-v2-access .gso-access-list-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .gso-po-v2-access .gso-access-list-meta { grid-column: 1 / -1; }
+  .gso-po-v2-access .gso-access-list-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+@media (max-width: 640px) {
+  .gso-po-v2-access .gso-ui-groups--compact { grid-template-columns: minmax(0, 1fr); max-height: 16rem; }
+  .gso-access-modal-layer { padding: 0.5rem; }
+  .gso-access-modal { max-height: calc(100vh - 1rem); }
 }
 @media (min-width: 1181px) and (max-width: 1366px) {
   .gso-po-v2-access .gso-ui-access-drawer {

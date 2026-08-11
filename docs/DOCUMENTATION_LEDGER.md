@@ -7267,3 +7267,21 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - **Validação prevista:** typecheck, build, lint, auditoria documental, teste
   contratual e teste controlado do launcher/porta; QA autenticado depende da
   sessão local disponível.
+
+## ACCESS CONTROL V2 — listas compactas, edição contextual e remoção de Convites — 2026-08-11
+
+- **Escopo:** `/admin/access`, somente a superfície de Usuários, Estrutura e
+  Perfis; dados e APIs históricas de convite permanecem fora da UI.
+- **Decisão UX:** Estrutura e Perfis deixaram de apresentar tabelas largas;
+  cada recurso aparece em lista compacta com seleção, estado, contagens úteis e
+  ações. Editar área e editar perfil abrem diálogo contextual identificado.
+- **Permissões de telas:** os catálogos por perfil e por colaborador foram
+  reorganizados em painéis paralelos com grupos compactos e rolagem interna.
+- **Documentos atualizados:** `PROJECT_STATE.md`,
+  `docs/design/screens/ADMIN_ACCESS.md`,
+  `docs/design/screens/ADMIN_ACCESS_BLUEPRINT_SPEC.md`,
+  `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`,
+  `docs/design/SETTINGS_BLUEPRINT_V4_REFACTOR_SPEC.md` e o relatório de Access
+  Control V2.
+- **Risco restante:** QA visual autenticado ainda depende da sessão local; não
+  houve alteração de banco, contrato, secret, push, deploy ou migration remota.
