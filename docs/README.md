@@ -1,5 +1,7 @@
 # Docs
 
+- [Handoff Recharts 3 e reconciliação da suíte](./reports/2026-08-11_recharts-suite-reconciliation-handoff.md) — migração concluída e falhas amplas classificadas para a próxima publicação.
+
 ## Decisão visual vigente — Administração e Configurações
 
 - [Contrato Visual de Administração e Configurações V1](./specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md) — precedência local para shell, Usuários, Histórico, Fontes e Integrações a partir de 2026-08-09.

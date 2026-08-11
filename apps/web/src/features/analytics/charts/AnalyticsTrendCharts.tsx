@@ -90,7 +90,7 @@ export function SupportTrendChart({ data }: { data: SupportTrendPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-        <CartesianGrid {...grade} vertical={false} />
+        <CartesianGrid {...grade} yAxisId="mes" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
         <YAxis yAxisId="mes" {...eixo} tickLine={false} axisLine={false} width={48} tickFormatter={contagem} />
         {/* A fila acumulada vive em eixo próprio: ela cresce em ordem de
@@ -108,7 +108,7 @@ export function SupportTrendChart({ data }: { data: SupportTrendPoint[] }) {
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) => [contagem(value), name]}
+          formatter={(value, name) => [typeof value === 'number' ? contagem(value) : '—', name ?? '']}
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <ReferenceLine yAxisId="mes" y={0} stroke="var(--minimal-border-strong)" />
@@ -141,7 +141,7 @@ export function CommercialTrendChart({ data }: { data: CommercialTrendPoint[] })
   return (
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-        <CartesianGrid {...grade} vertical={false} />
+        <CartesianGrid {...grade} yAxisId="qtd" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
         <YAxis yAxisId="qtd" {...eixo} tickLine={false} axisLine={false} width={44} tickFormatter={contagem} />
         <YAxis
@@ -156,10 +156,12 @@ export function CommercialTrendChart({ data }: { data: CommercialTrendPoint[] })
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) =>
-            name === 'Taxa de ganho'
-              ? [`${value.toLocaleString('pt-BR')}%`, name]
-              : [contagem(value), name]
+          formatter={(value, name) =>
+            typeof value !== 'number'
+              ? ['—', name ?? '']
+              : name === 'Taxa de ganho'
+                ? [`${value.toLocaleString('pt-BR')}%`, name]
+                : [contagem(value), name ?? '']
           }
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
@@ -195,7 +197,7 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
-        <CartesianGrid {...grade} vertical={false} />
+        <CartesianGrid {...grade} yAxisId="mov" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
         <YAxis yAxisId="mov" {...eixo} tickLine={false} axisLine={false} width={64} tickFormatter={moedaCurta} />
         {/* O previsto de um mês de vencimento concentrado é ordem de grandeza
@@ -212,7 +214,7 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
         <Tooltip
           contentStyle={caixaTooltip}
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value: number, name: string) => [formatCurrencyBRL(value), name]}
+          formatter={(value, name) => [typeof value === 'number' ? formatCurrencyBRL(value) : '—', name ?? '']}
         />
         <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <Area

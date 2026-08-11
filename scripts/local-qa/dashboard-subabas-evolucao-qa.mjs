@@ -127,10 +127,19 @@ async function inspecionar(browser, dominio, tema, viewport, storageState) {
   try {
     await page.goto(`${baseUrl}${dominio.path}`, { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
-    await page.waitForTimeout(900);
+    // A resposta de autenticação pode chegar depois do primeiro networkidle,
+    // especialmente no viewport de notebook. Não capture o estado transitório
+    // "Consultando a superfície" como se fosse uma tela sem sub-abas.
+    await page.waitForFunction(() => {
+      const text = document.body.innerText;
+      const carregando = /Consultando a superfície|Estamos preparando a próxima área/.test(text);
+      const superfíciePronta = /Posição|Nenhum dado financeiro|Dados financeiros ainda não disponíveis|Fonte financeira não configurada|Dados OMIE indisponíveis|Não foi possível carregar/.test(text);
+      return !carregando && superfíciePronta;
+    }, { timeout: 30_000 }).catch(() => {});
+    await page.waitForTimeout(300);
 
     // --- Sub-aba de posição -------------------------------------------------
-    const abaPosicao = page.getByRole('button', { name: 'Posição', exact: true });
+    const abaPosicao = page.getByRole('button', { name: /Posi/ });
     const temSubAbas = await abaPosicao.count() > 0;
 
     const textoPosicao = await page.locator('body').innerText();
@@ -158,7 +167,7 @@ async function inspecionar(browser, dominio, tema, viewport, storageState) {
     let temGraos = false;
     let mensagemIndisponivel = null;
 
-    const abaEvolucao = page.getByRole('button', { name: 'Evolução', exact: true });
+    const abaEvolucao = page.getByRole('button', { name: /Evolu/ });
     if (await abaEvolucao.count() > 0) {
       await abaEvolucao.first().click();
       await page.waitForTimeout(1400);

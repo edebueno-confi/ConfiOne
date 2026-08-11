@@ -48,6 +48,15 @@ test('medidas de ordem de grandeza diferente ficam em eixos separados', () => {
   }
 });
 
+test('cada grid de gráfico multi-eixo fica ligado ao eixo principal', () => {
+  // Recharts 3 deixou a resolução do eixo do CartesianGrid determinística;
+  // sem esse vínculo, as linhas horizontais podem deixar de ser desenhadas.
+  for (const eixo of ['mes', 'qtd', 'mov']) {
+    assert.match(charts, new RegExp(`<CartesianGrid[^>]*yAxisId="${eixo}"`),
+      `o grid precisa apontar para o eixo ${eixo}`);
+  }
+});
+
 test('o zero do saldo tem linha de referência', () => {
   // Sem ela, um saldo negativo parece apenas uma barra menor.
   assert.match(charts, /<ReferenceLine[^>]*y=\{0\}/);

@@ -1,5 +1,23 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## RECHARTS-3-HANDOFF — Migração e reconciliação da suíte — 2026-08-11
+
+- **Relatório:** `docs/reports/2026-08-11_recharts-suite-reconciliation-handoff.md`.
+- **Resumo:** Recharts atualizado de 2.15.4 para 3.10.1, com typecheck, build,
+  lint, quality gate, auditoria de dependências, testes focados e QA local
+  aprovados. A suíte ampla permanece em 492/531, com 39 falhas não relacionadas
+  ao Recharts.
+- **Decisão:** as falhas foram documentadas por grupos de Access, HubSpot,
+  Analytics/read models, UI/brand e harness. Não foram mascaradas nem removidas.
+- **Superfícies afetadas:** gráficos de Analytics e seus testes; nenhum backend,
+  migration remota, RPC, view, RLS, credencial ou sincronização externa foi
+  alterado neste lote.
+- **Riscos restantes:** reconciliar testes stale com os contratos atuais antes de
+  push/deploy; não ignorar os invariantes de segurança e ingestão do HubSpot em
+  releases dessa integração; preservar alterações de sessões paralelas.
+- **Próximo passo:** executar a reconciliação por grupo conforme o handoff antes
+  do próximo gate de publicação.
+
 ## CONFI-ONE-V1 — Blueprint Alignment & Claude Handoff — 2026-08-10
 
 - **Handoff Claude:** Relatório completo gerado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.

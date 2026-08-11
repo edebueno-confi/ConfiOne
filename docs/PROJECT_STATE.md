@@ -1,5 +1,24 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — Recharts 3 e reconciliação de suíte — 2026-08-11
+
+- `apps/web` usa `recharts` `3.10.1`; a migração a partir de `2.15.4` foi
+  validada com typecheck, build, lint sem erros, quality gate, auditoria de
+  dependências, testes focados e QA local desktop/mobile.
+- Os gráficos de Analytics mantêm `Tooltip`, `Legend`, eixos, grids multi-eixo,
+  `ResponsiveContainer`, `Cell`, `ReferenceLine`, barras, linhas e áreas sem
+  uso de APIs internas ou removidas do Recharts 3.
+- A suíte ampla atual possui 531 testes, com 492 aprovados e 39 falhos. As
+  falhas estão documentadas em
+  `docs/reports/2026-08-11_recharts-suite-reconciliation-handoff.md` e são
+  principalmente divergências de contratos legados/stale em Access, HubSpot,
+  Analytics/read models, UI/brand e harness.
+- A suíte ampla não deve ser declarada verde nem simplesmente ignorada em
+  releases de Access ou HubSpot. A migração Recharts pode ser validada pelo
+  lote focado enquanto a reconciliação dos demais contratos permanece pendente.
+- O checkout está sujeito a alterações de sessões paralelas. Qualquer commit,
+  push ou deploy deve usar staging seletivo e revisar o diff por proprietário.
+
 > **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
 
 ## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
