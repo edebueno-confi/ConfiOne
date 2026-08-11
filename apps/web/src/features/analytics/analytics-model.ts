@@ -286,6 +286,7 @@ export interface FinanceCsBucket {
 export interface FinanceUnmatchedCompany {
   client: string;
   taxId: string | null;
+  omieClientCode: string | null;
   titles: number;
   balance: number;
   overdueBalance: number;
@@ -698,7 +699,7 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
       identityIncompleteBalance: toNumber(recon.identity_incomplete_balance),
       noHubspotCompanyBalance: toNumber(recon.no_hubspot_company_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
-      unmatchedCompanies: unmatchedCompanies.map((row) => ({ client: toText(row.client) || 'Empresa sem nome', taxId: row.tax_id ? toText(row.tax_id) : null, titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance), nameMatches: toNumber(row.name_matches) })),
+      unmatchedCompanies: unmatchedCompanies.map((row) => ({ client: toText(row.client) || 'Empresa sem nome', taxId: row.tax_id ? toText(row.tax_id) : null, omieClientCode: row.omie_client_code ? toText(row.omie_client_code) : null, titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance), nameMatches: toNumber(row.name_matches) })),
       identityIssues: identityIssues.map((row) => ({ omieClientCode: toText(row.omie_client_code) || 'Sem código OMIE', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
     state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE indisponível' : 'OMIE API', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
