@@ -4,13 +4,18 @@ import { authorizeCsRunner, runnerError } from '../_shared/hubspot-cs-runner.ts'
 
 type WorkerResult = { status: number; payload: Record<string, unknown> | null };
 
-function scheduleContinuation(base: string, key: string, secret: string) {
+function scheduleContinuation(base: string, key: string, secret: string | null, authorization: string | null) {
   // Cada invocacao consome no maximo 12 itens. A proxima e disparada em segundo
   // plano para nao prender a requisicao original nem criar uma cadeia de awaits.
   EdgeRuntime.waitUntil(
     fetch(`${base}/functions/v1/hubspot-orchestrator-dispatcher`, {
       method: 'POST',
-      headers: { apikey: key, 'Content-Type': 'application/json', 'x-analytics-sync-secret': secret },
+      headers: {
+        apikey: key,
+        'Content-Type': 'application/json',
+        ...(secret ? { 'x-analytics-sync-secret': secret } : {}),
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
       body: '{}',
     }).then((response) => {
       if (!response.ok) console.warn(`Continuidade do dispatcher retornou HTTP ${response.status}.`);
@@ -61,8 +66,8 @@ Deno.serve(async (req) => {
     // O ultimo worker pode ter concluido a pagina antes de enxergar que era o
     // ultimo item. Quando a fila fica ociosa, a finalizacao e tentada de novo.
     const finalized = idle ? await finalizeIdleRuns(client) : [];
-    const continuationScheduled = Boolean(secret) && !idle && results.length === 12;
-    if (continuationScheduled) scheduleContinuation(base, key, secret);
+    const continuationScheduled = Boolean(secret || authorization) && !idle && results.length === 12;
+    if (continuationScheduled) scheduleContinuation(base, key, secret, authorization);
 
     return jsonResponse({
       ok: results.every((result) => result.status < 400),

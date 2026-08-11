@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 import { fetchCompaniesPage, fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwnersPage, fetchPipelineDefinitions } from '../_shared/hubspot.ts';
-import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow, toIsoTimestamp } from '../_shared/hubspot-cs-runner.ts';
 import { createSyncRequestTelemetryBuffer } from '../_shared/sync-request-telemetry.ts';
 
 function failure(error: unknown, attempts: number) {
@@ -62,14 +62,14 @@ Deno.serve(async (req) => {
         if (rows.length) { const { error } = await client.from('analytics_hubspot_deal_staging').upsert(rows, { onConflict: 'parent_run_id,deal_id' }); if (error) throw error; }
       } else if (item.object_type === 'shared_companies') {
         const page = await fetchCompaniesPage(
-          ['name','domain','cnpj','cnpj__chave_unica_','razao_social','nome_fantasia___aftersale','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'],
+          ['name','domain','cnpj','cnpj__chave_unica_','razao_social','nome_fantasia___aftersale','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale','notes_last_contacted'],
           token,
           { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, observer: telemetry.observer },
         );
         const companies = page.records;
         nextCursor = page.nextCursor;
         receivedCount = companies.length;
-        if (companies.length) { const rows = companies.map((r) => ({ parent_run_id:item.run_id, company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??r.properties.cnpj__chave_unica_??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('analytics_hubspot_company_staging').upsert(rows.slice(offset, offset + 500),{onConflict:'parent_run_id,company_id'}); if(error) throw error; } }
+        if (companies.length) { const rows = companies.map((r) => ({ parent_run_id:item.run_id, company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??r.properties.cnpj__chave_unica_??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,last_activity_at:toIsoTimestamp(r.properties.notes_last_contacted),raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('analytics_hubspot_company_staging').upsert(rows.slice(offset, offset + 500),{onConflict:'parent_run_id,company_id'}); if(error) throw error; } }
       } else if (item.object_type === 'shared_owners') {
         const page = await fetchOwnersPage(token, { cursor: item.cursor, observer: telemetry.observer });
         nextCursor = page.nextCursor;

@@ -23,6 +23,7 @@ import { AnalyticsOperationScope } from './AnalyticsOperationScope';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart } from './charts/AnalyticsCharts';
+import { CommercialOwnerPerformanceChart } from './charts/OwnerPerformanceCharts';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
@@ -132,7 +133,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const { funnel, byPipeline, byOwner, state: dataState } = state;
   const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
   const commercialKpiDetails = mapCommercialKpiDetails(kpiPayload);
-  const ownersWithPeriodActivity = commercialKpiDetails.byOwner.filter((owner) => owner.openDeals > 0 || owner.wonDeals > 0);
+  const ownersWithPeriodActivity = commercialKpiDetails.byOwner.filter((owner) => owner.openDeals > 0 || owner.wonDeals > 0 || owner.lostDeals > 0);
   const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
   const pipelineOptions = configuredPipelines.map((pipeline) => {
@@ -162,15 +163,21 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
               )}
             </ChartCard>
           ) : null}
-          {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Abertos agora e ganhos fechados dentro do recorte selecionado.">
+          {dataState?.status !== 'empty' ? <ChartCard title="Performance comercial por responsável" description="Volume por pessoa: carteira aberta agora e negócios encerrados no período.">
             {ownersWithPeriodActivity.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="gso-analytics-responsive-table w-full min-w-[520px] text-sm">
+              <>
+              <CommercialOwnerPerformanceChart owners={ownersWithPeriodActivity} />
+              <div className="mt-4 overflow-x-auto">
+                <table className="gso-analytics-responsive-table w-full min-w-[760px] text-sm">
                   <thead>
                     <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
                       <th className="py-2 pr-4">Responsável</th>
                       <th className="py-2 pr-4 text-right">Abertos agora</th>
+                      <th className="py-2 pr-4 text-right">Pipeline aberto</th>
                       <th className="py-2 pr-4 text-right">Ganhos no período</th>
+                      <th className="py-2 pr-4 text-right">Perdidos</th>
+                      <th className="py-2 pr-4 text-right">Conversão</th>
+                      <th className="py-2 pr-4 text-right">Ciclo mediano</th>
                       <th className="py-2 text-right">Receita ganha</th>
                     </tr>
                   </thead>
@@ -184,8 +191,20 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
                         <td data-label="Abertos agora" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
                           {owner.openDeals.toLocaleString('pt-BR')}
                         </td>
+                        <td data-label="Pipeline aberto" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">
+                          {formatCurrencyBRL(owner.openAmount)}
+                        </td>
                         <td data-label="Ganhos no período" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
                           {owner.wonDeals.toLocaleString('pt-BR')}
+                        </td>
+                        <td data-label="Perdidos" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">
+                          {owner.lostDeals.toLocaleString('pt-BR')}
+                        </td>
+                        <td data-label="Conversao" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">
+                          {formatOwnerRate(owner.winRate)}
+                        </td>
+                        <td data-label="Ciclo mediano" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">
+                          {owner.medianCycleDays === null ? 'Indisponivel' : `${owner.medianCycleDays.toLocaleString('pt-BR')} dias`}
                         </td>
                         <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
                           {formatCurrencyBRL(owner.wonAmount)}
@@ -195,10 +214,15 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
                   </tbody>
                 </table>
               </div>
+              <p className="mt-3 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">Esses números são agregados pelo responsável nativo do negócio no HubSpot. Conversão e ciclo só aparecem quando a coorte de fechamentos possui base suficiente; tarefas, reuniões, ligações e e-mails ainda não têm read model publicado neste ambiente.</p>
+              </>
             ) : (
               <MinimalState title="Sem responsáveis" description="Nenhum negócio aberto ou ganho foi atribuído no recorte." />
             )}
           </ChartCard> : null}
+          <ChartCard title="Tarefas e atividades comerciais" description="Ações pendentes por pessoa ainda dependem de uma ingestão de atividades validada no backend.">
+            <MinimalState title="Atividades indisponíveis" description="O dashboard ainda não publica tarefas, reuniões, ligações ou e-mails do HubSpot como read model. Nenhuma pendência é estimada a partir de negócios ou atendimentos." />
+          </ChartCard>
           {kpiPayload ? <ChartCard title="Ganhos no período" description="Negócios efetivamente fechados como ganho no intervalo selecionado.">
             {commercialKpiDetails.closedWins.length > 0 ? (
               <div className="overflow-x-auto">
@@ -254,6 +278,10 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
 function formatCommercialCloseDate(value: string): string {
   const [year, month, day] = value.split('-');
   return year && month && day ? `${day}/${month}/${year}` : 'Data não informada';
+}
+
+function formatOwnerRate(value: number | null): string {
+  return value === null ? 'Indisponível' : `${Math.round(value * 100).toLocaleString('pt-BR')}%`;
 }
 
 function applyConfiguredPipelineLabels(snapshot: CommercialSnapshot, configs: AnalyticsSourceConfig[]): CommercialSnapshot {

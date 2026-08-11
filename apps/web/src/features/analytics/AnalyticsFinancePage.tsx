@@ -166,6 +166,10 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
       </section>
       </div>
 
+      <ChartCard title="Performance financeira por responsável" description="A dimensão de responsável não está publicada no contrato atual de recebíveis do OMIE.">
+        <MinimalState title="Dimensão por pessoa indisponível" description="O read model financeiro atual expõe títulos, vencimentos, recebimentos, categorias e clientes, mas não publica responsável, cobrador ou centro de responsabilidade por título. Nenhuma atribuição é inferida no frontend." />
+      </ChartCard>
+
       {/* Previsibilidade + Aging por faixa */}
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartCard title="Previsibilidade de recebíveis" description="Quanto deve entrar em cada mês, considerando o vencimento dos títulos ainda em aberto.">
@@ -182,6 +186,11 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
           {snapshot.topDebtors.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem devedores em aberto.</p> : <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[480px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Cliente</th><th className="py-2">CNPJ/CPF</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo em aberto</th></tr></thead><tbody>{snapshot.topDebtors.map((row, index) => <tr key={`${row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Cliente" className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td data-label="CNPJ/CPF" className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Saldo em aberto" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
         </ChartCard>
         <ChartCard title="Carteira cruzada com o financeiro" description="Valores em aberto ligados aos clientes. O cruzamento usa apenas o cadastro fiscal conferido; semelhança de nome serve de pista, nunca de confirmação.">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
+            <div><p className="text-xs font-semibold text-[color:var(--minimal-text)]">Pendências de conciliação</p><p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-secondary)]">Identidade ausente e empresa não encontrada exigem revisão na Governança; o painel financeiro não aplica vínculo automaticamente.</p></div>
+            <Link to="/admin/settings/dashboard-sources" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-xs font-medium text-[color:var(--minimal-text)]">Abrir Governança</Link>
+            <div className="flex flex-wrap gap-2 text-[11px]"><Tag label={`Sem empresa: ${snapshot.csReconciliation.unmatchedCompanies.length.toLocaleString('pt-BR')}`} tone={snapshot.csReconciliation.unmatchedCompanies.length > 0 ? 'warning' : 'neutral'} /><Tag label={`Identidade pendente: ${snapshot.csReconciliation.identityIssues.length.toLocaleString('pt-BR')}`} tone={snapshot.csReconciliation.identityIssues.length > 0 ? 'warning' : 'neutral'} /></div>
+          </div>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Tag label={`Reconciliado: ${formatCurrencyBRL(snapshot.csReconciliation.matchedBalance)}`} tone="positive" />
             <MetricInfo text="Saldo em aberto de títulos cujo CNPJ foi encontrado no cadastro de empresas do HubSpot." />

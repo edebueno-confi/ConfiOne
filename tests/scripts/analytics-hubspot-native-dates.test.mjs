@@ -36,6 +36,24 @@ test('a propriedade inexistente foi substituída pela real em tickets', () => {
   assert.match(properties, /'hs_time_to_first_response_in_operating_hours'/);
 });
 
+test('o adapter solicita todos os campos nativos publicados pelo contrato', () => {
+  const properties = runnerSource.slice(
+    runnerSource.indexOf('CS_TICKET_PROPERTIES'),
+    runnerSource.indexOf('HUBSPOT_DEAL_PROPERTIES'),
+  );
+  for (const property of [
+    'subject',
+    'first_agent_reply_date',
+    'hs_ticket_reopened_at',
+    'time_to_close',
+    'hs_is_one_touch_ticket',
+    'tipo_de_fechamento',
+    'data_de_passgem',
+  ]) {
+    assert.match(properties, new RegExp(`'${property}'`), `campo nativo ausente: ${property}`);
+  }
+});
+
 test('negócios continuam usando a própria propriedade de fechamento', () => {
   // Em Deals `closedate` existe e está preenchido; a correção é só de tickets.
   const dealProperties = runnerSource.slice(runnerSource.indexOf('HUBSPOT_DEAL_PROPERTIES'));
@@ -46,6 +64,14 @@ test('o mapeamento do ticket lê a propriedade certa', () => {
   assert.match(runnerSource, /hs_closed_at: toIsoTimestamp\(record\.properties\.closed_date\)/);
   assert.match(runnerSource, /last_activity_at: toIsoTimestamp\(record\.properties\.hs_lastactivitydate\)/);
   assert.match(runnerSource, /first_response_ms: toMilliseconds\(record\.properties\.hs_time_to_first_response_in_operating_hours\)/);
+  assert.match(runnerSource, /subject: record\.properties\.subject \?\? null/);
+  assert.match(runnerSource, /first_agent_reply_at: toIsoTimestamp\(record\.properties\.first_agent_reply_date\)/);
+  assert.match(runnerSource, /reopened_at: toIsoTimestamp\(record\.properties\.hs_ticket_reopened_at\)/);
+  assert.match(runnerSource, /time_to_close_ms: toMilliseconds\(record\.properties\.time_to_close\)/);
+  assert.match(runnerSource, /is_one_touch: toNullableBoolean\(record\.properties\.hs_is_one_touch_ticket\)/);
+  assert.match(runnerSource, /closure_type: record\.properties\.tipo_de_fechamento \?\? null/);
+  assert.match(runnerSource, /closure_marked_at: toIsoTimestamp\(record\.properties\.data_de_passgem\)/);
+  assert.match(runnerSource, /resolution_note: null/);
 });
 
 test('duração inválida ou negativa não vira número', () => {
@@ -56,7 +82,14 @@ test('duração inválida ou negativa não vira número', () => {
 
 test('a empresa passa a carregar a última interação', () => {
   assert.match(workerSource, /'notes_last_contacted'/);
-  assert.match(workerSource, /last_activity_at:toIsoTimestamp\(r\.properties\.notes_last_contacted\)/);
+  assert.match(workerSource, /last_activity_at:\s*toIsoTimestamp\(r\.properties\.notes_last_contacted\)/);
+});
+
+test('a paginação do worker continua usando cursor e checkpoint', () => {
+  assert.match(workerSource, /fetchTicketsPageByPipeline\(item\.pipeline_id, CS_TICKET_PROPERTIES, token, \{ cursor: item\.cursor/);
+  assert.match(workerSource, /fetchDealsPageByPipeline\(item\.pipeline_id, HUBSPOT_DEAL_PROPERTIES, token, \{ cursor: item\.cursor/);
+  assert.match(workerSource, /nextCursor = page\.nextCursor/);
+  assert.match(workerSource, /p_next_cursor:nextCursor/);
 });
 
 test('a promoção do staging carrega as colunas novas sem perder as antigas', () => {

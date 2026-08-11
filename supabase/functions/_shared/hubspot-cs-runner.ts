@@ -3,8 +3,11 @@ import { getAuthorizationHeader, jsonResponse } from './ticket-evidence.ts';
 
 export const CS_TICKET_PROPERTIES = [
   'hs_pipeline', 'hs_pipeline_stage', 'hubspot_owner_id', 'source_type',
-  'hs_ticket_priority', 'createdate', 'closedate',
-  'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status', 'subject',
+  'hs_ticket_priority', 'createdate', 'closed_date',
+  'hs_lastactivitydate', 'hs_time_to_first_response_in_operating_hours',
+  'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status',
+  'subject', 'first_agent_reply_date', 'hs_ticket_reopened_at', 'time_to_close',
+  'hs_is_one_touch_ticket', 'tipo_de_fechamento', 'data_de_passgem',
 ];
 export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
 
@@ -104,10 +107,24 @@ export function runnerError(error: unknown, status = 502) {
   return jsonResponse({ error: classified.sanitizedMessage, code: classified.code }, { status });
 }
 
-function toIsoTimestamp(value: string | null | undefined): string | null {
+export function toIsoTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function toMilliseconds(value: string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : null;
+}
+
+function toNullableBoolean(value: string | null | undefined): boolean | null {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes', 'sim'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'nao', 'não'].includes(normalized)) return false;
+  return null;
 }
 
 export function toTicketStagingRow(record: { id: string; properties: Record<string, string | null> }, pipelineId: string, parentRunId: string, pageNumber: number) {
@@ -120,7 +137,17 @@ export function toTicketStagingRow(record: { id: string; properties: Record<stri
     source_type: record.properties.source_type ?? null,
     priority: record.properties.hs_ticket_priority ?? null,
     hs_created_at: toIsoTimestamp(record.properties.createdate),
-    hs_closed_at: toIsoTimestamp(record.properties.closedate),
+    hs_closed_at: toIsoTimestamp(record.properties.closed_date),
+    last_activity_at: toIsoTimestamp(record.properties.hs_lastactivitydate),
+    first_response_ms: toMilliseconds(record.properties.hs_time_to_first_response_in_operating_hours),
+    subject: record.properties.subject ?? null,
+    first_agent_reply_at: toIsoTimestamp(record.properties.first_agent_reply_date),
+    reopened_at: toIsoTimestamp(record.properties.hs_ticket_reopened_at),
+    time_to_close_ms: toMilliseconds(record.properties.time_to_close),
+    is_one_touch: toNullableBoolean(record.properties.hs_is_one_touch_ticket),
+    closure_type: record.properties.tipo_de_fechamento ?? null,
+    closure_marked_at: toIsoTimestamp(record.properties.data_de_passgem),
+    resolution_note: null,
     time_to_first_response_sla_status: record.properties.hs_time_to_first_response_sla_status ?? null,
     time_to_close_sla_status: record.properties.hs_time_to_close_sla_status ?? null,
     raw: record.properties,
