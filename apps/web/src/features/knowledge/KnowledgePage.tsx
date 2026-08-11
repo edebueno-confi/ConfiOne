@@ -2167,10 +2167,25 @@ export function KnowledgePage() {
       <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="gso-ui-header-heading space-y-1">
-            <h1>Conhecimento</h1>
-            <p>Artigos, revisão e publicação.</p>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-brand-blue)]">Cockpit do conhecimento</p>
+            <h1>Centrais de ajuda</h1>
+            <p>Administre conteúdo, categorias, revisão e publicação por marca.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label="Central ativa">
+              <SelectInput
+                aria-label="Selecionar central de ajuda"
+                className="h-10 min-w-[220px] rounded-md px-3.5 text-[0.86rem]"
+                onChange={(event) => {
+                  setSelectedSpaceId(event.target.value || null);
+                  setSelectedCategoryId('all');
+                  setCurrentPage(1);
+                }}
+                value={selectedSpaceId ?? ''}
+              >
+                {spaces.map((space) => <option key={space.id} value={space.id}>{space.display_name}</option>)}
+              </SelectInput>
+            </Field>
             <AppButton
               className="min-h-9 gap-2 rounded-md px-4 text-sm"
               disabled={!selectedSpace}
@@ -2181,6 +2196,41 @@ export function KnowledgePage() {
             </AppButton>
           </div>
         </div>
+      </section>
+
+      <section aria-label="Centrais de ajuda disponíveis" className="grid shrink-0 gap-3 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-3 sm:grid-cols-2 xl:grid-cols-3">
+        {spaces.map((space) => {
+          const active = space.id === selectedSpaceId;
+          return (
+            <button
+              aria-pressed={active}
+              className={cx(
+                'rounded-xl border px-4 py-3 text-left transition',
+                active ? 'border-[color:var(--color-brand-blue)] bg-[rgba(47,107,255,0.08)] shadow-[0_8px_24px_rgba(47,107,255,0.1)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] hover:border-[color:var(--minimal-border-strong)]',
+              )}
+              key={space.id}
+              onClick={() => {
+                setSelectedSpaceId(space.id);
+                setSelectedCategoryId('all');
+                setCurrentPage(1);
+              }}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[color:var(--minimal-text)]">{space.display_name}</p>
+                  <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">{space.brand_name ?? space.slug}</p>
+                </div>
+                <StatusPill tone={space.status === 'active' ? 'positive' : 'default'}>{space.status === 'active' ? 'Ativa' : space.status}</StatusPill>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[color:var(--minimal-border)] pt-3 text-xs">
+                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.article_count}</strong>artigos</span>
+                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.published_article_count}</strong>publicados</span>
+                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.category_count}</strong>categorias</span>
+              </div>
+            </button>
+          );
+        })}
       </section>
 
       <div className="min-h-0 flex-none overflow-visible">
