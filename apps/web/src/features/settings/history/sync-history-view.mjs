@@ -118,7 +118,16 @@ export function groupHistoryRows(rows) {
     const key = row.cycleId || row.correlationId || row.runId || `${row.startedAt}-${row.status}`;
     grouped.set(key, [...(grouped.get(key) ?? []), row]);
   }
-  return [...grouped.values()];
+  return [...grouped.values()].map((group) => group.slice().sort((left, right) => {
+    // O cabeçalho do ciclo vem sempre antes das etapas, independentemente da
+    // ordem em que o read model devolve as linhas.
+    if (left.rowKind !== right.rowKind) return left.rowKind === 'cycle' ? -1 : 1;
+    const leftTime = new Date(left.startedAt).getTime();
+    const rightTime = new Date(right.startedAt).getTime();
+    const safeLeft = Number.isFinite(leftTime) ? leftTime : 0;
+    const safeRight = Number.isFinite(rightTime) ? rightTime : 0;
+    return safeLeft - safeRight;
+  }));
 }
 
 /**
