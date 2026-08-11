@@ -70,6 +70,7 @@ function rotuloPeriodo(value: string): string {
 }
 
 const contagem = (value: number) => value.toLocaleString('pt-BR');
+const formatCurrencyBRLNumber = (number: number) => formatCurrencyBRL(number);
 
 /** Compacta valores grandes no eixo sem perder a ordem de grandeza. */
 function moedaCurta(value: number): string {
@@ -223,7 +224,7 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
           wrapperStyle={tooltipWrapper}
           axisId="mov"
           labelFormatter={(value) => rotuloPeriodo(String(value))}
-          formatter={(value, name) => [typeof value === 'number' ? formatCurrencyBRL(value) : '—', name ?? '']}
+          formatter={(value, name) => [typeof value === 'number' ? formatCurrencyBRLNumber(value) : '—', name ?? '']}
         />
         <Legend position="bottom" layout="horizontal" align="left" itemSorter={null} wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <Area
