@@ -202,7 +202,7 @@ function Comparison({ item, candidate, choose }: { item: ReconciliationItem; can
         <div className="gso-ui-reconciliation-candidates">
           <div className="gso-ui-section-heading"><div><h4>Candidatas no HubSpot</h4><p>Escolha uma candidata para revisar; foco não significa confirmação.</p></div></div>
           {item.candidates.length ? (
-            <UiTable labelledBy="reconciliation-candidates-title">
+            <UiTable className="gso-ui-table--reconciliation" labelledBy="reconciliation-candidates-title">
               <thead><tr><th scope="col">Empresa</th><th scope="col">Score</th><th scope="col">Decisão atual</th></tr></thead>
               <tbody>
                 {item.candidates.map((entry) => (

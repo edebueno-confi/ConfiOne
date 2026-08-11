@@ -2272,6 +2272,12 @@
 @media (min-width: 1280px) {
   .gso-knowledge-article-table { min-width: 0 !important; }
 }
+@media (max-width: 1279px) {
+  .gso-knowledge-article-table { min-width: 0 !important; }
+  .gso-knowledge-table-scroll { overflow-x: hidden; }
+  .gso-knowledge-article-table th:last-child,
+  .gso-knowledge-article-table td:last-child { position: static; box-shadow: none; }
+}
 @media (max-width: 760px) { .gso-hd-current-line { grid-template-columns: 1fr; }.gso-hd-current-line .gso-hd-metric, .gso-hd-current-line .gso-hd-metric:first-child { border-right: 0; border-bottom: 1px solid var(--hd-border); padding: 0.6rem 0; }.gso-hd-current-line .gso-hd-metric:last-child { border-bottom: 0; } }
 
 /* Dashboard Visual System V1 — cockpit editorial de decisão. */

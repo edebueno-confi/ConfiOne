@@ -8,6 +8,7 @@ export interface HistoryFilters {
   source: string;
   status: string;
   trigger: string;
+  sort: string;
 }
 
 export interface HistoryOption {
@@ -26,6 +27,7 @@ export interface HistoryCounts {
   readonly failed: number;
   readonly running: number;
   readonly processed: number;
+  readonly averageDurationMs: number;
 }
 
 export interface HistoryPage<T> {
@@ -42,6 +44,7 @@ export const PERIOD_OPTIONS: readonly HistoryPeriodOption[];
 export const SOURCE_OPTIONS: readonly HistoryOption[];
 export const STATUS_OPTIONS: readonly HistoryOption[];
 export const TRIGGER_OPTIONS: readonly HistoryOption[];
+export const SORT_OPTIONS: readonly HistoryOption[];
 export const DEFAULT_HISTORY_FILTERS: HistoryFilters;
 
 export function statusLabel(value: string): string;
@@ -51,6 +54,7 @@ export function cycleRowOf(rows: readonly AnalyticsSyncHistoryRow[]): AnalyticsS
 export function resolveGroupStatus(rows: readonly AnalyticsSyncHistoryRow[]): string;
 export function groupHistoryRows(rows: readonly AnalyticsSyncHistoryRow[]): AnalyticsSyncHistoryRow[][];
 export function summarizeHistoryGroups(groups: readonly AnalyticsSyncHistoryRow[][]): HistoryCounts;
+export function sortHistoryGroups(groups: readonly AnalyticsSyncHistoryRow[][], order?: string): AnalyticsSyncHistoryRow[][];
 export function filterHistoryGroups(
   groups: readonly AnalyticsSyncHistoryRow[][],
   filters: Partial<HistoryFilters>,

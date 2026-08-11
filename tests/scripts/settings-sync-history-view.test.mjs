@@ -10,8 +10,10 @@ const {
   hasActiveHistoryFilters,
   paginate,
   resolveGroupStatus,
+  sortHistoryGroups,
   statusBucket,
   statusLabel,
+  summarizeHistoryGroups,
 } = await import('../../apps/web/src/features/settings/history/sync-history-view.mjs');
 
 const NOW = new Date('2026-08-05T12:00:00Z').getTime();
@@ -127,4 +129,21 @@ test('paginação limita a página ao total disponível', () => {
   assert.deepEqual([last.page, last.from, last.to], [3, 21, 23]);
   const empty = paginate([], 1, 10);
   assert.deepEqual([empty.from, empty.to, empty.total, empty.pageCount], [0, 0, 0, 1]);
+});
+
+test('ordena ciclos pela data escolhida pelo operador', () => {
+  const groups = groupHistoryRows([
+    cycle({ cycleId: 'older', startedAt: '2026-08-01T10:00:00Z' }),
+    cycle({ cycleId: 'newer', startedAt: '2026-08-05T10:00:00Z' }),
+  ]);
+  assert.deepEqual(sortHistoryGroups(groups, 'recent').map((group) => cycleRowOf(group).cycleId), ['newer', 'older']);
+  assert.deepEqual(sortHistoryGroups(groups, 'oldest').map((group) => cycleRowOf(group).cycleId), ['older', 'newer']);
+});
+
+test('resumo calcula somente dados publicados, inclusive duração média', () => {
+  const summary = summarizeHistoryGroups([
+    [cycle({ durationMs: 1000 }), step({ processedCount: 10 })],
+    [cycle({ status: 'failed', durationMs: 3000 }), step({ status: 'failed', processedCount: 5 })],
+  ]);
+  assert.deepEqual(summary, { total: 2, success: 1, partial: 0, failed: 1, running: 0, processed: 15, averageDurationMs: 2000 });
 });

@@ -749,7 +749,7 @@ function UsersPanel(props: {
             </select>
           </div>
         </UiToolbar>
-          <UiTable label="Usuários internos">
+          <UiTable className="gso-ui-table--access-users" label="Usuários internos">
             <thead>
               <tr>
                 <th scope="col">Usuário</th>
@@ -1003,7 +1003,7 @@ function StructurePanel(props: {
             </div>
           </UiToolbar>
 
-          <UiTable label="Tabela de áreas">
+          <UiTable className="gso-ui-table--access-areas" label="Tabela de áreas">
             <thead>
               <tr>
                 {/* A coluna "Atualizado em" foi removida: vw_admin_access_areas nao
@@ -1337,7 +1337,7 @@ function PermissionsCapabilityPanel(props: {
             </div>
           </UiToolbar>
 
-          <UiTable label="Tabela de perfis">
+          <UiTable className="gso-ui-table--access-profiles" label="Tabela de perfis">
             <thead>
               <tr>
                 {/* "Atualizado em" removida: o contrato de perfis nao expoe data

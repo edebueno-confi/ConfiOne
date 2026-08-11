@@ -6,16 +6,18 @@ import type { ReactNode } from 'react';
  */
 export function UiTable({
   children,
+  className,
   label,
   labelledBy,
 }: {
   children: ReactNode;
+  className?: string;
   label?: string;
   labelledBy?: string;
 }) {
   return (
     <div className="gso-ui-table-frame">
-      <table aria-label={label} aria-labelledby={labelledBy} className="gso-ui-table">
+      <table aria-label={label} aria-labelledby={labelledBy} className={['gso-ui-table', className].filter(Boolean).join(' ')}>
         {children}
       </table>
     </div>

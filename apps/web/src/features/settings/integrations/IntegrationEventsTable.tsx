@@ -30,7 +30,7 @@ export function IntegrationEventsTable({ events = [] }: { events?: IntegrationEv
         <p>Últimos eventos de status e sincronização das integrações.</p>
       </header>
       <div className="gso-po-table-wrap">
-        <table className="gso-po-table">
+        <table className="gso-po-table gso-po-table--events">
           <thead>
             <tr>
               {COLUMNS.map((column) => (
