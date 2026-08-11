@@ -52,7 +52,8 @@ const caixaTooltip = {
   padding: '0.5rem 0.65rem',
 };
 
-const legenda = { fontSize: '0.72rem', paddingTop: '0.25rem' };
+const legenda = { fontSize: '0.72rem', paddingTop: '0.35rem', paddingLeft: '0.2rem' };
+const tooltipWrapper = { maxWidth: 'min(18rem, calc(100vw - 2rem))' };
 
 const COR = {
   entrada: 'var(--minimal-border-strong)',
@@ -92,7 +93,7 @@ export function SupportTrendChart({ data }: { data: SupportTrendPoint[] }) {
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
         <CartesianGrid {...grade} yAxisId="mes" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
-        <YAxis yAxisId="mes" {...eixo} tickLine={false} axisLine={false} width={48} tickFormatter={contagem} />
+        <YAxis yAxisId="mes" {...eixo} tickLine={false} axisLine={false} width="auto" tickFormatter={contagem} />
         {/* A fila acumulada vive em eixo próprio: ela cresce em ordem de
             grandeza maior que o movimento de um mês e, compartilhando escala,
             achataria as barras contra o zero. */}
@@ -107,21 +108,24 @@ export function SupportTrendChart({ data }: { data: SupportTrendPoint[] }) {
         />
         <Tooltip
           contentStyle={caixaTooltip}
+          wrapperStyle={tooltipWrapper}
+          axisId="mes"
           labelFormatter={(value) => rotuloPeriodo(String(value))}
           formatter={(value, name) => [typeof value === 'number' ? contagem(value) : '—', name ?? '']}
         />
-        <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
+        <Legend position="bottom" layout="horizontal" align="left" itemSorter={null} wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <ReferenceLine yAxisId="mes" y={0} stroke="var(--minimal-border-strong)" />
-        <Bar yAxisId="mes" dataKey="opened" name="Abertos no mês" fill={COR.entrada} radius={[3, 3, 0, 0]} maxBarSize={22} />
-        <Bar yAxisId="mes" dataKey="resolved" name="Encerrados no mês" fill={COR.positivo} radius={[3, 3, 0, 0]} maxBarSize={22} />
+        <Bar yAxisId="mes" dataKey="opened" name="Abertos no mês" fill={COR.entrada} radius={[4, 4, 0, 0]} maxBarSize={22} activeBar={{ opacity: 0.78 }} />
+        <Bar yAxisId="mes" dataKey="resolved" name="Encerrados no mês" fill={COR.positivo} radius={[4, 4, 0, 0]} maxBarSize={22} activeBar={{ opacity: 0.78 }} />
         <Line
           yAxisId="fila"
           type="linear"
           dataKey="cumulative_balance"
           name="Fila acumulada"
           stroke={COR.atencao}
-          strokeWidth={2}
-          dot={{ r: 2 }}
+          strokeWidth={2.25}
+          dot={{ r: 2.5, strokeWidth: 1.5, fill: 'var(--minimal-surface)' }}
+          activeDot={{ r: 4, strokeWidth: 2, fill: 'var(--minimal-surface)' }}
         />
       </ComposedChart>
     </ResponsiveContainer>
@@ -143,18 +147,20 @@ export function CommercialTrendChart({ data }: { data: CommercialTrendPoint[] })
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
         <CartesianGrid {...grade} yAxisId="qtd" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
-        <YAxis yAxisId="qtd" {...eixo} tickLine={false} axisLine={false} width={44} tickFormatter={contagem} />
+        <YAxis yAxisId="qtd" {...eixo} tickLine={false} axisLine={false} width="auto" tickFormatter={contagem} />
         <YAxis
           yAxisId="taxa"
           orientation="right"
           {...eixo}
           tickLine={false}
           axisLine={false}
-          width={44}
+          width="auto"
           unit="%"
         />
         <Tooltip
           contentStyle={caixaTooltip}
+          wrapperStyle={tooltipWrapper}
+          axisId="qtd"
           labelFormatter={(value) => rotuloPeriodo(String(value))}
           formatter={(value, name) =>
             typeof value !== 'number'
@@ -164,19 +170,20 @@ export function CommercialTrendChart({ data }: { data: CommercialTrendPoint[] })
                 : [contagem(value), name ?? '']
           }
         />
-        <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
+        <Legend position="bottom" layout="horizontal" align="left" itemSorter={null} wrapperStyle={legenda} iconType="circle" iconSize={8} />
         {/* Ganho antes de perda, e em cor de destaque: a ordem da legenda é a
             ordem em que a pergunta é feita. */}
-        <Bar yAxisId="qtd" dataKey="won" name="Ganhos" fill={COR.positivo} radius={[3, 3, 0, 0]} maxBarSize={20} />
-        <Bar yAxisId="qtd" dataKey="lost" name="Perdidos" fill={COR.entrada} radius={[3, 3, 0, 0]} maxBarSize={20} />
+        <Bar yAxisId="qtd" dataKey="won" name="Ganhos" fill={COR.positivo} radius={[4, 4, 0, 0]} maxBarSize={20} activeBar={{ opacity: 0.78 }} />
+        <Bar yAxisId="qtd" dataKey="lost" name="Perdidos" fill={COR.entrada} radius={[4, 4, 0, 0]} maxBarSize={20} activeBar={{ opacity: 0.78 }} />
         <Line
           yAxisId="taxa"
           type="linear"
           dataKey="win_rate"
           name="Taxa de ganho"
           stroke={COR.atencao}
-          strokeWidth={2}
-          dot={{ r: 2 }}
+          strokeWidth={2.25}
+          dot={{ r: 2.5, strokeWidth: 1.5, fill: 'var(--minimal-surface)' }}
+          activeDot={{ r: 4, strokeWidth: 2, fill: 'var(--minimal-surface)' }}
           // Mês sem nada encerrado não tem taxa. Ligar os pontos por cima da
           // lacuna afirmaria uma continuidade que não existe.
           connectNulls={false}
@@ -199,7 +206,7 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
       <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
         <CartesianGrid {...grade} yAxisId="mov" vertical={false} />
         <XAxis dataKey="period" tickFormatter={rotuloPeriodo} {...eixo} tickLine={false} axisLine={false} />
-        <YAxis yAxisId="mov" {...eixo} tickLine={false} axisLine={false} width={64} tickFormatter={moedaCurta} />
+        <YAxis yAxisId="mov" {...eixo} tickLine={false} axisLine={false} width="auto" tickFormatter={moedaCurta} />
         {/* O previsto de um mês de vencimento concentrado é ordem de grandeza
             maior que a movimentação típica; em eixo comum ele apaga as barras. */}
         <YAxis
@@ -208,15 +215,17 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
           {...eixo}
           tickLine={false}
           axisLine={false}
-          width={64}
+          width="auto"
           tickFormatter={moedaCurta}
         />
         <Tooltip
           contentStyle={caixaTooltip}
+          wrapperStyle={tooltipWrapper}
+          axisId="mov"
           labelFormatter={(value) => rotuloPeriodo(String(value))}
           formatter={(value, name) => [typeof value === 'number' ? formatCurrencyBRL(value) : '—', name ?? '']}
         />
-        <Legend wrapperStyle={legenda} iconType="circle" iconSize={8} />
+        <Legend position="bottom" layout="horizontal" align="left" itemSorter={null} wrapperStyle={legenda} iconType="circle" iconSize={8} />
         <Area
           yAxisId="previsto"
           type="linear"
@@ -224,10 +233,12 @@ export function FinanceTrendChart({ data }: { data: FinanceTrendPoint[] }) {
           name="Previsto pelo vencimento"
           stroke={COR.entrada}
           fill={COR.apoio}
+          fillOpacity={0.22}
           strokeWidth={1.5}
+          dot={{ r: 2.5, strokeWidth: 1.5, fill: 'var(--minimal-surface)' }}
         />
-        <Bar yAxisId="mov" dataKey="received" name="Recebido" fill={COR.positivo} radius={[3, 3, 0, 0]} maxBarSize={22} />
-        <Bar yAxisId="mov" dataKey="overdue" name="Vencido sem baixa" fill={COR.critico} radius={[3, 3, 0, 0]} maxBarSize={22} />
+        <Bar yAxisId="mov" dataKey="received" name="Recebido" fill={COR.positivo} radius={[4, 4, 0, 0]} maxBarSize={22} activeBar={{ opacity: 0.78 }} />
+        <Bar yAxisId="mov" dataKey="overdue" name="Vencido sem baixa" fill={COR.critico} radius={[4, 4, 0, 0]} maxBarSize={22} activeBar={{ opacity: 0.78 }} />
       </ComposedChart>
     </ResponsiveContainer>
   );

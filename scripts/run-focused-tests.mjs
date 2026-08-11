@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 // suíte ampla, que possui contratos legados independentes, em um falso gate da
 // migração de Recharts. A suíte completa continua disponível em test:all.
 const focusedTests = [
+  'tests/scripts/analytics-visual-contract.test.mjs',
   'tests/scripts/analytics-trend-charts.test.mjs',
   'tests/scripts/analytics-timeseries-contract.test.mjs',
 ];

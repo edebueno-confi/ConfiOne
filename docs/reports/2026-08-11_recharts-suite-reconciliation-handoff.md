@@ -6,8 +6,8 @@
 - Branch observada: `codex/governanca-dados-tabs`
 - HEAD observado antes do commit deste lote: `a992f05`
 - Migração concluída: `recharts` `2.15.4` → `3.10.1`
-- Suíte focada da migração: 21/21 testes aprovados
-- Suíte ampla atual: 531 testes, 492 aprovados, 39 falhos
+- Suíte focada de Analytics/Recharts e evolução visual: 24/24 testes aprovados
+- Suíte ampla atual: 534 testes, 495 aprovados, 39 falhos
 - As 39 falhas não apontam para os componentes Recharts e não devem ser usadas para reabrir esta migração.
 
 ## Decisão operacional
@@ -29,9 +29,38 @@ Nenhuma das falhas envolve `Tooltip`, `Legend`, `XAxis`, `YAxis`, `CartesianGrid
 
 ## Grupos para a próxima sessão
 
+### Como interpretar as 39 falhas atuais
+
+O número 39 é um diagnóstico da suíte ampla no estado local observado em
+2026-08-11, não um contador de incompatibilidades do Recharts. Ele não deve
+ser ignorado em um release geral, mas pode ser separado do gate desta migração
+porque nenhum teste falho cobre uma API ou componente do Recharts.
+
+Nos casos chamados informalmente de “legados de atos”, o teste está cobrando
+uma ação ou superfície antiga — aba, rota, CTA, menu ou catálogo de telas —
+por exemplo `Convites`, links HTML diretos ou um shell anterior. Isso é um
+legado de contrato de interface, não uma permissão para reintroduzir a ação.
+O próximo agente deve confirmar o contrato vigente em `PROJECT_STATE.md`,
+nas regras de Access e no catálogo de release; só depois deve atualizar o
+teste legado ou corrigir o runtime.
+
+Matriz atual, para o agente que preparar push/deploy:
+
+| Grupo | Testes | Decisão antes de publicar |
+| --- | --- | --- |
+| Access, rotas e release surface | `1`, `12`, `16`, `284`, `371`, `376`, `377`, `378`, `422`, `447`, `474` | reconciliar expectativa histórica com catálogo, guard e rota atuais; não reintroduzir superfícies antigas por regex |
+| HubSpot e contratos de integração | `4`, `57`, `80`, `82`, `83`, `84`, `92`, `93`, `94`, `118` | tratar como bloqueio quando o lote tocar integração; validar propriedades, batches, read-only, sanitização e traduções contra worker/read model reais |
+| Analytics e read models | `63`, `65`, `73`, `212`, `287`, `288`, `293`, `424`, `425`, `431` | conferir primeiro backend/view/RPC e estados `fresh`, `empty` e `unavailable`; só então alterar UI ou teste |
+| UI, marca e tokens | `306`, `315`, `337`, `483`, `485`, `486`, `529`, `531` | comparar com o contrato visual atual e executar QA; não satisfazer snapshots antigos com cor literal ou markup artificial |
+
+Portanto: as falhas podem ser ignoradas apenas no gate específico de Recharts,
+com esta justificativa registrada. Elas não podem ser marcadas como “tudo
+verde” para o monorepo, nem podem ser ignoradas se o agente alterar Access,
+HubSpot, read models ou as superfícies visuais correspondentes.
+
 ### 1. Access, autenticação e release surface — reconciliação obrigatória
 
-Falhas: `1`, `12`, `16`, `281`, `373`, `374`, `375`, `419`, `444`, `471`.
+Falhas: `1`, `12`, `16`, `284`, `371`, `376`, `377`, `378`, `422`, `447`, `474`.
 
 Principais divergências:
 
@@ -61,13 +90,13 @@ Classificação: não são bloqueios Recharts. Também não devem ser ignorados 
 
 ### 3. Analytics e read models — reconciliação de contrato
 
-Falhas: `65`, `73`, `212`, `284`, `285`, `290`, `421`, `422`, `428`.
+Falhas: `63`, `65`, `73`, `212`, `287`, `288`, `293`, `424`, `425`, `431`.
 
 Esses testes verificam separação de fontes, estados `fresh`/`unavailable`, carregamento, histórico de sincronização, semântica de KPIs, taxonomia da home e pluralização. Parte deles pode refletir mudança legítima de contrato; outra parte pode apontar regressão. A revisão deve começar pelo read model/backend e só depois ajustar a UI ou o teste.
 
 ### 4. UI, marca e contratos visuais — reconciliação separada
 
-Falhas: `63`, `303`, `312`, `334`, `368`, `480`, `482`, `483`, `526`, `528`.
+Falhas: `306`, `315`, `337`, `483`, `485`, `486`, `529`, `531`.
 
 São expectativas exatas sobre classes, SVG, ícones, links, labels e tokens Confi One. O contrato visual canônico atual tem precedência sobre snapshots ou regex históricos. Corrigir apenas com comparação ao blueprint/contrato visual vigente e QA visual; não misturar com a migração Recharts.
 
@@ -96,7 +125,7 @@ Antes de push/deploy, a próxima sessão deve:
 
 ## Validação deste handoff
 
-- `npm test`: 21/21 aprovado.
+- `npm test`: 24/24 aprovado.
 - `npm run web:typecheck`: aprovado.
 - `npm run contracts:typecheck`: aprovado.
 - `npm run lint`: aprovado, 0 erros e 193 avisos preexistentes.
@@ -104,7 +133,7 @@ Antes de push/deploy, a próxima sessão deve:
 - `npm run quality:changed`: aprovado, 0 findings.
 - `npm audit --audit-level=high`: 0 vulnerabilidades.
 - QA local das subabas: 18 combinações, 0 achados; dataset local sem dados suficientes para desenhar barras reais.
-- `npm run test:all`: 492 aprovados e 39 falhos; falhas registradas acima.
+- `npm run test:all`: 495 aprovados e 39 falhos; falhas registradas acima.
 
 ## Estado Git e paralelismo
 

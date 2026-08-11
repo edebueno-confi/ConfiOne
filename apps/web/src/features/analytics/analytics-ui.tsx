@@ -112,7 +112,7 @@ export function MetricInfo({ text, content, ariaLabel = 'Como esta métrica é c
 }
 
 export function ChartCard({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return <section className="gso-visual-v1-chart genius-tech-card rounded-xl border border-[color:var(--minimal-border)] px-5 py-4">
+  return <section className="gso-visual-v1-chart genius-tech-card min-w-0 rounded-xl border border-[color:var(--minimal-border)] px-5 py-4">
     <header className="mb-4"><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{title}</h3>{description ? <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{description}</p> : null}</header>
     {children}
   </section>;

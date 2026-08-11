@@ -1,12 +1,15 @@
+import type { ReactNode } from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
+  LabelList,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type BarShapeProps,
 } from 'recharts';
 import {
   formatCurrencyBRL,
@@ -36,9 +39,46 @@ function ticketStatusColor(label: string, isClosed: boolean) {
 
 const AXIS_STYLE = { fontSize: 11, fill: PALETTE.axis } as const;
 
+function formatChartCount(value: unknown): string {
+  return typeof value === 'number' ? value.toLocaleString('pt-BR') : '';
+}
+
+function ChartBarShape(props: BarShapeProps) {
+  const row = (props.payload ?? {}) as {
+    name?: string;
+    kind?: 'funnel' | 'status' | 'stage';
+    isWon?: boolean;
+    isClosed?: boolean;
+    isUnclassified?: boolean;
+  };
+  const fill = row.kind === 'funnel'
+    ? row.isWon
+      ? PALETTE.won
+      : row.isClosed
+        ? PALETTE.lost
+        : PALETTE.primary
+    : row.isUnclassified
+      ? PALETTE.neutral
+      : row.name
+        ? ticketStatusColor(row.name, row.isClosed === true)
+        : PALETTE.primary;
+
+  return <Rectangle {...props} fill={fill} />;
+}
+
+function ChartTooltipContent({ title, value, details }: { title: string; value: string; details?: ReactNode }) {
+  return (
+    <div className="gso-chart-tooltip">
+      <strong className="gso-chart-tooltip__title">{title}</strong>
+      <div className="gso-chart-tooltip__value">{value}</div>
+      {details ? <div className="gso-chart-tooltip__details">{details}</div> : null}
+    </div>
+  );
+}
+
 function ChartFrame({ children, height = 260 }: { children: React.ReactElement; height?: number }) {
   return (
-    <div style={{ width: '100%', height }}>
+    <div className="gso-chart-frame" style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>
@@ -59,6 +99,7 @@ function CompactSummary({ title, rows, unit }: { title: string; rows: Array<{ la
 
 export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] }) {
   const rows = data.map((stage) => ({
+    kind: 'funnel' as const,
     name: stage.label,
     deals: stage.dealCount,
     isWon: stage.isWon,
@@ -71,21 +112,24 @@ export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] 
 
   return (
     <ChartFrame height={Math.max(220, rows.length * 42)}>
-      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 42, top: 8, bottom: 8 }}>
         <CartesianGrid horizontal={false} stroke={PALETTE.grid} />
         <XAxis type="number" allowDecimals={false} tick={AXIS_STYLE} />
-        <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
+        <YAxis type="category" dataKey="name" width="auto" tick={AXIS_STYLE} />
         <Tooltip
           formatter={(value) => [typeof value === 'number' ? `${value} deals` : '—', 'Deals']}
           cursor={{ fill: PALETTE.cursor }}
         />
-        <Bar dataKey="deals" radius={[0, 4, 4, 0]}>
-          {rows.map((row, index) => (
-            <Cell
-              key={index}
-              fill={row.isWon ? PALETTE.won : row.isClosed ? PALETTE.lost : PALETTE.primary}
-            />
-          ))}
+        <Bar dataKey="deals" radius={[0, 5, 5, 0]} shape={ChartBarShape} activeBar={{ opacity: 0.76 }}>
+          <LabelList
+            dataKey="deals"
+            position="right"
+            offset={8}
+            fill={PALETTE.axis}
+            fontSize={11}
+            fontWeight={600}
+            formatter={formatChartCount}
+          />
         </Bar>
       </BarChart>
     </ChartFrame>
@@ -94,6 +138,7 @@ export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] 
 
 export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
   const rows = data.map((status) => ({
+    kind: 'status' as const,
     name: status.label,
     tickets: status.ticketCount,
     isClosed: status.isClosed,
@@ -106,23 +151,35 @@ export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
 
   return (
     <ChartFrame height={Math.max(220, rows.length * 42)}>
-      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+      <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 42, top: 8, bottom: 8 }}>
         <CartesianGrid horizontal={false} stroke={PALETTE.grid} />
         <XAxis type="number" allowDecimals={false} tick={AXIS_STYLE} />
-        <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
+        <YAxis type="category" dataKey="name" width="auto" tick={AXIS_STYLE} />
         <Tooltip
           formatter={(value) => [typeof value === 'number' ? `${value} tickets` : '—', 'Total consolidado']}
           content={({ active, payload }) => {
             const row = payload?.[0]?.payload as (typeof rows)[number] | undefined;
             if (!active || !row) return null;
-            return <div style={{ border: `1px solid ${PALETTE.grid}`, borderRadius: 8, background: 'var(--minimal-surface)', padding: '8px 10px', color: 'var(--minimal-text)', fontSize: 12 }}><strong>{row.name}</strong><div style={{ marginTop: 4 }}>{row.tickets.toLocaleString('pt-BR')} tickets consolidados</div>{row.pipelineBreakdown.length ? <div style={{ marginTop: 6, color: 'var(--minimal-text-secondary)' }}>{row.pipelineBreakdown.map((item) => <div key={`${item.pipelineId}-${item.pipelineLabel}`}>{item.pipelineLabel}: {item.ticketCount.toLocaleString('pt-BR')}</div>)}</div> : null}</div>;
+            return (
+              <ChartTooltipContent
+                title={row.name}
+                value={`${row.tickets.toLocaleString('pt-BR')} tickets consolidados`}
+                details={row.pipelineBreakdown.length ? row.pipelineBreakdown.map((item) => <div key={`${item.pipelineId}-${item.pipelineLabel}`}>{item.pipelineLabel}: {item.ticketCount.toLocaleString('pt-BR')}</div>) : undefined}
+              />
+            );
           }}
           cursor={{ fill: PALETTE.cursor }}
         />
-        <Bar dataKey="tickets" radius={[0, 4, 4, 0]}>
-          {rows.map((row, index) => (
-            <Cell key={index} fill={ticketStatusColor(row.name, row.isClosed)} />
-          ))}
+        <Bar dataKey="tickets" radius={[0, 5, 5, 0]} shape={ChartBarShape} activeBar={{ opacity: 0.76 }}>
+          <LabelList
+            dataKey="tickets"
+            position="right"
+            offset={8}
+            fill={PALETTE.axis}
+            fontSize={11}
+            fontWeight={600}
+            formatter={formatChartCount}
+          />
         </Bar>
       </BarChart>
     </ChartFrame>
@@ -143,6 +200,7 @@ export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
  */
 export function SupportStageChart({ rows }: { rows: StageBreakdownRow[] }) {
   const points = rows.map((row) => ({
+    kind: 'stage' as const,
     name: row.stage,
     tickets: row.openTickets,
     byPipeline: row.byPipeline,
@@ -155,28 +213,34 @@ export function SupportStageChart({ rows }: { rows: StageBreakdownRow[] }) {
 
   return (
     <ChartFrame height={Math.max(220, points.length * 42)}>
-      <BarChart data={points} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+      <BarChart data={points} layout="vertical" margin={{ left: 8, right: 42, top: 8, bottom: 8 }}>
         <CartesianGrid horizontal={false} stroke={PALETTE.grid} />
         <XAxis type="number" allowDecimals={false} tick={AXIS_STYLE} />
-        <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
+        <YAxis type="category" dataKey="name" width="auto" tick={AXIS_STYLE} />
         <Tooltip
           cursor={{ fill: PALETTE.cursor }}
           content={({ active, payload }) => {
             const row = payload?.[0]?.payload as (typeof points)[number] | undefined;
             if (!active || !row) return null;
-            return <div style={{ border: `1px solid ${PALETTE.grid}`, borderRadius: 8, background: 'var(--minimal-surface)', padding: '8px 10px', color: 'var(--minimal-text)', fontSize: 12 }}>
-              <strong>{row.name}</strong>
-              <div style={{ marginTop: 4 }}>{row.tickets.toLocaleString('pt-BR')} aguardando atendimento</div>
-              {row.byPipeline.length > 1 ? <div style={{ marginTop: 6, color: 'var(--minimal-text-secondary)' }}>{row.byPipeline.map((item) => <div key={item.pipelineLabel}>{item.pipelineLabel}: {item.openTickets.toLocaleString('pt-BR')}</div>)}</div> : null}
-            </div>;
+            return (
+              <ChartTooltipContent
+                title={row.name}
+                value={`${row.tickets.toLocaleString('pt-BR')} aguardando atendimento`}
+                details={row.byPipeline.length > 1 ? row.byPipeline.map((item) => <div key={item.pipelineLabel}>{item.pipelineLabel}: {item.openTickets.toLocaleString('pt-BR')}</div>) : undefined}
+              />
+            );
           }}
         />
-        <Bar dataKey="tickets" radius={[0, 4, 4, 0]}>
-          {points.map((row, index) => (
-            // Etapa sem decisão de cruzamento fica em tom neutro: ela não é uma
-            // etapa do processo, é uma pendência de configuração.
-            <Cell key={index} fill={row.isUnclassified ? PALETTE.neutral : ticketStatusColor(row.name, false)} />
-          ))}
+        <Bar dataKey="tickets" radius={[0, 5, 5, 0]} shape={ChartBarShape} activeBar={{ opacity: 0.76 }}>
+          <LabelList
+            dataKey="tickets"
+            position="right"
+            offset={8}
+            fill={PALETTE.axis}
+            fontSize={11}
+            fontWeight={600}
+            formatter={formatChartCount}
+          />
         </Bar>
       </BarChart>
     </ChartFrame>
