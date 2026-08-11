@@ -439,9 +439,13 @@ export function InternalControlPlanePage() {
               functions={functions}
               onCreateArea={() => void runAction(() => createAdminInternalAccessArea(areaForm), 'Área criada.', { title: 'Criar área organizacional?', impact: 'A área ficará disponível para novos vínculos de acesso.' })}
               onCreateFunction={() => void runAction(() => createAdminInternalFunction({ areaKey: functionForm.areaKey, name: functionForm.name, description: functionForm.description, defaultAccessProfileId: functionForm.profileId || null }), 'Função criada.', { title: 'Criar função?', impact: 'A função ficará disponível para atribuições dentro da área escolhida.' })}
+              onUpdateArea={(areaKey, form) => void runAction(() => updateAdminInternalAccessArea({ areaKey, displayName: form.displayName, description: form.description, isActive: form.isActive, managerUserId: form.managerUserId }), 'Área atualizada.', { title: 'Salvar alterações da área?', impact: 'O nome e a descrição da área serão atualizados; vínculos e histórico serão preservados.' })}
               onToggleArea={(area) => void runAction(() => updateAdminInternalAccessArea({ areaKey: area.area_key, displayName: area.display_name, description: area.description ?? '', isActive: !area.is_active, managerUserId: area.manager_user_id }), area.is_active ? 'Área desativada.' : 'Área reativada.', { title: area.is_active ? 'Desativar área?' : 'Reativar área?', impact: area.is_active ? 'Os vínculos e o histórico serão preservados; a área deixará de aparecer como opção padrão para novos acessos.' : 'A área voltará a aparecer como opção para novos acessos.' })}
               onDeleteArea={(area) => void runAction(() => deleteAdminInternalAccessArea(area.area_key), 'Área excluída permanentemente.', { title: `Excluir permanentemente ${area.display_name}?`, impact: 'Esta ação remove a área do catálogo. Só é permitida quando não existem vínculos, funções, convites ou referências legadas.' })}
               onToggleFunction={(item) => void runAction(() => updateAdminInternalFunction({ functionId: item.function_id, name: item.name, description: item.description ?? '', defaultAccessProfileId: item.default_access_profile_id, isActive: !item.is_active }), item.is_active ? 'Função desativada.' : 'Função reativada.', { title: item.is_active ? 'Desativar função?' : 'Reativar função?', impact: 'A alteração será auditada e afeta novas atribuições nessa área.' })}
+              onUpdateFunction={(input) => void runAction(() => updateAdminInternalFunction(input), 'Função atualizada.', { title: 'Salvar alterações da função?', impact: 'A alteração será auditada e afeta novas atribuições nessa área.' })}
+              onAssignUser={(input) => void runAction(() => updateAdminInternalAccessAssignment(input), 'Usuário vinculado à área.', { title: 'Vincular usuário à área?', impact: 'O usuário passará a ter a área, a função e o perfil selecionados como contexto de acesso.' })}
+              onOpenProfiles={() => { selectTab('permissions'); window.requestAnimationFrame(() => document.querySelector<HTMLInputElement>('#new-profile-name')?.focus()); }}
               profiles={profiles}
               setAreaForm={setAreaForm}
               setFunctionForm={setFunctionForm}
@@ -452,15 +456,19 @@ export function InternalControlPlanePage() {
           {tab === 'permissions' ? (
             <>
               <PermissionsCapabilityPanel
+                areas={areas}
                 busy={busy}
                 capabilities={capabilities}
                 onCreate={() => void runAction(() => createAdminAccessProfile(profileForm), 'Perfil criado.', { title: 'Criar perfil?', impact: 'O perfil será criado sem permissões até que sua composição seja salva.' })}
                 onSaveCapabilities={(profileId, keys) => void runAction(() => replaceAdminAccessProfileCapabilities(profileId, keys), 'Permissões do perfil atualizadas.', { title: 'Salvar permissões do perfil?', impact: 'As pessoas vinculadas a este perfil poderão ter suas permissões efetivas alteradas.' })}
                 onToggle={(profile) => void runAction(() => updateAdminAccessProfile({ profileId: profile.access_profile_id, name: profile.name, description: profile.description ?? '', isActive: !profile.is_active }), profile.is_active ? 'Perfil desativado.' : 'Perfil reativado.', { title: profile.is_active ? 'Desativar perfil?' : 'Reativar perfil?', impact: 'A alteração afeta os acessos efetivos das pessoas vinculadas ao perfil.' })}
                 profileCapabilities={profileCapabilities}
+                onUpdateProfile={(input) => void runAction(() => updateAdminAccessProfile(input), 'Perfil atualizado.', { title: 'Salvar dados do perfil?', impact: 'Nome, descrição e status serão atualizados no contrato real de acesso.' })}
+                onAssignUser={(input) => void runAction(() => updateAdminInternalAccessAssignment(input), 'Usuário vinculado ao perfil.', { title: 'Vincular usuário ao perfil?', impact: 'O vínculo altera o acesso efetivo do usuário na área selecionada.' })}
                 profileForm={profileForm}
                 profiles={profiles}
                 setProfileForm={setProfileForm}
+                functions={functions}
                 users={users}
               />
               <ProfileScreenAccessPanel
@@ -1057,19 +1065,28 @@ function StructurePanel(props: {
   functions: AdminInternalFunctionRow[];
   onCreateArea: () => void;
   onCreateFunction: () => void;
+  onUpdateFunction: (input: { functionId: string; name: string; description: string; defaultAccessProfileId: string | null; isActive: boolean }) => void;
   onDeleteArea: (area: AdminInternalAccessAreaRow) => void;
+  onUpdateArea: (areaKey: string, form: { displayName: string; description: string; isActive: boolean; managerUserId: string | null }) => void;
   onToggleArea: (area: AdminInternalAccessAreaRow) => void;
   onToggleFunction: (item: AdminInternalFunctionRow) => void;
+  onAssignUser: (input: { userId: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null }) => void;
+  onOpenProfiles: () => void;
   profiles: AdminInternalProfileRow[];
   setAreaForm: React.Dispatch<React.SetStateAction<{ areaKey: string; displayName: string; description: string }>>;
   setFunctionForm: React.Dispatch<React.SetStateAction<{ areaKey: string; name: string; description: string; profileId: string }>>;
   users: AdminInternalAccessUserRow[];
 }) {
-  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onDeleteArea, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm, users } = props;
+  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onDeleteArea, onUpdateArea, onUpdateFunction, onToggleArea, onToggleFunction, onAssignUser, onOpenProfiles, profiles, setAreaForm, setFunctionForm, users } = props;
   const [selectedAreaKey, setSelectedAreaKey] = useState<string>(areas[0]?.area_key ?? '');
   const [areaSearch, setAreaSearch] = useState('');
   const [areaStatusFilter, setAreaStatusFilter] = useState<'active' | 'all'>('active');
   const [structureTab, setStructureTab] = useState<'overview' | 'functions' | 'users'>('overview');
+  const [editingAreaKey, setEditingAreaKey] = useState<string | null>(null);
+  const [editingFunctionId, setEditingFunctionId] = useState<string | null>(null);
+  const [assignUserId, setAssignUserId] = useState('');
+  const [assignFunctionId, setAssignFunctionId] = useState('');
+  const [assignProfileId, setAssignProfileId] = useState('');
 
   // Nao existe area "Customer Success" fabricada como fallback: sem areas no
   // contrato, o painel de detalhe entra em estado vazio explicito.
@@ -1086,6 +1103,51 @@ function StructurePanel(props: {
     (areaStatusFilter === 'all' || a.is_active)
     && (!areaSearch.trim() || a.display_name.toLowerCase().includes(areaSearch.trim().toLowerCase())),
   );
+
+  function beginEditArea(area: AdminInternalAccessAreaRow) {
+    setEditingAreaKey(area.area_key);
+    setAreaForm({ areaKey: area.area_key, displayName: area.display_name, description: area.description ?? '' });
+    window.requestAnimationFrame(() => document.querySelector<HTMLInputElement>('#area-editor-name')?.focus());
+  }
+
+  function submitAreaForm() {
+    if (!editingAreaKey) {
+      onCreateArea();
+      return;
+    }
+    const area = areas.find((item) => item.area_key === editingAreaKey);
+    if (!area) return;
+    onUpdateArea(editingAreaKey, {
+      displayName: areaForm.displayName.trim(),
+      description: areaForm.description.trim(),
+      isActive: area.is_active,
+      managerUserId: area.manager_user_id,
+    });
+    setEditingAreaKey(null);
+  }
+
+  function assignUserToArea() {
+    if (!assignUserId || !selectedArea) return;
+    onAssignUser({ userId: assignUserId, areaKey: selectedArea.area_key, functionId: assignFunctionId || null, accessProfileId: assignProfileId || null });
+    setAssignUserId('');
+    setAssignFunctionId('');
+    setAssignProfileId('');
+  }
+
+  function beginEditFunction(item: AdminInternalFunctionRow) {
+    setEditingFunctionId(item.function_id);
+    setFunctionForm({ areaKey: item.area_key, name: item.name, description: item.description ?? '', profileId: item.default_access_profile_id ?? '' });
+    setStructureTab('functions');
+  }
+
+  function submitFunctionForm() {
+    if (editingFunctionId) {
+      onUpdateFunction({ functionId: editingFunctionId, name: functionForm.name.trim(), description: functionForm.description.trim(), defaultAccessProfileId: functionForm.profileId || null, isActive: functions.find((item) => item.function_id === editingFunctionId)?.is_active ?? true });
+      setEditingFunctionId(null);
+      return;
+    }
+    onCreateFunction();
+  }
 
   return (
     <div className="space-y-4">
@@ -1170,21 +1232,22 @@ function StructurePanel(props: {
           </UiTable>
 
           {/* Form para criar nova área */}
-          <form className="gso-ui-card-body border-t border-[color:var(--gso-border)]" onSubmit={(event) => { event.preventDefault(); onCreateArea(); }}>
-            <h4 className="text-xs font-semibold text-[color:var(--gso-text-primary)] mb-2">+ Criar nova área</h4>
+          <form className="gso-ui-card-body border-t border-[color:var(--gso-border)]" id="area-editor-form" onSubmit={(event) => { event.preventDefault(); submitAreaForm(); }}>
+            <h4 className="text-xs font-semibold text-[color:var(--gso-text-primary)] mb-2">{editingAreaKey ? 'Editar área selecionada' : '+ Criar nova área'}</h4>
             <div className="gso-ui-grid">
               <UiField hint="Chave única em letras minúsculas." label="Chave">
-                <input id="new-area-key" className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, areaKey: event.target.value }))} pattern="[a-z0-9_]+" placeholder="ex: customer_success" required value={areaForm.areaKey} />
+                <input disabled={Boolean(editingAreaKey)} id="new-area-key" className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, areaKey: event.target.value }))} pattern="[a-z0-9_]+" placeholder="ex: customer_success" required value={areaForm.areaKey} />
               </UiField>
               <UiField label="Nome de exibição">
-                <input className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="ex: Customer Success" required value={areaForm.displayName} />
+                <input id="area-editor-name" className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="ex: Customer Success" required value={areaForm.displayName} />
               </UiField>
               <UiField label="Descrição" wide>
                 <textarea className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, description: event.target.value }))} placeholder="Descrição dos objetivos da área" rows={2} value={areaForm.description} />
               </UiField>
             </div>
             <div className="gso-ui-actions mt-3">
-              <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar área</UiButton>
+              <UiButton disabled={busy} icon={editingAreaKey ? 'check' : 'plus'} type="submit" variant="primary">{editingAreaKey ? 'Salvar alterações' : 'Criar área'}</UiButton>
+              {editingAreaKey ? <UiButton disabled={busy} onClick={() => setEditingAreaKey(null)} type="button" variant="ghost">Cancelar edição</UiButton> : null}
             </div>
           </form>
         </UiCard>
@@ -1288,6 +1351,7 @@ function StructurePanel(props: {
                   <div className="pt-3 border-t border-[color:var(--gso-border)] space-y-2">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Ações rápidas</h4>
                     <div className="grid gap-2">
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => beginEditArea(selectedArea)} type="button">✎ Editar área</button>
                       <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => setStructureTab('functions')} type="button">＋ Adicionar função</button>
                       <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" onClick={() => onToggleArea(selectedArea)} type="button">{selectedArea.is_active ? '⏸ Desativar área' : '▶ Reativar área'}</button>
                     </div>
@@ -1298,7 +1362,11 @@ function StructurePanel(props: {
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Gestão de Funções</h4>
                   </div>
-                  <form className="space-y-3 p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)]" onSubmit={(event) => { event.preventDefault(); onCreateFunction(); }}>
+                  <form className="space-y-3 p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)]" onSubmit={(event) => { event.preventDefault(); submitFunctionForm(); }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <h5 className="font-semibold text-[color:var(--gso-text-primary)]">{editingFunctionId ? 'Editar função' : 'Nova função'}</h5>
+                      {editingFunctionId ? <UiButton compact onClick={() => setEditingFunctionId(null)} type="button" variant="ghost">Cancelar</UiButton> : null}
+                    </div>
                     <UiField label="Nome da função">
                       <input className="gso-ui-control" onChange={(event) => setFunctionForm((current) => ({ ...current, areaKey: selectedArea.area_key, name: event.target.value }))} required value={functionForm.name} />
                     </UiField>
@@ -1307,14 +1375,54 @@ function StructurePanel(props: {
                         <option value="">Sem perfil padrão</option>
                         {profiles.map((p) => <option key={p.access_profile_id} value={p.access_profile_id}>{p.name}</option>)}
                       </select>
+                      <button className="gso-ui-linkbutton mt-1 text-left" onClick={onOpenProfiles} type="button">Criar ou editar perfil</button>
                     </UiField>
-                    <UiButton compact disabled={busy} icon="plus" type="submit" variant="primary">Criar função nesta área</UiButton>
+                    <UiButton compact disabled={busy} icon={editingFunctionId ? 'check' : 'plus'} type="submit" variant="primary">{editingFunctionId ? 'Salvar função' : 'Criar função nesta área'}</UiButton>
                   </form>
+                  <div className="space-y-2">
+                    <h5 className="font-semibold text-[color:var(--gso-text-primary)]">Funções desta área</h5>
+                    {areaFunctions.length === 0 ? <p className="gso-ui-note">Nenhuma função cadastrada nesta área.</p> : areaFunctions.map((item) => (
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-[color:var(--gso-border)] p-2" key={item.function_id}>
+                        <div className="min-w-0">
+                          <strong className="block truncate text-[color:var(--gso-text-primary)]">{item.name}</strong>
+                          <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{item.default_access_profile_name || 'Sem perfil padrão'}</span>
+                        </div>
+                        <div className="gso-ui-table-actions shrink-0">
+                          <UiButton compact disabled={busy} onClick={() => beginEditFunction(item)} variant="ghost">Editar</UiButton>
+                          <UiButton compact disabled={busy} onClick={() => onToggleFunction(item)} variant="ghost">{item.is_active ? 'Inativar' : 'Ativar'}</UiButton>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários vinculados à área</h4>
                   <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Colaboradores associados a {selectedArea.display_name}.</p>
+                  <div className="rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-3 space-y-3">
+                    <h5 className="font-semibold text-[color:var(--gso-text-primary)]">Adicionar usuário à área</h5>
+                    <div className="gso-ui-grid">
+                      <UiField label="Usuário">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignUserId(event.target.value)} value={assignUserId}>
+                          <option value="">Selecione um usuário</option>
+                          {users.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name || user.email || 'Colaborador'}</option>)}
+                        </select>
+                      </UiField>
+                      <UiField label="Função">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignFunctionId(event.target.value)} value={assignFunctionId}>
+                          <option value="">Sem função</option>
+                          {areaFunctions.filter((item) => item.is_active).map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
+                        </select>
+                      </UiField>
+                      <UiField label="Perfil">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignProfileId(event.target.value)} value={assignProfileId}>
+                          <option value="">Personalizado</option>
+                          {profiles.filter((profile) => profile.is_active).map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
+                        </select>
+                      </UiField>
+                    </div>
+                    <UiButton compact disabled={busy || !assignUserId} icon="plus" onClick={assignUserToArea} variant="primary">Vincular usuário</UiButton>
+                  </div>
                   {/* Lista real vinda de vw_admin_internal_access_users. A versao
                       anterior repetia tres pessoas fixas de CS em qualquer area. */}
                   {areaUsers.length === 0 ? (
@@ -1349,23 +1457,34 @@ function StructurePanel(props: {
 }
 
 function PermissionsCapabilityPanel(props: {
+  areas: AdminInternalAccessAreaRow[];
   busy: boolean;
   capabilities: Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
   onCreate: () => void;
   onSaveCapabilities: (profileId: string, keys: string[]) => void;
   onToggle: (profile: AdminInternalProfileRow) => void;
+  onUpdateProfile: (input: { profileId: string; name: string; description: string; isActive: boolean }) => void;
+  onAssignUser: (input: { userId: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null }) => void;
   profileCapabilities: Array<{ access_profile_id: string; capability_key: string }>;
   profileForm: { name: string; description: string };
   profiles: AdminInternalProfileRow[];
   setProfileForm: React.Dispatch<React.SetStateAction<{ name: string; description: string }>>;
+  functions: AdminInternalFunctionRow[];
   users: AdminInternalAccessUserRow[];
 }) {
-  const { busy, capabilities, onCreate, onSaveCapabilities, onToggle, profileCapabilities, profileForm, profiles, setProfileForm, users } = props;
+  const { areas, busy, capabilities, functions, onAssignUser, onCreate, onSaveCapabilities, onToggle, onUpdateProfile, profileCapabilities, profileForm, profiles, setProfileForm, users } = props;
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.access_profile_id ?? '');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [profileSearch, setProfileSearch] = useState('');
   const [profileTypeFilter, setProfileTypeFilter] = useState('');
   const [profileDetailTab, setProfileDetailTab] = useState<'overview' | 'permissions' | 'users'>('overview');
+  const [profileEditForm, setProfileEditForm] = useState({ name: '', description: '' });
+  const [assignmentUserId, setAssignmentUserId] = useState('');
+  const [assignmentAreaKey, setAssignmentAreaKey] = useState('');
+  const [assignmentFunctionId, setAssignmentFunctionId] = useState('');
+  // Nao existe perfil "Gestor de CS" fabricado como fallback: quando o contrato
+  // nao retorna perfis, o painel de detalhe entra em estado vazio explicito.
+  const selectedProfile = profiles.find((p) => p.access_profile_id === selectedProfileId) ?? profiles[0] ?? null;
 
   useEffect(() => {
     if (!profiles.some((profile) => profile.access_profile_id === selectedProfileId)) setSelectedProfileId(profiles[0]?.access_profile_id ?? '');
@@ -1373,10 +1492,12 @@ function PermissionsCapabilityPanel(props: {
   useEffect(() => {
     setSelectedKeys(profileCapabilities.filter((item) => item.access_profile_id === selectedProfileId).map((item) => item.capability_key));
   }, [profileCapabilities, selectedProfileId]);
-
-  // Nao existe perfil "Gestor de CS" fabricado como fallback: quando o contrato
-  // nao retorna perfis, o painel de detalhe entra em estado vazio explicito.
-  const selectedProfile = profiles.find((p) => p.access_profile_id === selectedProfileId) ?? profiles[0] ?? null;
+  useEffect(() => {
+    setProfileEditForm({ name: selectedProfile?.name ?? '', description: selectedProfile?.description ?? '' });
+  }, [selectedProfileId, selectedProfile?.description, selectedProfile?.name]);
+  useEffect(() => {
+    if (!areas.some((area) => area.area_key === assignmentAreaKey)) setAssignmentAreaKey(areas.find((area) => area.is_active)?.area_key ?? areas[0]?.area_key ?? '');
+  }, [areas, assignmentAreaKey]);
 
   const toggleCapability = (key: string) => setSelectedKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const viewCapabilities = capabilities.filter((capability) => capability.capability_key.endsWith('.view'));
@@ -1412,6 +1533,18 @@ function PermissionsCapabilityPanel(props: {
       email: user.email,
       status: user.access_status as string,
     }));
+  const assignmentFunctions = functions.filter((item) => item.area_key === assignmentAreaKey && item.is_active);
+  const activeUsers = users.filter((user) => user.access_status !== 'inactive');
+  const submitProfileEdit = () => {
+    if (!selectedProfile || !profileEditForm.name.trim()) return;
+    onUpdateProfile({ profileId: selectedProfile.access_profile_id, name: profileEditForm.name.trim(), description: profileEditForm.description.trim(), isActive: selectedProfile.is_active });
+  };
+  const submitProfileAssignment = () => {
+    if (!selectedProfileId || !assignmentUserId || !assignmentAreaKey) return;
+    onAssignUser({ userId: assignmentUserId, areaKey: assignmentAreaKey, functionId: assignmentFunctionId || null, accessProfileId: selectedProfileId });
+    setAssignmentUserId('');
+    setAssignmentFunctionId('');
+  };
 
   const capabilityOption = (capability: (typeof capabilities)[number]) => (
     <label className="gso-ui-toggle flex items-center justify-between py-1.5 px-2 rounded hover:bg-[color:var(--gso-surface-2)]" key={capability.capability_key}>
@@ -1583,6 +1716,24 @@ function PermissionsCapabilityPanel(props: {
             <div className="p-4 space-y-4 text-xs">
               {profileDetailTab === 'overview' ? (
                 <>
+                  <div className="space-y-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Dados do perfil</h4>
+                        <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Edite o nome e a finalidade sem sair desta tela.</p>
+                      </div>
+                      <UiButton compact disabled={busy || !profileEditForm.name.trim()} onClick={submitProfileEdit} variant="primary">Salvar dados</UiButton>
+                    </div>
+                    <div className="gso-ui-grid">
+                      <UiField label="Nome do perfil">
+                        <input className="gso-ui-control" disabled={selectedProfile.is_system} onChange={(event) => setProfileEditForm((current) => ({ ...current, name: event.target.value }))} value={profileEditForm.name} />
+                      </UiField>
+                      <UiField label="Descrição" wide>
+                        <textarea className="gso-ui-control" disabled={selectedProfile.is_system} onChange={(event) => setProfileEditForm((current) => ({ ...current, description: event.target.value }))} rows={2} value={profileEditForm.description} />
+                      </UiField>
+                    </div>
+                    {selectedProfile.is_system ? <p className="gso-ui-note">Perfis padrão não podem ter metadados editados.</p> : null}
+                  </div>
                   <div className="space-y-2">
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Módulos e níveis de acesso</h4>
                     {/* Derivado das capabilities reais do perfil. A lista fixa
@@ -1606,7 +1757,6 @@ function PermissionsCapabilityPanel(props: {
                     <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Ações rápidas</h4>
                     <div className="grid gap-2">
                       <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => setProfileDetailTab('permissions')} type="button">⚡ Ajustar permissões</button>
-                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" type="button">⎘ Duplicar perfil</button>
                       {!selectedProfile.is_system ? (
                         <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" onClick={() => onToggle(selectedProfile)} type="button">🗑 Desativar perfil</button>
                       ) : null}
@@ -1635,6 +1785,32 @@ function PermissionsCapabilityPanel(props: {
               ) : (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários com o perfil {selectedProfile.name}</h4>
+                  <div className="space-y-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-3">
+                    <div>
+                      <h5 className="font-semibold text-[color:var(--gso-text-primary)]">Vincular usuário a este perfil</h5>
+                      <p className="text-[11px] text-[color:var(--gso-text-secondary)]">O perfil é aplicado dentro da área escolhida.</p>
+                    </div>
+                    <div className="gso-ui-grid">
+                      <UiField label="Usuário">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignmentUserId(event.target.value)} value={assignmentUserId}>
+                          <option value="">Selecione um usuário</option>
+                          {activeUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name || user.email || 'Colaborador'}</option>)}
+                        </select>
+                      </UiField>
+                      <UiField label="Área">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => { setAssignmentAreaKey(event.target.value); setAssignmentFunctionId(''); }} value={assignmentAreaKey}>
+                          {areas.filter((area) => area.is_active).map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
+                        </select>
+                      </UiField>
+                      <UiField label="Função (opcional)">
+                        <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignmentFunctionId(event.target.value)} value={assignmentFunctionId}>
+                          <option value="">Sem função específica</option>
+                          {assignmentFunctions.map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
+                        </select>
+                      </UiField>
+                    </div>
+                    <UiButton compact disabled={busy || !assignmentUserId || !assignmentAreaKey} onClick={submitProfileAssignment} variant="primary">Vincular usuário</UiButton>
+                  </div>
                   {/* Lista real derivada dos vinculos de area. A versao anterior
                       exibia tres pessoas fixas para qualquer perfil. */}
                   {profileUsers.length === 0 ? (

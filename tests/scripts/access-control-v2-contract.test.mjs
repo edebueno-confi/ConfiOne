@@ -34,6 +34,12 @@ test('interface confirma mutações sensíveis e mantém rolagem no corpo da tel
   assert.match(page, /deleteAdminInternalAccessArea/);
   assert.match(page, /Histórico de convites internos/);
   assert.match(page, /Ativas por padrão/);
+  assert.match(page, /onUpdateArea/);
+  assert.match(page, /onUpdateFunction/);
+  assert.match(page, /onUpdateProfile/);
+  assert.match(page, /Vincular usu/);
+  assert.doesNotMatch(page, /Duplicar perfil/);
   assert.match(css, /\.gso-po-v2-access \.gso-ui-shell-body/);
+  assert.match(css, /\.gso-po-v2-access \.gso-ui-split--wide-detail/);
   assert.match(css, /overflow-y: auto/);
 });

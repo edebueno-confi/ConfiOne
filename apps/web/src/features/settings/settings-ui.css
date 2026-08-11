@@ -130,22 +130,31 @@
    tela de acessos. */
 .gso-po-v2-access {
   display: flex;
+  height: 100%;
   min-height: 100%;
+  max-height: 100%;
   flex-direction: column;
 }
 .gso-po-v2-access .gso-ui-shell-body {
+  height: 0;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0%;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
 .gso-po-v2-access .gso-ui-page--fill {
-  min-height: 100%;
+  min-height: max-content;
   align-content: start;
 }
 .gso-po-v2-access .gso-ui-split {
   align-items: start;
+}
+/* No desktop, lista e detalhe ocupam a largura total em sequência. A coluna
+   lateral estreita continua existindo apenas como adaptação de viewport menor,
+   evitando que tabelas operacionais comprimam o contexto editável. */
+.gso-po-v2-access .gso-ui-split--wide-detail {
+  grid-template-columns: minmax(0, 1fr);
 }
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
