@@ -1828,11 +1828,11 @@ function RichTextArticleEditor({
       <style>{`
         .knowledge-editor-card {
           display: grid;
-          grid-template-rows: 44px minmax(0, 1fr) 52px;
-          height: 100%;
-          min-height: 0;
+          grid-template-rows: 44px auto 52px;
+          height: auto;
+          min-height: 760px;
           min-width: 0;
-          overflow: hidden;
+          overflow: visible;
           padding-top: 0;
           border: 1px solid var(--minimal-border);
           border-radius: 12px;
@@ -1855,9 +1855,10 @@ function RichTextArticleEditor({
 
         .knowledge-editor-content-grid {
           display: grid;
-          grid-template-rows: 116px minmax(0, 1fr);
+          grid-template-rows: 116px auto;
           gap: 12px;
-          height: 100%;
+          height: auto;
+          min-height: 0;
         }
 
         .knowledge-editor-meta-grid > label {
@@ -1883,12 +1884,13 @@ function RichTextArticleEditor({
           padding: 6px 10px;
         }
 
-         .knowledge-editor-card { overflow: hidden; }
+         .knowledge-editor-card { overflow: visible; }
 
          .knowledge-rich-editor {
            min-height: 0;
-           overflow-y: auto;
-           overflow-x: hidden;
+           width: 100%;
+           min-width: 0;
+           overflow: visible;
          }
 
          .knowledge-rich-editor .ProseMirror {
@@ -4669,13 +4671,13 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="knowledge-editor-page h-full min-h-0 overflow-hidden bg-[color:var(--one-canvas-bg)]"
+      className="knowledge-editor-page h-full min-h-0 overflow-x-hidden overflow-y-auto bg-[color:var(--one-canvas-bg)]"
       onSubmit={handleSaveDraft}
     >
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-col">
         {/* O editor tem layout especializado, mas usa a mesma regua horizontal
             e os mesmos tokens do restante do shell interno. */}
-        <header className="knowledge-editor-header z-20 flex h-[52px] shrink-0 items-center justify-between gap-5 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-2">
+        <header className="knowledge-editor-header sticky top-0 z-20 flex h-[52px] shrink-0 items-center justify-between gap-5 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-2">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--one-text-secondary)]">
               <Link className="hover:text-[color:var(--one-text-link)]" to="/admin/knowledge">
@@ -4789,10 +4791,10 @@ export function KnowledgeArticleEditorPage() {
             revisão" a ponto de os campos quebrarem em duas linhas e o painel
             precisar rolar. Passa a 380px — a área de escrita cede a diferença,
             como pedido. Em 1366px o conteúdo ainda fica com ~840px úteis. */}
-        <div className={cx('gso-knowledge-editor-shell grid min-h-0 w-full flex-1 px-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-4', propertiesOpen ? '' : 'xl:grid-cols-1')}>
-        <main className="min-h-0 min-w-0 pb-4 pt-3 xl:grid xl:grid-rows-[minmax(0,1fr)]">
+        <div className={cx('gso-knowledge-editor-shell grid w-full flex-none px-5 pb-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-4', propertiesOpen ? '' : 'xl:grid-cols-1')}>
+        <main className="min-w-0 pb-4 pt-3">
           <div className="contents">
-              <section className="knowledge-editor-content-grid min-h-0 min-w-0">
+              <section className="knowledge-editor-content-grid min-w-0">
                 <input
                   accept="image/png,image/jpeg,image/webp,image/gif"
                   className="hidden"
@@ -4872,14 +4874,14 @@ export function KnowledgeArticleEditorPage() {
           role={propertiesOpen ? 'dialog' : undefined}
         >
             {propertiesOpen ? <button aria-label="Fechar propriedades" className="absolute inset-0 cursor-default bg-[rgba(12,18,32,0.5)] backdrop-blur-sm xl:hidden" onClick={() => setPropertiesOpen(false)} tabIndex={-1} type="button" /> : null}
-            <aside className="gso-knowledge-editor-properties relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[440px] lg:max-w-[620px] xl:sticky xl:top-0 xl:h-full xl:w-full xl:min-w-0 xl:max-w-none xl:shadow-none">
+            <aside className="gso-knowledge-editor-properties relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[440px] lg:max-w-[620px] xl:sticky xl:top-3 xl:h-fit xl:w-full xl:min-w-0 xl:max-w-none xl:shadow-none">
               <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] px-5 py-3.5">
                 <div className="min-w-0">
                   <h2 className="text-base font-semibold text-[color:var(--minimal-text)]" id="gso-article-properties-title">Configurações editoriais</h2>
                   <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">Classificação, publicação e revisão.</p>
                 </div>
               </header>
-              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2 xl:overflow-hidden">
+              <div className="px-3 py-2 xl:overflow-visible">
                 <div className="space-y-2.5">
                       <RailCard title="">
                         <Field label="Categoria *">

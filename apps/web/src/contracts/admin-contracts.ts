@@ -1201,6 +1201,7 @@ export interface AdminKnowledgeCategoryV2Row {
   updated_at: IsoTimestamp;
   created_by_full_name: string | null;
   updated_by_full_name: string | null;
+  category_sort_order: number;
 }
 
 export interface AdminKnowledgeArticleRecordRow {

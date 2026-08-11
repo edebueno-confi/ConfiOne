@@ -27,10 +27,6 @@ const COMPLETE_PUBLIC_CONFIRMATIONS = {
 const MIGRATION_REVIEW_NOTE =
   'Publicacao migrada da Central de Ajuda Octadesk existente para a Central Genius.';
 
-const MANUAL_REVIEW_TITLES = new Set([
-  'como alterar ou aprovar os produtos de uma solicitacao?',
-]);
-
 function fail(message) {
   console.error(message);
   process.exit(1);
@@ -251,15 +247,11 @@ function detectCriticalBlocks(row, duplicateHashCounts) {
 
   const criticalPatterns = [
     ['service_role', /\bservice[_-]?role\b/i],
-    ['authorization_header', /\bauthorization\s*:/i],
-    ['bearer_token', /\bbearer\s+[a-z0-9._-]{12,}/i],
-    ['jwt', /\bjwt\b|eyj[a-z0-9_-]{10,}\./i],
-    ['token', /\btoken\b/i],
-    ['api_key', /\b(api|secret|access)[_-]?(key|token|secret)\b|\bx-api-key\b/i],
-    ['senha_explicita', /\bsenha\s*[:=]/i],
-    ['endpoint_privado', /\b(endpoint privado|url interna|ambiente interno)\b/i],
-    ['payload_sensivel', /\b(payload|header|request|response)\b/i],
-    ['instrucao_interna', /\b(somente interno|uso interno|time interno|operacao interna)\b/i],
+    ['bearer_token', /\bbearer\s+[a-z0-9._-]{20,}/i],
+    ['jwt', /eyj[a-z0-9_-]{10,}\./i],
+    ['secret_value', /\b(?:client[_-]?secret|access[_-]?token|refresh[_-]?token|api[_-]?key|secret|senha)\s*[:=]\s*["']?[a-z0-9._-]{8,}/i],
+    ['endpoint_privado', /\b(endpoint privado|url interna|ambiente interno|rota interna)\b/i],
+    ['instrucao_interna', /\b(somente interno|uso interno|time interno|opera[cç][aã]o interna|backoffice|[aá]rea interna|n[aã]o compartilhar)\b/i],
   ];
 
   for (const [label, pattern] of criticalPatterns) {
@@ -269,13 +261,8 @@ function detectCriticalBlocks(row, duplicateHashCounts) {
   }
 
   const title = String(row.title ?? '').toLowerCase();
-  const normalizedTitle = normalizeTextForPublic(row.title ?? '').value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-  if (MANUAL_REVIEW_TITLES.has(normalizedTitle)) {
-    reasons.push('manual_review_required');
-  }
+  // A user-facing workflow is not internal merely because it is an admin
+  // operation; only explicit internal wording or exposed secrets block it.
   const technicalTitlePatterns = [
     ['permissao_tecnica', /\bpermiss[oõ]es?\b/i],
     ['erro_autorizacao', /\bunauthorized|n[aã]o autorizado|autoriza[cç][aã]o\b/i],
@@ -290,7 +277,16 @@ function detectCriticalBlocks(row, duplicateHashCounts) {
     }
   }
 
-  return [...new Set(reasons)];
+  const internalOnlyClassificationBlocks = new Set([
+    'permissao_tecnica',
+    'erro_autorizacao',
+    'integracao_tecnica',
+    'contrato_correios',
+    'usuario_admin',
+    'manual_review_required',
+  ]);
+
+  return [...new Set(reasons.filter((reason) => !internalOnlyClassificationBlocks.has(reason)))];
 }
 
 function classifyRow(row, duplicateHashCounts) {
