@@ -12,7 +12,7 @@ import { chromium } from 'playwright';
 import { loadQaEnv } from './assert-local-supabase.mjs';
 
 const root = process.cwd();
-const baseUrl = process.env.GSO_QA_URL ?? 'http://127.0.0.1:4174';
+const baseUrl = process.env.GSO_QA_URL ?? 'http://127.0.0.1:4173';
 const outputDir = join(root, 'output/dashboard-fila-por-etapa');
 const qa = loadQaEnv();
 

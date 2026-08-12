@@ -5,6 +5,7 @@ import type {
   AdminAccessMembershipRow,
   AdminAccessUserRow,
   AdminInternalAccessUserRow,
+  AdminInternalAccessUserDetail,
   AdminInternalAccessAreaRow,
   AdminInternalFunctionRow,
   AdminInternalInviteRow,
@@ -1150,6 +1151,7 @@ export async function listAdminKnowledgeCategoriesV2(knowledgeSpaceId: string) {
     .from('vw_admin_knowledge_categories_v2')
     .select('*')
     .eq('knowledge_space_id', knowledgeSpaceId)
+    .order('category_sort_order', { ascending: true })
     .order('name', { ascending: true });
 
   if (error) {
@@ -1726,7 +1728,7 @@ export async function getAdminInternalAccessUser(userId: string) {
   const client = requireClient();
   const { data, error } = await client.rpc('rpc_admin_get_internal_access_user', { p_user_id: userId });
   if (error) throw toAppError(error, 'Falha ao carregar o detalhe do usuário.');
-  return data as Record<string, unknown>;
+  return data as AdminInternalAccessUserDetail;
 }
 
 export async function setAdminInternalUserStatus(userId: string, isActive: boolean, justification = 'Alteração realizada pelo administrador no control plane.') {
@@ -1842,6 +1844,13 @@ export async function updateAdminInternalAccessArea(input: { areaKey: string; di
   const { data, error } = await client.rpc('rpc_admin_update_internal_area', { p_area_key: input.areaKey, p_display_name: input.displayName, p_description: input.description ?? null, p_is_active: input.isActive, p_manager_user_id: input.managerUserId ?? null });
   if (error) throw toAppError(error, 'Falha ao atualizar a área interna.');
   return data as AdminInternalAccessAreaRow;
+}
+
+export async function deleteAdminInternalAccessArea(areaKey: string) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_delete_internal_area', { p_area_key: areaKey, p_confirmed: true });
+  if (error) throw toAppError(error, 'Falha ao excluir permanentemente a área interna.');
+  return data as { area_key: string; deleted: boolean; deleted_by: string };
 }
 
 export async function listAdminInternalFunctions() {

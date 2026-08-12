@@ -36,4 +36,15 @@ No canto inferior da barra lateral esquerda existe o seletor **Tema**:
 ## Se algo der errado
 
 Copie a ultima mensagem da janela preta e me envie aqui — eu ajusto.
-Erros comuns: Docker fechado, ou a porta 4173/54321 ja em uso.
+Erros comuns: Docker fechado, ou a porta 54321 ja em uso.
+
+## Regra da porta web local
+
+O ambiente web usa exclusivamente **http://localhost:4173**. Nenhuma porta
+alternativa faz parte do fluxo atual.
+
+Ao executar `npm run dev`, o launcher verifica o processo que esta escutando
+em 4173. Se o marcador temporario confirmar que e uma instancia deste projeto,
+ela e encerrada e iniciada novamente. Se o servico for desconhecido, o comando
+para com o PID/processo identificado para inspecao manual; ele nao encerra o
+processo desconhecido e nao sobe outra porta.

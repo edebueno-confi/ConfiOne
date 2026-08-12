@@ -245,7 +245,7 @@ export function BrandsSettingsPage({
               </UiCard>
             ) : (
               <UiCard flush label="Marcas cadastradas">
-                <UiTable label="Marcas cadastradas">
+                <UiTable className="gso-ui-table--brands" label="Marcas cadastradas">
                   <thead>
                     <tr>
                       <th scope="col">Marca</th>

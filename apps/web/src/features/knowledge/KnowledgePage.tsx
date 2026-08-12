@@ -74,7 +74,6 @@ type ArticleDuplicateFilter = 'all' | 'duplicates' | 'unique';
 type ArticleClassificationFilter = KnowledgeAdvisoryClassification | 'all' | 'without-advisory';
 type EditorialChecklistTone = 'default' | 'positive' | 'warning' | 'critical' | 'accent';
 type KnowledgeListSort = 'recent' | 'oldest' | 'title';
-type KnowledgeDateFilter = 'all' | '90' | '30' | '7';
 type DetailTab = 'preview' | 'review' | 'classification' | 'checklist' | 'advanced';
 
 interface EditorialChecklistItem {
@@ -606,9 +605,6 @@ export function KnowledgePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [listStatusFilter, setListStatusFilter] = useState<ArticleStatusFilter>('all');
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
-  const [selectedAuthor, setSelectedAuthor] = useState('all');
-  const [selectedDateWindow, setSelectedDateWindow] =
-    useState<KnowledgeDateFilter>('90');
   const [listSort, setListSort] = useState<KnowledgeListSort>('recent');
   const [currentPage, setCurrentPage] = useState(1);
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -619,7 +615,6 @@ export function KnowledgePage() {
   const [assetActionSubmitting, setAssetActionSubmitting] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
   const [detailTab, setDetailTab] = useState<DetailTab>('preview');
-  const [statusFilter, setStatusFilter] = useState<ArticleStatusFilter>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<ArticleVisibilityFilter>('all');
   const [originFilter, setOriginFilter] = useState<ArticleOriginFilter>('all');
   const [duplicateFilter, setDuplicateFilter] = useState<ArticleDuplicateFilter>('all');
@@ -652,10 +647,6 @@ export function KnowledgePage() {
   const selectedAdvisory =
     selectedArticleId ? advisoryMap.get(selectedArticleId) ?? null : null;
   const sourceHashCounts = buildSourceHashCounts(articles);
-  const legacyArticlesCount = articles.filter(
-    (article) => Boolean(article.source_path || article.source_hash),
-  ).length;
-  const manualArticlesCount = articles.length - legacyArticlesCount;
   const duplicateArticlesCount = articles.filter((article) => {
     const advisoryDuplicateCount =
       advisoryMap.get(article.id)?.duplicate_group_article_count ?? 0;
@@ -665,9 +656,6 @@ export function KnowledgePage() {
 
     return Math.max(advisoryDuplicateCount, sourceDuplicateCount) > 1;
   }).length;
-  const reviewedArticlesCount = advisories.filter(
-    (advisory) => advisory.review_status === 'reviewed',
-  ).length;
   const withoutAdvisoryCount = articles.filter(
     (article) => !advisoryMap.has(article.id),
   ).length;
@@ -796,21 +784,9 @@ export function KnowledgePage() {
   const selectedHumanConfirmationsCount = HUMAN_CONFIRMATION_FIELDS.filter(
     (field) => humanConfirmationsDraft[field.key] === true,
   ).length;
-  const statusCounts = {
-    all: filteredArticles.length,
-    published: filteredArticles.filter((article) => article.status === 'published').length,
-    draft: filteredArticles.filter((article) => article.status === 'draft').length,
-    review: filteredArticles.filter((article) => article.status === 'review').length,
-    archived: filteredArticles.filter((article) => article.status === 'archived').length,
-  };
-  const visibilityCounts = {
-    public: filteredArticles.filter((article) => article.visibility === 'public').length,
-    internal: filteredArticles.filter((article) => article.visibility === 'internal').length,
-    restricted: filteredArticles.filter((article) => article.visibility === 'restricted').length,
-  };
   const sortedCategories = [...categories].sort((left, right) => {
-    if (right.article_count !== left.article_count) {
-      return right.article_count - left.article_count;
+    if (left.category_sort_order !== right.category_sort_order) {
+      return left.category_sort_order - right.category_sort_order;
     }
 
     return left.name.localeCompare(right.name, 'pt-BR');
@@ -818,9 +794,6 @@ export function KnowledgePage() {
   const visibleCategories = showAllCategories
     ? sortedCategories
     : sortedCategories.slice(0, 5);
-  const availableAuthors = Array.from(
-    new Set(filteredArticles.map((article) => articleContributorName(article))),
-  ).sort((left, right) => left.localeCompare(right, 'pt-BR'));
   const searchedArticles = filteredArticles.filter((article) => {
     if (listStatusFilter !== 'all' && article.status !== listStatusFilter) {
       return false;
@@ -832,26 +805,6 @@ export function KnowledgePage() {
 
     if (selectedCategoryId !== 'all' && article.category_id !== selectedCategoryId) {
       return false;
-    }
-
-    if (
-      selectedAuthor !== 'all' &&
-      articleContributorName(article) !== selectedAuthor
-    ) {
-      return false;
-    }
-
-    if (selectedDateWindow !== 'all') {
-      const days = Number(selectedDateWindow);
-      const updatedAtMs = Date.parse(article.updated_at);
-
-      if (Number.isFinite(updatedAtMs)) {
-        const ageInDays = (Date.now() - updatedAtMs) / (1000 * 60 * 60 * 24);
-
-        if (ageInDays > days) {
-          return false;
-        }
-      }
     }
 
     if (!searchQuery.trim()) {
@@ -1039,7 +992,7 @@ export function KnowledgePage() {
           listAdminKnowledgeCategoriesV2(knowledgeSpaceId),
           listAdminKnowledgeArticlesV2({
             knowledgeSpaceId,
-            status: statusFilter,
+            status: listStatusFilter,
             visibility: visibilityFilter,
           }),
           listAdminKnowledgeArticleReviewAdvisories(knowledgeSpaceId),
@@ -1206,7 +1159,7 @@ export function KnowledgePage() {
     }
 
     void loadKnowledgeContent(selectedSpaceId);
-  }, [selectedSpaceId, statusFilter, visibilityFilter]);
+  }, [selectedSpaceId, listStatusFilter, visibilityFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1214,8 +1167,6 @@ export function KnowledgePage() {
     searchQuery,
     listStatusFilter,
     selectedCategoryId,
-    selectedAuthor,
-    selectedDateWindow,
     listSort,
     visibilityFilter,
     originFilter,
@@ -2210,10 +2161,10 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="gso-knowledge-cockpit flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--one-canvas-bg)]">
+    <div className="gso-knowledge-cockpit flex h-full min-h-0 flex-col overflow-x-hidden overflow-y-auto bg-[color:var(--one-canvas-bg)]">
       {/* Regua horizontal e tipografia vindas do contrato global; a tela nao
           declara mais padding lateral nem escala de titulo proprios. */}
-      <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-[var(--one-space-page-y)]">
+      <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="gso-ui-header-heading space-y-1">
             <h1>Conhecimento</h1>
@@ -2232,9 +2183,9 @@ export function KnowledgePage() {
         </div>
       </section>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <div className="gso-knowledge-cockpit-grid grid h-full min-h-0 min-w-0 xl:grid-cols-[minmax(0,1fr)_290px]">
-          <main className="gso-knowledge-articles-pane flex min-h-0 min-w-0 flex-col overflow-hidden">
+      <div className="min-h-0 flex-none overflow-visible">
+        <div className="gso-knowledge-cockpit-grid grid min-w-0 pt-[var(--one-space-component-gap)] xl:grid-cols-[minmax(0,1fr)_290px]">
+          <main className="gso-knowledge-articles-pane flex min-w-0 flex-col !overflow-visible">
             <section className="gso-knowledge-filter-deck grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px]">
               <div className="md:col-span-3 xl:col-span-1">
                 <Field label="Busca global de conhecimento">
@@ -2295,6 +2246,59 @@ export function KnowledgePage() {
                   <option value="public">Público</option>
                   <option value="internal">Interno</option>
                   <option value="restricted">Restrito</option>
+                </SelectInput>
+              </Field>
+            </section>
+
+            <section
+              aria-label="Filtros de curadoria editorial"
+              className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-3"
+            >
+              <Field label="Origem do conteúdo">
+                <SelectInput
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
+                  onChange={(event) =>
+                    setOriginFilter(event.target.value as ArticleOriginFilter)
+                  }
+                  value={originFilter}
+                >
+                  <option value="all">Todas as origens</option>
+                  <option value="legacy">Importado do Octadesk</option>
+                  <option value="manual">Criado no Genius</option>
+                </SelectInput>
+              </Field>
+
+              <Field label="Sinal de curadoria">
+                <SelectInput
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
+                  onChange={(event) =>
+                    setClassificationFilter(
+                      event.target.value as ArticleClassificationFilter,
+                    )
+                  }
+                  value={classificationFilter}
+                >
+                  <option value="all">Todos os sinais</option>
+                  <option value="public">Sugestão pública</option>
+                  <option value="internal">Sugestão interna</option>
+                  <option value="restricted">Sugestão restrita</option>
+                  <option value="obsolete">Obsoleto</option>
+                  <option value="duplicate">Duplicado</option>
+                  <option value="without-advisory">Sem advisory</option>
+                </SelectInput>
+              </Field>
+
+              <Field label="Duplicidade de origem">
+                <SelectInput
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
+                  onChange={(event) =>
+                    setDuplicateFilter(event.target.value as ArticleDuplicateFilter)
+                  }
+                  value={duplicateFilter}
+                >
+                  <option value="all">Todos</option>
+                  <option value="duplicates">Possíveis duplicados</option>
+                  <option value="unique">Sem duplicidade</option>
                 </SelectInput>
               </Field>
             </section>
@@ -2402,7 +2406,7 @@ export function KnowledgePage() {
               </article>
             </section>
 
-            <section className="gso-knowledge-table-panel min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]">
+            <section className="gso-knowledge-table-panel flex-none !overflow-visible bg-[color:var(--minimal-surface)]">
               <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
                 <div>
                   <h2 className="text-[1.05rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
@@ -2465,8 +2469,8 @@ export function KnowledgePage() {
                   />
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="gso-knowledge-table-scroll min-h-0 flex-1 overflow-auto">
+                <div className="flex flex-col">
+                  <div className="gso-knowledge-table-scroll overflow-visible">
                     <table className="gso-knowledge-article-table w-full table-fixed border-separate border-spacing-0">
                       <colgroup>
                         <col />

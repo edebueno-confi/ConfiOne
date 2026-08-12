@@ -55,6 +55,7 @@ output/
 tmp/
 temp/
 /.codex-local/
+.codex-remote-attachments/
 .vercel/
 .supabase/
 supabase/.temp/

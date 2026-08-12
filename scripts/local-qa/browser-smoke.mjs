@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import { createConnection } from 'node:net';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -13,17 +12,10 @@ assertLocalSupabaseEnvironment({ ...process.env, ...qa }, { status });
 const root = process.cwd();
 const baseUrl = process.env.LOCAL_QA_WEB_URL ?? 'http://127.0.0.1:4173';
 const port = Number(new URL(baseUrl).port || 4173);
+if (port !== 4173) throw new Error('LOCAL_QA_WEB_PORT_MUST_BE_4173');
 const logDir = join(root, 'output', 'local-qa');
 const serverLog = join(logDir, 'web-server.log');
 mkdirSync(logDir, { recursive: true });
-
-function isPortOccupied(portNumber) {
-  return new Promise((resolve) => {
-    const socket = createConnection({ host: '127.0.0.1', port: portNumber });
-    socket.once('connect', () => { socket.destroy(); resolve(true); });
-    socket.once('error', () => resolve(false));
-  });
-}
 
 async function waitForWebServer() {
   const deadline = Date.now() + Number(process.env.LOCAL_QA_WEB_START_TIMEOUT_MS ?? 45_000);
@@ -43,7 +35,7 @@ async function waitForWebServer() {
 
 function startWebServer() {
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const child = spawn(npm, ['run', 'web:dev', '--', '--host', '127.0.0.1', '--port', String(port)], {
+  const child = spawn(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(port)], {
     cwd: root,
     env: process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -117,9 +109,6 @@ for (const account of accounts) {
   if (!account.email || !account.password) throw new Error(`LOCAL_QA_CONFIG_MISSING: ${account.role}`);
 }
 
-if (await isPortOccupied(port)) {
-  throw new Error(`LOCAL_QA_WEB_PORT_OCCUPIED: ${port}`);
-}
 const server = startWebServer();
 const results = [];
 const screenshots = [];

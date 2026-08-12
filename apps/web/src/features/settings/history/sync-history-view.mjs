@@ -51,7 +51,12 @@ export const TRIGGER_OPTIONS = [
   { value: 'diagnostic', label: 'Diagnóstico' },
 ];
 
-export const DEFAULT_HISTORY_FILTERS = { period: '30d', source: 'all', status: 'all', trigger: 'all' };
+export const SORT_OPTIONS = [
+  { value: 'recent', label: 'Mais recentes primeiro' },
+  { value: 'oldest', label: 'Mais antigos primeiro' },
+];
+
+export const DEFAULT_HISTORY_FILTERS = { period: '30d', source: 'all', status: 'all', trigger: 'all', sort: 'recent' };
 
 /** @param {string} value */
 export function statusLabel(value) {
@@ -122,7 +127,8 @@ export function groupHistoryRows(rows) {
  */
 export function summarizeHistoryGroups(groups) {
   const list = Array.isArray(groups) ? groups : [];
-  const counts = { total: list.length, success: 0, partial: 0, failed: 0, running: 0, processed: 0 };
+  const counts = { total: list.length, success: 0, partial: 0, failed: 0, running: 0, processed: 0, averageDurationMs: 0 };
+  const durations = [];
   for (const group of list) {
     const bucket = statusBucket(resolveGroupStatus(group));
     if (bucket === 'success') counts.success += 1;
@@ -132,15 +138,32 @@ export function summarizeHistoryGroups(groups) {
     for (const row of group) {
       if (row.rowKind === 'step') counts.processed += Number(row.processedCount ?? 0);
     }
+    const durationMs = Number(cycleRowOf(group).durationMs ?? 0);
+    if (Number.isFinite(durationMs) && durationMs > 0) durations.push(durationMs);
   }
+  counts.averageDurationMs = durations.length
+    ? Math.round(durations.reduce((sum, duration) => sum + duration, 0) / durations.length)
+    : 0;
   return counts;
+}
+
+/** Ordena os ciclos por início, sem depender da ordem da view ou da API. */
+export function sortHistoryGroups(groups, order = 'recent') {
+  const list = Array.isArray(groups) ? groups : [];
+  return list.slice().sort((left, right) => {
+    const leftTime = new Date(cycleRowOf(left).startedAt).getTime();
+    const rightTime = new Date(cycleRowOf(right).startedAt).getTime();
+    const safeLeft = Number.isFinite(leftTime) ? leftTime : 0;
+    const safeRight = Number.isFinite(rightTime) ? rightTime : 0;
+    return order === 'oldest' ? safeLeft - safeRight : safeRight - safeLeft;
+  });
 }
 
 /**
  * Aplica os quatro filtros da barra. `nowMs` entra por parametro para o
  * resultado ser deterministico em teste.
  * @param {Array<Array<Record<string, unknown>>>} groups
- * @param {{ period?: string, source?: string, status?: string, trigger?: string }} filters
+ * @param {{ period?: string, source?: string, status?: string, trigger?: string, sort?: string }} filters
  * @param {number} nowMs
  */
 export function filterHistoryGroups(groups, filters, nowMs) {

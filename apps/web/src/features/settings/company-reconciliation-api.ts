@@ -107,8 +107,8 @@ function mapQueue(value: unknown): ReconciliationQueue {
   };
 }
 
-export async function getCompanyReconciliationQueue(): Promise<ReconciliationQueue> {
-  const { data, error } = await requireSupabaseBrowserClient().rpc('rpc_analytics_company_reconciliation_queue', { p_limit: 100, p_offset: 0 });
+export async function getCompanyReconciliationQueue({ limit = 25, offset = 0 }: { limit?: number; offset?: number } = {}): Promise<ReconciliationQueue> {
+  const { data, error } = await requireSupabaseBrowserClient().rpc('rpc_analytics_company_reconciliation_queue', { p_limit: limit, p_offset: offset });
   if (error) throw toAppError(error, 'Falha ao carregar a fila de conciliação.');
   return mapQueue(data);
 }

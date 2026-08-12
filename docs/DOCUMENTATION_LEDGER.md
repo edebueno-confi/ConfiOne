@@ -1,5 +1,13 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## ACCESS CONTROL V2 — ciclo de vida e evidência de permissões — 2026-08-11
+
+- **Escopo:** `/admin/access`, control plane interno; sem Dashboard, governança de dados, integrações, push, deploy ou migration remota.
+- **Entrega:** dependências e `can_delete` no read model de áreas; desativação preserva histórico; exclusão permanente condicionada por RPC e confirmação; permissões efetivas com origem/escopo/conflito; histórico de convites sanitizado; confirmações e rolagem acessível na UI.
+- **Arquivos/documentos:** migration `20260811130000_access_control_v2_lifecycle_effective_permissions.sql`, teste pgTAP `113_access_control_v2_lifecycle_effective_permissions.sql`, teste Node `access-control-v2-contract.test.mjs`, `PROJECT_STATE.md`, `AUTH_CONTEXT_STRATEGY.md`, `VIEW_RPC_CONTRACTS.md` e relatório `docs/reports/ACCESS_CONTROL_V2_2026-08-11.md`.
+- **Validação:** 11 testes Node focados, `git diff --check` e `npm run documentation:validate:internal-docs` passaram; auditoria documental `changed` terminou sem blockers, com ressalvas históricas; typechecks, build, lint, pgTAP e QA visual aguardam `tsc`/dependências/runtime local.
+- **Riscos restantes:** o modelo atual ainda não materializa um catálogo genérico de Resource/Action/Scope; presets nominais e a taxonomia Conteúdo/Conhecimento permanecem decisão de domínio, sem grants implícitos.
+
 ## CONFI-ONE-V1 — Blueprint Alignment & Claude Handoff — 2026-08-10
 
 - **Handoff Claude:** Relatório completo gerado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
@@ -7240,3 +7248,40 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   suíte executada; CI da PR #34 não consultado; viewports 1440/1024/390 e tema claro
   fora de escopo até o gate de 1366 passar.
 - Impacto futuro na FAQ: nenhum.
+
+## ACCESS CONTROL V2 — UX operacional e runtime local em 4173 — 2026-08-11
+
+- **Escopo:** `/admin/access` e launcher local do frontend; sem banco remoto,
+  push, deploy ou uso de porta alternativa.
+- **Decisão:** lista e detalhe permanecem lado a lado em Estrutura e Perfis;
+  tabelas usam densidade reduzida e rolagem interna, enquanto o corpo do shell
+  continua rolável para formulários e detalhes completos.
+- **Runtime:** `npm run dev` é o launcher oficial e usa exclusivamente
+  `http://127.0.0.1:4173`. Ele identifica o processo da porta; reinicia apenas
+  a instância marcada como deste worktree e para com diagnóstico quando o
+  processo é desconhecido.
+- **Docs/código:** `COMO-TESTAR.md`, `apps/web/README.md`,
+  `docs/ENVIRONMENT_VARIABLES.md`, `docs/LOCAL_QA_AUTH.md`,
+  `docs/PROMPT_RETOMADA_CODEX_2026-08-08.md`, `package.json`,
+  `scripts/dev/run-web-dev.mjs` e contratos de QA relacionados.
+- **Validação prevista:** typecheck, build, lint, auditoria documental, teste
+  contratual e teste controlado do launcher/porta; QA autenticado depende da
+  sessão local disponível.
+
+## ACCESS CONTROL V2 — listas compactas, edição contextual e remoção de Convites — 2026-08-11
+
+- **Escopo:** `/admin/access`, somente a superfície de Usuários, Estrutura e
+  Perfis; dados e APIs históricas de convite permanecem fora da UI.
+- **Decisão UX:** Estrutura e Perfis deixaram de apresentar tabelas largas;
+  cada recurso aparece em lista compacta com seleção, estado, contagens úteis e
+  ações. Editar área e editar perfil abrem diálogo contextual identificado.
+- **Permissões de telas:** os catálogos por perfil e por colaborador foram
+  reorganizados em painéis paralelos com grupos compactos e rolagem interna.
+- **Documentos atualizados:** `PROJECT_STATE.md`,
+  `docs/design/screens/ADMIN_ACCESS.md`,
+  `docs/design/screens/ADMIN_ACCESS_BLUEPRINT_SPEC.md`,
+  `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`,
+  `docs/design/SETTINGS_BLUEPRINT_V4_REFACTOR_SPEC.md` e o relatório de Access
+  Control V2.
+- **Risco restante:** QA visual autenticado ainda depende da sessão local; não
+  houve alteração de banco, contrato, secret, push, deploy ou migration remota.
