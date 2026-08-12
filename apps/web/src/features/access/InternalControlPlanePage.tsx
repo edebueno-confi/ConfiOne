@@ -37,6 +37,7 @@ import {
   listAdminInternalOverrides,
   removeAdminInternalOverride,
   resetAdminInternalUserPassword,
+  promotePlatformAdmin,
   setAdminInternalUserStatus,
   updateAdminInternalAccessArea,
   updateAdminInternalAccessAssignment,
@@ -157,7 +158,7 @@ export function InternalControlPlanePage() {
   const [detail, setDetail] = useState<AdminInternalAccessUserDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({ fullName: '', email: '', areaKey: '', functionId: '', profileId: '' });
+  const [createForm, setCreateForm] = useState({ fullName: '', email: '', areaKey: '', functionId: '', profileId: '', globalRole: null as 'platform_admin' | 'dashboard_viewer' | null });
   const [createErrors, setCreateErrors] = useState<{ fullName?: string; email?: string; areaKey?: string }>({});
   const [areaForm, setAreaForm] = useState({ areaKey: '', displayName: '', description: '' });
   const [functionForm, setFunctionForm] = useState({ areaKey: '', name: '', description: '', profileId: '' });
@@ -251,16 +252,14 @@ export function InternalControlPlanePage() {
    * Criação direta: valida no cliente apenas o que é formato, e deixa a regra de
    * autorização, unicidade e provisionamento para o comando do servidor.
    */
-  async function submitCreate(event: React.FormEvent) {
-    event.preventDefault();
+  async function submitCreate(event?: React.FormEvent) {
+    event?.preventDefault();
     const nextErrors: { fullName?: string; email?: string; areaKey?: string } = {};
     if (!createForm.fullName.trim()) nextErrors.fullName = 'Informe o nome completo da pessoa.';
     if (!isValidEmail(createForm.email)) nextErrors.email = 'Informe um e-mail válido, no formato nome@dominio.com.';
     if (!createForm.areaKey) nextErrors.areaKey = 'Escolha a área que dará contexto ao acesso.';
     setCreateErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    if (!window.confirm(`Criar acesso interno para ${createForm.fullName.trim()}?\n\nA conta será provisionada no servidor com a área, função e perfil informados. A credencial temporária será exibida uma única vez.`)) return;
-
     setBusy(true); setMessage(null);
     try {
       const result = await createAdminInternalUser({
@@ -269,6 +268,7 @@ export function InternalControlPlanePage() {
         areaKey: createForm.areaKey,
         functionId: createForm.functionId || null,
         accessProfileId: createForm.profileId || null,
+        globalRole: createForm.globalRole,
       });
       if (result?.temporaryPassword) {
         setIssuedCredential({
@@ -283,7 +283,7 @@ export function InternalControlPlanePage() {
         tone: result?.alreadyExisted ? 'warning' : 'positive',
       });
       setCreating(false);
-      setCreateForm((current) => ({ ...current, fullName: '', email: '', functionId: '', profileId: '' }));
+      setCreateForm((current) => ({ ...current, fullName: '', email: '', functionId: '', profileId: '', globalRole: null }));
       await load();
     } catch (error) {
       const classified = classifyAdminError(error, 'Não foi possível criar o usuário interno.');
@@ -601,15 +601,16 @@ function CreateUserCard(props: {
   areas: AdminInternalAccessAreaRow[];
   busy: boolean;
   errors: { fullName?: string; email?: string; areaKey?: string };
-  form: { fullName: string; email: string; areaKey: string; functionId: string; profileId: string };
+  form: { fullName: string; email: string; areaKey: string; functionId: string; profileId: string; globalRole: 'platform_admin' | 'dashboard_viewer' | null };
   functions: AdminInternalFunctionRow[];
   onCancel: () => void;
-  onSubmit: (event: React.FormEvent) => Promise<void>;
+  onSubmit: (event?: React.FormEvent) => Promise<void>;
   profiles: AdminInternalProfileRow[];
-  setForm: React.Dispatch<React.SetStateAction<{ fullName: string; email: string; areaKey: string; functionId: string; profileId: string }>>;
+  setForm: React.Dispatch<React.SetStateAction<{ fullName: string; email: string; areaKey: string; functionId: string; profileId: string; globalRole: 'platform_admin' | 'dashboard_viewer' | null }>>;
 }) {
   const { areas, busy, errors, form, functions, onCancel, onSubmit, profiles, setForm } = props;
   const [step, setStep] = useState(1);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const areaFunctions = functions.filter((item) => item.is_active && item.area_key === form.areaKey);
   const presets = [
     { key: 'platform-admin', label: 'Administrador da plataforma', description: 'Acesso amplo à operação e às configurações.', terms: ['admin', 'administrador'] },
@@ -617,9 +618,9 @@ function CreateUserCard(props: {
     { key: 'operator', label: 'Operador', description: 'Executa rotinas operacionais sem administrar acessos.', terms: ['operador', 'operator'] },
     { key: 'viewer', label: 'Usuário', description: 'Consulta informações e navega nas áreas liberadas.', terms: ['usuário', 'usuario', 'viewer', 'leitor'] },
   ];
-  function choosePreset(terms: string[]) {
+  function choosePreset(terms: string[], globalRole: 'platform_admin' | 'dashboard_viewer' | null = null) {
     const match = profiles.find((profile) => terms.some((term) => profile.name.toLowerCase().includes(term)));
-    setForm((current) => ({ ...current, profileId: match?.access_profile_id ?? '' }));
+    setForm((current) => ({ ...current, profileId: match?.access_profile_id ?? '', globalRole }));
     setStep(2);
   }
 
@@ -632,13 +633,13 @@ function CreateUserCard(props: {
         titleId="create-user-title"
         tone="primary"
       />
-      <form className="gso-ui-card-body" onSubmit={(event) => void onSubmit(event)}>
+      <form className="gso-ui-card-body" onSubmit={(event) => { event.preventDefault(); setConfirmOpen(true); }}>
         <div className="mb-4 flex items-center gap-2 text-xs text-[color:var(--gso-text-secondary)]" aria-label="Etapas do cadastro">
           {[['1', 'Perfil base'], ['2', 'Dados e área'], ['3', 'Revisão']].map(([number, label]) => <span className={step === Number(number) ? 'font-semibold text-[color:var(--gso-action-blue)]' : ''} key={number}>{number}. {label}</span>)}
         </div>
         {step === 1 ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            {presets.map((preset) => <button className="rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-4 text-left transition hover:border-[color:var(--gso-action-blue)]" key={preset.key} onClick={() => choosePreset(preset.terms)} type="button"><strong className="block text-sm text-[color:var(--gso-text-primary)]">{preset.label}</strong><span className="mt-1 block text-xs leading-5 text-[color:var(--gso-text-secondary)]">{preset.description}</span></button>)}
+            {presets.map((preset) => <button className="rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-4 text-left transition hover:border-[color:var(--gso-action-blue)]" key={preset.key} onClick={() => choosePreset(preset.terms, preset.key === 'platform-admin' ? 'platform_admin' : null)} type="button"><strong className="block text-sm text-[color:var(--gso-text-primary)]">{preset.label}</strong><span className="mt-1 block text-xs leading-5 text-[color:var(--gso-text-secondary)]">{preset.description}</span></button>)}
             <p className="sm:col-span-2 text-xs text-[color:var(--gso-text-secondary)]">O perfil base define o padrão. A área e a função refinam o contexto, sem exigir a marcação de dezenas de permissões.</p>
           </div>
         ) : null}
@@ -717,6 +718,15 @@ function CreateUserCard(props: {
           será obrigada a trocá-la no primeiro acesso.
         </p>
         {step > 1 ? <div className="gso-ui-actions"><UiButton disabled={busy} onClick={onCancel} type="button" variant="ghost">Cancelar</UiButton></div> : null}
+        {confirmOpen ? (
+          <div aria-labelledby="create-access-confirm-title" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog">
+            <div className="w-full max-w-lg rounded-2xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-1)] p-5 shadow-2xl">
+              <h3 className="text-base font-semibold text-[color:var(--gso-text-primary)]" id="create-access-confirm-title">Confirmar criação de acesso</h3>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--gso-text-secondary)]">Será criada uma conta para <strong>{form.fullName}</strong>, com o perfil <strong>{profiles.find((profile) => profile.access_profile_id === form.profileId)?.name || 'Personalizado'}</strong>. A senha temporária será exibida uma única vez.</p>
+              <div className="gso-ui-actions mt-5 justify-end"><UiButton onClick={() => setConfirmOpen(false)} type="button" variant="ghost">Voltar</UiButton><UiButton disabled={busy} onClick={() => { setConfirmOpen(false); void onSubmit(); }} type="button" variant="primary">Confirmar e criar</UiButton></div>
+            </div>
+          </div>
+        ) : null}
       </form>
     </UiCard>
   );
@@ -967,6 +977,18 @@ function UsersPanel(props: {
                       ))}
                     </ul>
                   )}
+                </div>
+                <div className="gso-ui-card-body">
+                  <UiCardHeader description="Uma role global libera o ambiente padrão da plataforma. A ação é auditada." icon="shield" title="Acesso à plataforma" tone="primary" />
+                  <div className="gso-ui-actions mt-3">
+                    <UiButton
+                      disabled={busy || selectedUser.platform_roles.includes('platform_admin')}
+                      onClick={() => void onAction(() => promotePlatformAdmin(selectedUser.user_id), 'Administrador da plataforma aplicado.', { title: 'Promover a administrador da plataforma?', impact: 'Este usuário poderá acessar o ambiente padrão e as configurações administrativas.' })}
+                      variant="primary"
+                    >
+                      {selectedUser.platform_roles.includes('platform_admin') ? 'Administrador da plataforma' : 'Promover a administrador da plataforma'}
+                    </UiButton>
+                  </div>
                 </div>
                 <div className="gso-ui-card-body">
                   <UiField label="Área">

@@ -32,6 +32,7 @@ type RequestBody = {
   areaKey?: string;
   functionId?: string | null;
   accessProfileId?: string | null;
+  globalRole?: 'platform_admin' | 'dashboard_viewer' | null;
   userId?: string;
 };
 
@@ -199,6 +200,17 @@ Deno.serve(async (req) => {
         { error: 'Não foi possível provisionar o acesso interno deste usuário.', compensated },
         { status: 400 },
       );
+    }
+
+    if (body.globalRole) {
+      const { error: roleError } = body.globalRole === 'platform_admin'
+        ? await userClient.rpc('rpc_admin_promote_platform_admin', { p_user_id: userId })
+        : await userClient.rpc('rpc_admin_set_global_role', { p_user_id: userId, p_role: body.globalRole, p_is_enabled: true });
+      if (roleError) {
+        const compensated = createdNow ? await compensateOrphanAuthUser(serviceClient, userId) : false;
+        console.error('internal-access-user-create role assignment failed', roleError.message, { compensated });
+        return jsonResponse({ error: 'Não foi possível aplicar o perfil global deste usuário.', compensated }, { status: 400 });
+      }
     }
 
     return jsonResponse({

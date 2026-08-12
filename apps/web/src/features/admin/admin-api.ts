@@ -1612,7 +1612,7 @@ export async function listInternalActorWorkspaceContext() {
 
 export async function setGlobalRole(input: {
   userId: string;
-  role: 'dashboard_viewer';
+  role: 'platform_admin' | 'dashboard_viewer';
   enabled: boolean;
 }) {
   const client = requireClient();
@@ -1626,6 +1626,13 @@ export async function setGlobalRole(input: {
     throw toAppError(error, 'Falha ao atualizar o papel global do usuário.');
   }
 
+  return data;
+}
+
+export async function promotePlatformAdmin(userId: string) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_promote_platform_admin', { p_user_id: userId });
+  if (error) throw toAppError(error, 'Falha ao promover o usuário a administrador da plataforma.');
   return data;
 }
 
@@ -1786,6 +1793,7 @@ export async function createAdminInternalUser(input: {
   areaKey: string;
   functionId?: string | null;
   accessProfileId?: string | null;
+  globalRole?: 'platform_admin' | 'dashboard_viewer' | null;
 }) {
   const client = requireClient();
   const { data, error } = await client.functions.invoke('internal-access-user-create', {
