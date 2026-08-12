@@ -159,19 +159,34 @@ export function AnalyticsCeoPage({
         });
     }
 
-    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
-      .then(([data, history, liveSourceStatus]) => {
-        if (!cancelled) {
-          setResult({ loading: false, data, history, sourceStatus: liveSourceStatus ?? sourceStatus });
-          setRefreshing(false);
+    void (async () => {
+      try {
+        // O histórico recalcula dois snapshots. Mantê-lo fora do mesmo lote do
+        // snapshot atual evita saturar o limite de execução do papel
+        // authenticated quando a tela é montada ou atualizada em duplicidade.
+        const [data, liveSourceStatus] = await Promise.all([
+          getCeoSnapshot(filters),
+          sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe(),
+        ]);
+        if (cancelled) return;
+
+        setResult({ loading: false, data, sourceStatus: liveSourceStatus ?? sourceStatus });
+        setRefreshing(false);
+
+        try {
+          const history = await getCeoHistory(filters);
+          if (!cancelled) setResult((current) => ({ ...current, history }));
+        } catch {
+          // A leitura atual continua operacional; a ausência do comparativo
+          // histórico não deve derrubar o dashboard inteiro.
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setResult((current) => ({ ...current, loading: false, error: true }));
           setRefreshing(false);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };

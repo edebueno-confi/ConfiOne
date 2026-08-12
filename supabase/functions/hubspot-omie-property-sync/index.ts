@@ -6,11 +6,24 @@ import { updateCompaniesBatch } from '../_shared/hubspot.ts';
 interface RollupRow {
   company_id: string;
   company_name?: string;
+  omie_client_code?: string | null;
   saldo_aberto: number;
   saldo_vencido: number;
   titulos_abertos: number;
   atraso_medio_dias: number;
   situacao: string;
+}
+
+function buildOmieProperties(row: RollupRow, nowDate: string): Record<string, string> {
+  return {
+    ...(row.omie_client_code ? { omie_cliente_id: String(row.omie_client_code) } : {}),
+    omie_saldo_aberto: String(row.saldo_aberto ?? 0),
+    omie_saldo_vencido: String(row.saldo_vencido ?? 0),
+    omie_titulos_abertos: String(row.titulos_abertos ?? 0),
+    omie_atraso_medio_dias: String(row.atraso_medio_dias ?? 0),
+    omie_situacao_financeira: String(row.situacao ?? ''),
+    omie_ultima_sincronizacao: nowDate,
+  };
 }
 
 async function authorize(req: Request, client: SupabaseClient): Promise<string | null> {
@@ -59,7 +72,7 @@ Deno.serve(async (req) => {
     .select('id').single();
   if (runError || !run) return jsonResponse({ error: `Falha ao registrar ledger do property-sync: ${runError?.message ?? 'run indisponivel'}` }, { status: 500 });
   const runId = String(run.id);
-  const plannedItems = targets.map((row) => ({ run_id: runId, company_id: String(row.company_id), status: 'planned', after_payload: { omie_saldo_aberto: String(row.saldo_aberto ?? 0), omie_saldo_vencido: String(row.saldo_vencido ?? 0), omie_titulos_abertos: String(row.titulos_abertos ?? 0), omie_atraso_medio_dias: String(row.atraso_medio_dias ?? 0), omie_situacao_financeira: String(row.situacao ?? ''), omie_ultima_sincronizacao: nowDate } }));
+  const plannedItems = targets.map((row) => ({ run_id: runId, company_id: String(row.company_id), status: 'planned', after_payload: buildOmieProperties(row, nowDate) }));
   if (plannedItems.length) {
     const { error: itemError } = await client.from('analytics_hubspot_omie_property_sync_items').insert(plannedItems);
     if (itemError) return jsonResponse({ error: `Falha ao registrar itens do property-sync: ${itemError.message}` }, { status: 500 });
@@ -87,14 +100,7 @@ Deno.serve(async (req) => {
   const batchSize = 100;
   for (let index = 0; index < targets.length; index += batchSize) {
     const batch = targets.slice(index, index + batchSize);
-    const updates = batch.map((r) => ({ id: String(r.company_id), properties: {
-      omie_saldo_aberto: String(r.saldo_aberto ?? 0),
-      omie_saldo_vencido: String(r.saldo_vencido ?? 0),
-      omie_titulos_abertos: String(r.titulos_abertos ?? 0),
-      omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
-      omie_situacao_financeira: String(r.situacao ?? ''),
-      omie_ultima_sincronizacao: nowDate,
-    }}));
+    const updates = batch.map((r) => ({ id: String(r.company_id), properties: buildOmieProperties(r, nowDate) }));
     try {
       const batchUpdated = await updateCompaniesBatch(updates, token);
       updated += batchUpdated;

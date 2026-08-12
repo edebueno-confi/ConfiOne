@@ -33,7 +33,13 @@ type SortKey = 'balance' | 'name';
 
 function matchesQuery(item: ReconciliationItem, query: string) {
   if (!query) return true;
-  return [item.sourceName, item.sourceTradeName, item.sourceTaxId]
+  return [
+    item.sourceName,
+    item.sourceTradeName,
+    item.sourceTaxId,
+    item.omieClientCode,
+    ...item.candidates.flatMap((candidate) => [candidate.companyName, candidate.taxId]),
+  ]
     .filter(Boolean)
     .some((value) => String(value).toLocaleLowerCase('pt-BR').includes(query));
 }
@@ -57,11 +63,15 @@ export function CompanyReconciliationPanel() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0]);
 
-  const load = useCallback(async (nextPage: number, nextPerPage: number) => {
+  const load = useCallback(async (nextPage: number, nextPerPage: number, nextQuery = '') => {
     setPhase('loading');
     setError(null);
     try {
-      const next = await getCompanyReconciliationQueue({ limit: nextPerPage, offset: (nextPage - 1) * nextPerPage });
+      const searching = nextQuery.trim().length > 0;
+      const next = await getCompanyReconciliationQueue({
+        limit: searching ? 500 : nextPerPage,
+        offset: searching ? 0 : (nextPage - 1) * nextPerPage,
+      });
       setQueue(next);
       setSourceKey((current) => current && next.items.some((item) => item.sourceKey === current) ? current : next.items[0]?.sourceKey ?? null);
       setPhase('ready');
@@ -71,7 +81,7 @@ export function CompanyReconciliationPanel() {
     }
   }, []);
 
-  useEffect(() => { void load(page, perPage); }, [load, page, perPage]);
+  useEffect(() => { void load(page, perPage, query); }, [load, page, perPage, query]);
 
   const item = useMemo(() => queue?.items.find((entry) => entry.sourceKey === sourceKey) ?? null, [queue, sourceKey]);
   const candidate = item?.candidates.find((entry) => entry.companyId === companyId) ?? null;
@@ -95,7 +105,8 @@ export function CompanyReconciliationPanel() {
       });
   }, [query, queue?.items, sortDirection, sortKey, statusFilter]);
 
-  const totalForFilter = statusFilter === 'pending' ? queue?.summary.pending ?? 0 : statusFilter === 'confirmed' ? queue?.summary.confirmed ?? 0 : queue?.summary.total ?? 0;
+  const totalForStatus = statusFilter === 'pending' ? queue?.summary.pending ?? 0 : statusFilter === 'confirmed' ? queue?.summary.confirmed ?? 0 : queue?.summary.total ?? 0;
+  const totalForFilter = query.trim() ? visibleItems.length : totalForStatus;
 
   function sortBy(nextKey: SortKey) {
     if (sortKey === nextKey) setSortDirection((current) => current === 'desc' ? 'asc' : 'desc');
@@ -112,7 +123,7 @@ export function CompanyReconciliationPanel() {
     try {
       if (decision === 'revoked') await revokeCompanyReconciliation(item.sourceKey, evidence);
       else await decideCompanyReconciliation({ sourceKey: item.sourceKey, sourceName: item.sourceName, sourceTaxId: item.sourceTaxId, companyId: candidate!.companyId, decision, evidence });
-      await load(page, perPage);
+      await load(page, perPage, query);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a decisão.');
     } finally { setSaving(null); }
@@ -188,9 +199,11 @@ function Comparison({ item, candidate, choose }: { item: ReconciliationItem; can
   const sourceFields = [
     ['Razão social', item.sourceName],
     ['Nome fantasia', item.sourceTradeName ?? 'Indisponível'],
+    ['Código OMIE', item.omieClientCode ?? 'Indisponível'],
     ['CNPJ', item.sourceTaxId ?? 'Indisponível'],
     ['Títulos', item.titleCount.toLocaleString('pt-BR')],
     ['Saldo em aberto', money.format(item.totalBalance)],
+    ['Valor vencido', money.format(item.overdueBalance)],
   ];
   return (
     <UiCard flush labelledBy="reconciliation-comparison-title">
@@ -207,7 +220,7 @@ function Comparison({ item, candidate, choose }: { item: ReconciliationItem; can
               <tbody>
                 {item.candidates.map((entry) => (
                   <tr className={candidate?.companyId === entry.companyId ? 'is-selected' : undefined} key={entry.companyId}>
-                    <td><label className="gso-ui-reconciliation-candidate"><input checked={candidate?.companyId === entry.companyId} name="reconciliation-candidate" onChange={() => choose(entry.companyId)} type="radio" /><span><strong>{entry.companyName}</strong><small>{entry.taxId ? `CNPJ: ${entry.taxId}` : 'CNPJ não informado'} · {reason[entry.reason] ?? entry.reason}</small>{buildHubSpotCompanyUrl(entry.companyId) ? <a className="gso-ui-link" href={buildHubSpotCompanyUrl(entry.companyId) ?? undefined} rel="noreferrer" target="_blank">Abrir no HubSpot</a> : null}</span></label></td>
+                    <td><label className="gso-ui-reconciliation-candidate"><input checked={candidate?.companyId === entry.companyId} name="reconciliation-candidate" onChange={() => choose(entry.companyId)} type="radio" /><span><strong>{entry.companyName}</strong><small>{entry.taxId ? `CNPJ: ${entry.taxId}` : 'CNPJ não informado'} · {reason[entry.reason] ?? entry.reason}</small><small>CSM ID: {entry.ownerId ?? 'Indisponível'} · Fonte: {entry.source}</small><small>Match: apenas sugestão até confirmação humana.</small>{buildHubSpotCompanyUrl(entry.companyId) ? <a className="gso-ui-link" href={buildHubSpotCompanyUrl(entry.companyId) ?? undefined} rel="noreferrer" target="_blank">Abrir no HubSpot</a> : null}</span></label></td>
                     <td className="gso-ui-table-numeric">{entry.score === null ? 'Indisponível' : `${(entry.score * 100).toFixed(0)}%`}</td>
                     <td><UiBadge tone={candidateDecisionTone(entry.decision)}>{entry.decision === 'confirmed' ? 'Confirmada' : entry.decision === 'discarded' ? 'Descartada' : 'Sugestão'}</UiBadge></td>
                   </tr>

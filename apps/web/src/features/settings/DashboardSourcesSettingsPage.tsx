@@ -11,6 +11,8 @@ import {
   getAnalyticsSourceStatus,
   getIntegrationSchedule,
   listAnalyticsSourceConfig,
+  runHubSpotOmiePropertySync,
+  runHubSpotPropertySetup,
   setIntegrationSchedule,
   triggerHubspotSync,
   triggerOmieSync,
@@ -207,6 +209,7 @@ export function DashboardSourcesSettingsPage() {
   const [syncProgress, setSyncProgress] = useState('Preparando a atualização das fontes.');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [propertyMirrorBusy, setPropertyMirrorBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -289,6 +292,27 @@ export function DashboardSourcesSettingsPage() {
       setMessage('Atualização automática salva.');
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a atualização automática.'); } finally { setBusy(false); }
+  };
+
+  const updateHubSpotFinancialMirror = async () => {
+    if (!window.confirm('Criar ou confirmar as propriedades OMIE e atualizar os dados financeiros das empresas no HubSpot? A operação será registrada em auditoria e não altera vínculos de empresa.')) return;
+    setPropertyMirrorBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const setup = await runHubSpotPropertySetup(false);
+      const setupFailed = Number(setup.summary?.failed ?? 0);
+      if (setupFailed > 0) throw new Error(`A configuração das propriedades terminou com ${setupFailed} falha(s).`);
+      const sync = await runHubSpotOmiePropertySync(false, 5000);
+      const syncFailed = Number(sync.failed ?? 0);
+      if (syncFailed > 0) throw new Error(`A atualização financeira terminou com ${syncFailed} falha(s).`);
+      setMessage(`Espelho financeiro atualizado no HubSpot: ${Number(sync.updated ?? 0).toLocaleString('pt-BR')} empresas processadas. Ledger: ${sync.ledgerRunId ?? 'registrado'}.`);
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível atualizar o espelho financeiro no HubSpot.');
+    } finally {
+      setPropertyMirrorBusy(false);
+    }
   };
 
   const run = async (kind: 'full' | 'hubspot' | 'omie') => {
@@ -501,6 +525,37 @@ export function DashboardSourcesSettingsPage() {
           </div>
         </div>
         {!canEdit ? <p className="gso-ui-note">Seu perfil pode consultar as fontes, mas não pode alterar configurações ou iniciar atualizações.</p> : null}
+      </UiCard> : null}
+
+      {tab === 'sources' ? <UiCard labelledBy="hubspot-financial-mirror-title">
+        <UiCardHeader
+          actions={
+            <UiButton
+              disabled={!canEdit || busy || propertyMirrorBusy}
+              icon="refresh"
+              onClick={() => void updateHubSpotFinancialMirror()}
+              variant="primary"
+            >
+              {propertyMirrorBusy ? 'Atualizando HubSpot…' : 'Atualizar espelho financeiro'}
+            </UiButton>
+          }
+          description="Publica no HubSpot o identificador OMIE e os valores financeiros já consolidados no read model."
+          icon="database"
+          title="Espelho financeiro no HubSpot"
+          titleId="hubspot-financial-mirror-title"
+          tone="accent"
+        />
+        <div className="gso-ui-card-body">
+          <p className="gso-ui-note">
+            A operação é administrativa, idempotente e auditada. Primeiro garante o grupo e as propriedades OMIE; depois atualiza somente os campos financeiros, sem confirmar ou substituir vínculos da conciliação.
+          </p>
+          <ul className="gso-ui-facts">
+            <li><strong>Identidade:</strong> código do cliente OMIE, quando publicado no read model.</li>
+            <li><strong>Financeiro:</strong> saldo em aberto, saldo vencido, títulos, atraso médio, situação e data da sincronização.</li>
+            <li><strong>Segurança:</strong> exige perfil administrativo autorizado e grava o histórico de cada execução e empresa processada.</li>
+          </ul>
+          {!canEdit ? <p className="gso-ui-note">Seu perfil pode consultar o espelho, mas não pode executar escrita no HubSpot.</p> : null}
+        </div>
       </UiCard> : null}
 
       {tab === 'pipelines' ? <>
