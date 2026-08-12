@@ -10,6 +10,7 @@ import {
 import {
   Link,
   NavLink,
+  type NavLinkRenderProps,
   Navigate,
   Outlet,
   useLocation,
@@ -297,7 +298,7 @@ function PortalShell({ children }: { children: ReactNode }) {
               { label: 'Central autorizada', to: '/portal/help' },
             ].map((item) => (
               <NavLink
-                className={({ isActive }) =>
+                className={({ isActive }: NavLinkRenderProps) =>
                   cx(
                     'rounded-[16px] px-3 py-3 text-sm font-medium transition',
                     isActive
@@ -498,7 +499,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                 { label: 'Central autorizada', to: '/portal/help' },
               ].map((item) => (
                 <NavLink
-                  className={({ isActive }) =>
+                  className={({ isActive }: NavLinkRenderProps) =>
                     cx(
                       'inline-flex min-h-11 items-center rounded-[16px] px-3 text-sm font-medium transition',
                       isActive
