@@ -53,6 +53,32 @@ import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
 
 type Row = Record<string, unknown>;
 
+const analyticsRpcInFlight = new Map<string, Promise<unknown>>();
+
+async function readAnalyticsRpc<T>(
+  rpcName: string,
+  args: Record<string, unknown> | undefined,
+  errorMessage: string,
+): Promise<T> {
+  const key = `${rpcName}:${JSON.stringify(args ?? {})}`;
+  const inFlight = analyticsRpcInFlight.get(key);
+  if (inFlight) return inFlight as Promise<T>;
+
+  const request = (async () => {
+    const client = requireSupabaseBrowserClient();
+    const { data, error } = await client.rpc(rpcName, args);
+    if (error) throw toAppError(error, errorMessage);
+    return data as T;
+  })();
+
+  analyticsRpcInFlight.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (analyticsRpcInFlight.get(key) === request) analyticsRpcInFlight.delete(key);
+  }
+}
+
 export async function getCommercialKpis(): Promise<CommercialKpis> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
@@ -285,10 +311,11 @@ export async function getCustomerSuccessKpisV2(): Promise<unknown> {
 }
 
 export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unknown> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(filters));
-  if (error) throw toAppError(error, 'Falha ao carregar o resumo executivo.');
-  return data;
+  return readAnalyticsRpc(
+    'rpc_analytics_executive_kpis_v2',
+    rpcFilters(filters),
+    'Falha ao carregar o resumo executivo.',
+  );
 }
 
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
@@ -433,16 +460,20 @@ export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'succe
 }
 
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_ceo_snapshot', { ...rpcFilters(filters) });
-  if (error) throw toAppError(error, 'Falha ao carregar a visão executiva.');
+  const data = await readAnalyticsRpc<unknown>(
+    'rpc_analytics_ceo_snapshot',
+    { ...rpcFilters(filters) },
+    'Falha ao carregar a visão executiva.',
+  );
   return mapCeoSnapshot(data);
 }
 
 export async function getCeoHistory(filters: AnalyticsFilters): Promise<CeoHistory> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_ceo_history', { ...rpcFilters(filters) });
-  if (error) throw toAppError(error, 'Falha ao carregar a evolucao historica executiva.');
+  const data = await readAnalyticsRpc<unknown>(
+    'rpc_analytics_ceo_history',
+    { ...rpcFilters(filters) },
+    'Falha ao carregar a evolucao historica executiva.',
+  );
   return mapCeoHistory(data);
 }
 
