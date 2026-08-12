@@ -2,7 +2,7 @@
 
 ## Veredito
 
-`inconsistente com ressalvas críticas`: a Central pública está acessível e o corpus atual está publicado, mas a baseline ainda contém referências de imagens sem assets correspondentes, 10 artigos com marcadores de mojibake no corpo, não possui canal de suporte configurado e mantém artigos legados sensíveis publicados sem uma decisão individual registrada para o estado atual.
+`inconsistente com ressalvas críticas`: a Central pública está acessível e o corpus atual está publicado, mas a baseline ainda contém referências de imagens sem assets correspondentes, não possui canal de suporte configurado e mantém artigos legados sensíveis publicados sem uma decisão individual registrada para o estado atual.
 
 Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usando as views/tabelas públicas da Knowledge Base. Não houve escrita remota durante esta auditoria.
 
@@ -16,11 +16,11 @@ Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usan
 | Referências `knowledge-asset:<id>` em artigos públicos | 128 | `body_md` |
 | Referências de asset sem linha correspondente | 128 | `LEFT JOIN` por UUID |
 | Artigos com caractere de substituição UTF-8 | 0 | `chr(65533)` em título, resumo e corpo |
-| Artigos com marcadores de mojibake | 10 | `Ã`, `Â`, `â` ou `ð` em título, resumo ou corpo |
+| Artigos com mojibake confirmado | 0 | detector de sequências malformadas (`Ã`/`Â` + byte de continuação, `â€`, `ðŸ`) |
 | Artigos com placeholder de FAQ | 0 | busca por `link da FAQ` |
 | Contatos públicos configurados | nenhum | `vw_public_knowledge_space_resolver.support_contacts = {}` |
 
-O frontend esconder a imagem ausente evita um placeholder quebrado na tela, mas não corrige a fonte de dados: o artigo continua contendo a referência e o asset não existe no read model público. A checagem anterior por `chr(65533)` também era insuficiente: o estado atual ainda contém 10 corpos com mojibake, que precisam de normalização editorial antes de declarar a qualidade resolvida.
+O frontend esconder a imagem ausente evita um placeholder quebrado na tela, mas não corrige a fonte de dados: o artigo continua contendo a referência e o asset não existe no read model público. A primeira busca por qualquer letra `Ã`/`â` gerava falso positivo em palavras portuguesas válidas; a consulta atual usa sequências malformadas e confirmou zero artigos públicos com mojibake.
 
 ## Os sete tópicos da migração Genius > Aftersale V2
 
@@ -40,12 +40,12 @@ Não foi encontrado artigo público com `antifraude` no título, resumo ou corpo
 
 ## Causa raiz dos problemas de qualidade
 
-- **Mojibake:** a origem `raw_knowledge/octadesk_export/latest` ainda contém textos como `Ã¡` e `Ã§Ã£` em `article.json`/`content.*`. A migration `20260812150000_help_center_public_corpus_quality_v2.sql` fez forward-fix direcionado para um único artigo (`como-atualizar-os-dados-de-integracao-do-e-commerce`); os 10 artigos listados na consulta atual não passaram por essa normalização.
+- **Mojibake:** o export legado contém alguns campos históricos com representação mojibake em `article.json`, enquanto o corpus público atual passou pelo detector específico sem ocorrências confirmadas. O normalizador local `scripts/knowledge/legacy-normalization.mjs` foi robustecido para reparar também sequências Windows-1252 em futuras importações, sem alterar palavras portuguesas válidas.
 - **Imagens:** o índice local registra 129 assets em 53 artigos, e os arquivos dos sete tópicos auditados existem no export local. O runtime público, porém, tem zero linhas em `knowledge_article_assets`, enquanto os corpos publicados já carregam 128 markers `knowledge-asset:<id>`. A causa é a separação entre a migration editorial que gravou os markers e o reprocessador de assets `scripts/knowledge/reprocess-octadesk-article-assets.mjs`, que ainda não foi aplicado ao ambiente público.
 - **FAQ:** o placeholder foi removido no forward-fix de qualidade e a consulta atual não encontrou ocorrência publicada.
 - **Suporte:** o resolver público lê `brand_settings.support_contacts`; o valor atual é `{}`, portanto não existe canal real para o frontend exibir.
 
-Artigos públicos com marcador de mojibake confirmado: `api-docs-swagger-e-referencia-tecnica`, `como-atualizar-os-dados-de-integracao-do-e-commerce`, `como-automatizar-o-pagamento-de-estorno-e-vale-compra`, `como-configurar-o-blocklist`, `como-consultar-processos-e-acompanhar-status`, `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce`, `permissoes-tray`, `permissoes-vtex`, `posso-filtrar-as-solicitacoes-de-reversas` e `variacao-do-produto`.
+Não há artigos públicos com mojibake confirmado pelo detector específico atual.
 
 ## Artigos publicados com tema sensível explícito
 
@@ -94,4 +94,4 @@ Recomendação técnica: opção 1 apenas como exceção com prazo e lista nomin
 
 ## Limitação e próximo gate
 
-Não foi executada escrita remota nesta auditoria. A publicação/alteração do corpus público e a reconciliação de assets exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+Não foi executada escrita remota nesta auditoria. O dry-run do reprocessador local não avançou porque o ambiente não tinha `KNOWLEDGE_ADMIN_EMAIL/PASSWORD`; a inspeção read-only confirmou que os arquivos de asset existem no export. A publicação/alteração do corpus público e a reconciliação de assets exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.

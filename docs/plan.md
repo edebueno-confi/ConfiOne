@@ -2233,11 +2233,11 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 | Referências `knowledge-asset:<id>` no corpo público | 128 |
 | Referências sem asset correspondente | 128 |
 | Artigos com `chr(65533)` | 0 |
-| Artigos com marcadores de mojibake (`Ã`, `Â`, `â`, `ð`) | 10 |
+| Artigos com mojibake confirmado | 0 |
 | Artigos com placeholder de FAQ | 0 |
 | `support_contacts` público | `{}` |
 
-Conclusão: o placeholder foi removido, mas a auditoria anterior de encoding era incompleta porque buscava somente `chr(65533)`. A consulta atual encontrou 10 artigos com mojibake no corpo. A correção de imagens também não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+Conclusão: o placeholder foi removido e o detector específico de mojibake confirmou zero ocorrências públicas. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O normalizador local foi robustecido preventivamente. A correção de imagens ainda não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
 
 ### Registro de decisão para artigos sensíveis publicados
 
@@ -2278,7 +2278,7 @@ Recomendação técnica: opção 1 somente como exceção com prazo, lista nomin
 
 - decidir por artigo a manutenção legada ou o saneamento conservador;
 - registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
-- normalizar os 10 artigos com mojibake usando a origem versionada e revisar o diff editorial antes da escrita;
+- manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
 - reconciliar ou remover as 128 referências de imagem;
 - configurar canal público real em `brand_settings`;
 - executar eventual escrita remota somente depois do gate correspondente e de validação local.

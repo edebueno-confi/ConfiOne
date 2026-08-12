@@ -12,6 +12,17 @@ test('corrige somente o fragmento legado sem corromper os demais acentos', () =>
   assert.equal(repairMojibake('ConfiguraÃ§Ã£o de parametrização'), 'Configuração de parametrização');
 });
 
+test('corrige aspas tipográficas e emoji codificados como Windows-1252', () => {
+  assert.equal(
+    repairMojibake('Resposta â€œinválidaâ€ e valor ðŸ’°'),
+    'Resposta “inválida” e valor 💰',
+  );
+});
+
+test('preserva palavras válidas com a letra â', () => {
+  assert.equal(repairMojibake('INTEGRAÇÃO, câmbio e parâmetro'), 'INTEGRAÇÃO, câmbio e parâmetro');
+});
+
 test('remove contato legado inline sem remover o conteúdo operacional', () => {
   assert.equal(
     stripLegacySupportContacts('Fale com o suporte, WhatsApp 11978935651 e e-mail.'),
