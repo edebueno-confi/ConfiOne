@@ -2212,7 +2212,7 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Não alterado: contratos de dados, RPCs, regras de frescor, RLS ou credenciais.
 - Pendências técnicas: telemetria por request, atomicidade do bloco compartilhado HubSpot, tombstones/arquivamentos e smoke visual autenticado em todos os viewports.
 
-## Adendo corrente — auditoria de governança da Central pública — 12/08/2026
+## Registro histórico — auditoria inicial de governança da Central pública — 12/08/2026
 
 ### Escopo e estado de execução
 
@@ -2223,25 +2223,25 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - escrita remota nesta etapa: não executada
 - relatório detalhado: `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`
 
-### Evidência atual do corpus público
+### Snapshot local anterior — não usar como evidência de produção
 
 | Medida | Resultado |
 | --- | ---: |
 | Artigos `published/public` em `genius` | 69 |
 | Categorias públicas | 12 |
-| Linhas de asset editorial | 128 |
-| Referências `knowledge-asset:<id>` no corpo público | 128 |
+| Linhas de asset editorial | 128 (snapshot local anterior) |
+| Referências `knowledge-asset:<id>` no corpo público | 128 (snapshot local anterior) |
 | Referências sem asset correspondente | 0 |
 | Artigos com `chr(65533)` | 0 |
 | Artigos com mojibake confirmado | 0 |
 | Artigos com placeholder de FAQ | 0 |
 | `support_contacts` público | `{ "websiteUrl": "https://www.geniusreturns.com.br/contato/" }` |
 
-Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, caractere de substituição ou placeholder de FAQ na consulta pública atual. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé agora oferece a página oficial de contato registrada pelo backend; e-mail e WhatsApp permanecem ausentes porque não há fonte atual confirmada para esses canais.
+Conclusão histórica: naquele snapshot local, os 128 assets correspondiam aos 128 markers do corpo. Essa evidência foi substituída pela reconciliação final de produção ao fim deste documento, que confirmou zero markers, zero referências quebradas, zero placeholder de FAQ, zero caractere de substituição, zero mojibake confirmado e o canal oficial de contato.
 
 ### Registro de decisão para artigos sensíveis publicados
 
-A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A consulta nominal dos sete tópicos da migração também confirmou artigos públicos de BlockList, estorno automático PIX, cálculo/estorno, vale-compra, motivos, logística reversa e prazo de postagem. Os IDs e slugs estão no relatório de auditoria. Para todos eles, o estado operacional deste lote é `EXCEÇÃO_LEGADA_DELEGADA`: continuam públicos para preservar cobertura, com correções objetivas permitidas, enquanto qualquer novo canônico permanece bloqueado até revisão formal.
+A consulta histórica por tema confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A lista nominal atual, com IDs/slugs do espaço de produção e a decisão por artigo, está na reconciliação final do relatório de auditoria. A decisão operacional permanece `EXCEÇÃO_LEGADA_DELEGADA` para o lote atual: continuam públicos para preservar cobertura, com correções objetivas permitidas, enquanto qualquer novo canônico permanece bloqueado até revisão formal.
 
 Os documentos canônicos existentes permanecem respeitados:
 
@@ -2249,7 +2249,7 @@ Os documentos canônicos existentes permanecem respeitados:
 - os rewrites de formas de estorno, motivos de troca/devolução, prazo de postagem, pendência de logística reversa e CEP/endereço são candidatos, não publicações aprovadas;
 - nenhuma aprovação foi simulada e nenhum canônico foi publicado nesta etapa.
 
-Além dos 15 artigos de alta confiança, há uma watchlist de 15 artigos com termo sensível apenas no corpo, muitas vezes em link relacionado, exemplo ou alt de imagem. Ela exige classificação semântica antes de ser tratada como violação; o runbook foi ajustado para não confundir ocorrência lexical incidental com decisão editorial.
+Além dos 15 artigos de alta confiança do snapshot histórico, havia uma watchlist de 15 artigos com termo sensível apenas no corpo. Ela exige classificação semântica antes de ser tratada como violação; o runbook foi ajustado para não confundir ocorrência lexical incidental com decisão editorial. A evidência atual é a reconciliação final do relatório.
 
 ### Matriz nominal dos sete tópicos da migração
 
@@ -2281,3 +2281,11 @@ Cada linha abaixo foi confirmada como `published/public` no banco. `EXCEÇÃO_LE
 - validação local concluída para o reparo por slug: `published/public`, sem `chr(65533)`, placeholder ou quebra de passo colapsada;
 - canal público real configurado em `brand_settings` via RPC administrativo: `websiteUrl = https://www.geniusreturns.com.br/contato/`;
 - executar a escrita remota somente pelo fluxo administrativo autenticado e repetir a consulta read-only após a publicação.
+
+## Reconciliação final da Central pública em produção — 2026-08-12
+
+O espaço de produção efetivamente resolvido para `genius` é `526f7658-8e15-4e74-a1a0-631fbf0e7285`. A consulta read-only final confirmou 69 artigos `published/public`, zero marcadores `knowledge-asset:<id>`, zero referências quebradas, zero placeholder de FAQ, zero caractere de substituição, zero mojibake confirmado pelo detector específico e zero resumo genérico deixado pelo saneamento. O canal público é exclusivamente `websiteUrl = https://www.geniusreturns.com.br/contato/`.
+
+Foram corrigidos pelo editor autenticado 36 artigos que continham 89 referências legadas sem asset público. A ação foi limitada à remoção dos blocos de imagem sem correspondência, seguida de salvamento e republicação pelo gate editorial existente. Os 22 resumos preenchidos transitoriamente para satisfazer o pré-voo foram restaurados para resumos específicos e republicados.
+
+A decisão de produto deste lote permanece: artigos legados sensíveis já publicados ficam em `EXCEÇÃO_LEGADA_DELEGADA`, com saneamento objetivo permitido; nenhum novo canônico sensível é aprovado ou publicado sem revisão formal nominal de Produto, Engenharia, Suporte/CS. A matriz nominal atualizada por IDs/slugs reais está em `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`.
