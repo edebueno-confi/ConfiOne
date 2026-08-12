@@ -18,6 +18,7 @@ Definir o procedimento operacional seguro para curar, revisar e publicar artigos
 - nao executar publish remoto sem evidencia local e sem checklist concluido
 - nao assumir que `published` basta; o `knowledge_space` precisa estar `active`
 - bloquear automaticamente qualquer artigo com credencial, token, senha, chave, `service_role`, header de autorizacao, JWT, URL assinada, payload sensivel, dado pessoal sensivel, instrucao interna, endpoint privado, conteudo quebrado/vazio ou duplicidade exata sem canonical
+- bloquear readiness quando `title`, `summary` ou `body_md` contiverem marcadores de mojibake (`Ã`, `Â`, `â` ou `ð`), mesmo que não exista o caractere de substituição `�`
 - nao republicar artigo Octadesk reprocessado enquanto os assets referenciados por `knowledge-asset:<id>` estiverem `pending` ou `blocked`
 
 ## Pre-requisitos para publicar
@@ -256,6 +257,7 @@ npm run supabase:verify
 - `title` revisado
 - `summary` revisado
 - `body_md` revisado
+- ausência de marcadores de mojibake e de caractere de substituição no conteúdo publicado
 - categoria final correta
 - `visibility = public` validada manualmente
 - nenhuma exposicao de segredo, endpoint interno ou operacao sensivel

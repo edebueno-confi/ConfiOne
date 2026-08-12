@@ -2233,14 +2233,15 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 | Referências `knowledge-asset:<id>` no corpo público | 128 |
 | Referências sem asset correspondente | 128 |
 | Artigos com `chr(65533)` | 0 |
+| Artigos com marcadores de mojibake (`Ã`, `Â`, `â`, `ð`) | 10 |
 | Artigos com placeholder de FAQ | 0 |
 | `support_contacts` público | `{}` |
 
-Conclusão: a correção de encoding e placeholder foi confirmada no banco. A correção de imagens ainda não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé também permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+Conclusão: o placeholder foi removido, mas a auditoria anterior de encoding era incompleta porque buscava somente `chr(65533)`. A consulta atual encontrou 10 artigos com mojibake no corpo. A correção de imagens também não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
 
 ### Registro de decisão para artigos sensíveis publicados
 
-A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. Os IDs e slugs nominais estão no relatório de auditoria. Para todos eles, o estado de decisão é `PENDENTE_PRODUCT_CS` (com Engenharia ou governança financeira quando indicado pelo subcluster), porque não existe evidência humana atual para escolher entre manutenção temporária da exceção legada ou retirada/substituição canônica.
+A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A consulta nominal dos sete tópicos da migração também confirmou artigos públicos de BlockList, estorno automático PIX, cálculo/estorno, vale-compra, motivos, logística reversa e prazo de postagem. Os IDs e slugs estão no relatório de auditoria. Para todos eles, o estado de decisão é `PENDENTE_PRODUCT_CS` (com Engenharia ou governança financeira quando indicado pelo subcluster), porque não existe evidência humana atual para escolher entre manutenção temporária da exceção legada ou retirada/substituição canônica.
 
 Os documentos canônicos existentes permanecem respeitados:
 
@@ -2249,6 +2250,22 @@ Os documentos canônicos existentes permanecem respeitados:
 - nenhuma aprovação foi simulada e nenhum canônico foi publicado nesta etapa.
 
 Além dos 15 artigos de alta confiança, há uma watchlist de 15 artigos com termo sensível apenas no corpo, muitas vezes em link relacionado, exemplo ou alt de imagem. Ela exige classificação semântica antes de ser tratada como violação; o runbook foi ajustado para não confundir ocorrência lexical incidental com decisão editorial.
+
+### Matriz nominal dos sete tópicos da migração
+
+Cada linha abaixo foi confirmada como `published/public` no banco. `PENDENTE_PRODUCT_CS` é o estado documental real; a coluna de recomendação não substitui a aprovação humana exigida.
+
+| Tópico | Artigo / ID / slug | Recomendação técnica | Estado |
+| --- | --- | --- | --- |
+| BlockList | `22895093-a670-4836-8e18-ec9c21761e3b` / `como-configurar-o-blocklist` | manter somente como exceção legada corrigida ou arquivar; não há canônico aprovado | `PENDENTE_PRODUCT_CS` |
+| Estorno automático PIX | `15d7c880-4c8d-4833-902d-92c8e8c3abd7` / `como-configurar-o-estorno-automatico-via-pix` | saneamento conservador; rewrite depende de Produto + Engenharia + CS | `PENDENTE_PRODUCT_CS` |
+| Cálculo de estorno | `d72dd20e-9044-45ab-a339-15fb3f561668` / `como-configurar-o-calculo-do-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Limite de estorno | `f2f5fba0-94ee-4159-b63b-0636edb6085c` / `limitando-o-valor-maximo-de-um-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Política de frete | `b5b2972c-c45c-4d58-af90-bed28909c89d` / `politica-para-estorno-do-frete` | saneamento conservador; requer governança financeira/operacional | `PENDENTE_PRODUCT_CS` |
+| Vale-compra | `95654f3b-ac06-4b24-9947-39b436bef979` / `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `096d01bd-8b3c-4eb4-8392-8a381bf5e39b` / `como-configurar-o-vale-compras-retencao`; `40e23d70-cf7f-4442-a698-2c312574f739` / `como-realizar-alteracoes-em-um-vale-compra-pendente`; `cf5febab-ba03-4c95-bcd2-f0c01216a2ec` / `pedidos-pagos-com-vale-compras`; `7a148387-a690-4662-9492-7ef9958ed331` / `sellers-permitidos-para-criar-vale-compras` | manter apenas por exceção nominal ou retirar; não há rewrite aprovado | `PENDENTE_PRODUCT_CS` |
+| Motivos de troca/devolução | `3d3b6d48-7b06-435b-aeaf-018d3670fcef` / `como-cadastrar-motivos-para-troca-ou-devolucao`; `96c630b8-7912-45c0-a456-aa4b89789dad` / `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` | substituir por recorte canônico após aprovação de Produto + CS | `PENDENTE_PRODUCT_CS` |
+| Logística reversa | `f6e84831-4299-4df1-a69b-3042164a1041` / `como-o-consumidor-solicita-uma-reversa`; `7224ca4a-286b-4b58-9fab-5c57d6e1ba0c` / `habilitar-a-api-de-logistica-reversa-do-correios`; `672b1a48-a89a-494b-8f86-22c29c44e35c` / `pendencia-de-logistica-reversa`; `e361c695-8391-4736-aab0-9879a9df03bd` / `posso-filtrar-as-solicitacoes-de-reversas`; `10fe946f-7407-43ce-85b9-68b6ef14ab70` / `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` | substituir por rewrites de logística/postagem aprovados; integração Correios continua bloqueada | `PENDENTE_PRODUCT_CS` |
+| Prazo de postagem | `beea958a-1e18-465a-b919-5defcb199135` / `como-configurar-o-prazo-logistico-por-estado` | substituir por `KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` após aprovação | `PENDENTE_PRODUCT_CS` |
 
 ### Opções submetidas ao gate humano
 
@@ -2261,6 +2278,7 @@ Recomendação técnica: opção 1 somente como exceção com prazo, lista nomin
 
 - decidir por artigo a manutenção legada ou o saneamento conservador;
 - registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
+- normalizar os 10 artigos com mojibake usando a origem versionada e revisar o diff editorial antes da escrita;
 - reconciliar ou remover as 128 referências de imagem;
 - configurar canal público real em `brand_settings`;
 - executar eventual escrita remota somente depois do gate correspondente e de validação local.
