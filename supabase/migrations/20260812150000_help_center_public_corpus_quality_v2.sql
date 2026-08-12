@@ -7,6 +7,7 @@ begin;
 do $$
 declare
   v_article public.knowledge_articles;
+  v_clean_body text;
 begin
   for v_article in
     select ka.*
@@ -18,35 +19,38 @@ begin
       and ka.status = 'published'
       and ka.visibility = 'public'
   loop
+    v_clean_body := regexp_replace(
+      v_article.body_md,
+      '^COMO ATUALIZAR OS DADOS DE INTEGRA' || chr(65533) || chr(65533) || 'O DO E-COMMERCE[[:space:]]+Para atualizar os dados de integra' || chr(65533) || chr(65533) || 'o, siga os passos abaixo:[[:space:]]+Acesse o painel administrativo da sua loja\.[[:space:]]*',
+      '',
+      'i'
+    );
+    v_clean_body := replace(
+      v_clean_body,
+      'INTEGRA' || chr(65533) || chr(65533) || 'O',
+      'INTEGRAÇÃO'
+    );
+    v_clean_body := replace(
+      v_clean_body,
+      'integra' || chr(65533) || chr(65533) || 'o',
+      'integração'
+    );
+    v_clean_body := regexp_replace(
+      v_clean_body,
+      'Consulte a FAQ \(inserir link da FAQ\) para aprender a configurar as permiss[^.]*\.',
+      'Se o teste gerar erro, revise as permissões exigidas pela plataforma e tente novamente.',
+      'gi'
+    );
+    v_clean_body := regexp_replace(
+      v_clean_body,
+      'Consulte a FAQ \(inserir link da FAQ\) para um passo a passo sobre como obter o API Token e configurar as permiss[^.]*\.',
+      'Consulte a documentação oficial da plataforma para gerar o API Token e configurar as permissões antes de testar a integração.',
+      'gi'
+    );
+
     update public.knowledge_articles
     set summary = 'Para atualizar os dados de integração, siga os passos abaixo e valide as permissões da plataforma antes de salvar.',
-        body_md = regexp_replace(
-          regexp_replace(
-            regexp_replace(
-              regexp_replace(
-                body_md,
-                '^COMO ATUALIZAR OS DADOS DE INTEGRA' || chr(65533) || chr(65533) || 'O DO E-COMMERCE[[:space:]]+Para atualizar os dados de integra' || chr(65533) || chr(65533) || 'o, siga os passos abaixo:[[:space:]]+Acesse o painel administrativo da sua loja\.[[:space:]]*',
-                '',
-                'i'
-              ),
-              'INTEGRA' || chr(65533) || chr(65533) || 'O',
-              'INTEGRAÇÃO',
-              'g'
-            ),
-            'integra' || chr(65533) || chr(65533) || 'o',
-            'integração',
-            'g'
-          ),
-          'Consulte a FAQ \(inserir link da FAQ\) para aprender a configurar as permiss[^.]*\.',
-          'Se o teste gerar erro, revise as permissões exigidas pela plataforma e tente novamente.',
-          'gi'
-        ),
-        body_md = regexp_replace(
-          body_md,
-          'Consulte a FAQ \(inserir link da FAQ\) para um passo a passo sobre como obter o API Token e configurar as permiss[^.]*\.',
-          'Consulte a documentação oficial da plataforma para gerar o API Token e configurar as permissões antes de testar a integração.',
-          'gi'
-        ),
+        body_md = v_clean_body,
         current_revision_number = current_revision_number + 1,
         updated_at = timezone('utc', now())
     where id = v_article.id;
@@ -57,37 +61,39 @@ begin
       'Forward-fix editorial UTF-8, duplicidade de lead e placeholders públicos'
     );
 
-    update public.knowledge_article_editorial_drafts
-    set summary = 'Para atualizar os dados de integração, siga os passos abaixo e valide as permissões da plataforma antes de salvar.',
-        body_md = regexp_replace(
-          regexp_replace(
-            regexp_replace(
-              regexp_replace(
-                body_md,
-                '^COMO ATUALIZAR OS DADOS DE INTEGRA' || chr(65533) || chr(65533) || 'O DO E-COMMERCE[[:space:]]+Para atualizar os dados de integra' || chr(65533) || chr(65533) || 'o, siga os passos abaixo:[[:space:]]+Acesse o painel administrativo da sua loja\.[[:space:]]*',
-                '',
-                'i'
-              ),
-              'INTEGRA' || chr(65533) || chr(65533) || 'O',
-              'INTEGRAÇÃO',
-              'g'
-            ),
-            'integra' || chr(65533) || chr(65533) || 'o',
-            'integração',
-            'g'
-          ),
-          'Consulte a FAQ \(inserir link da FAQ\) para aprender a configurar as permiss[^.]*\.',
-          'Se o teste gerar erro, revise as permissões exigidas pela plataforma e tente novamente.',
-          'gi'
-        ),
-        body_md = regexp_replace(
-          body_md,
-          'Consulte a FAQ \(inserir link da FAQ\) para um passo a passo sobre como obter o API Token e configurar as permiss[^.]*\.',
-          'Consulte a documentação oficial da plataforma para gerar o API Token e configurar as permissões antes de testar a integração.',
-          'gi'
-        ),
-        updated_at = timezone('utc', now())
+    select body_md
+      into v_clean_body
+    from public.knowledge_article_editorial_drafts
     where article_id = v_article.id;
+
+    if found then
+      v_clean_body := regexp_replace(
+        v_clean_body,
+        '^COMO ATUALIZAR OS DADOS DE INTEGRA' || chr(65533) || chr(65533) || 'O DO E-COMMERCE[[:space:]]+Para atualizar os dados de integra' || chr(65533) || chr(65533) || 'o, siga os passos abaixo:[[:space:]]+Acesse o painel administrativo da sua loja\.[[:space:]]*',
+        '',
+        'i'
+      );
+      v_clean_body := replace(v_clean_body, 'INTEGRA' || chr(65533) || chr(65533) || 'O', 'INTEGRAÇÃO');
+      v_clean_body := replace(v_clean_body, 'integra' || chr(65533) || chr(65533) || 'o', 'integração');
+      v_clean_body := regexp_replace(
+        v_clean_body,
+        'Consulte a FAQ \(inserir link da FAQ\) para aprender a configurar as permiss[^.]*\.',
+        'Se o teste gerar erro, revise as permissões exigidas pela plataforma e tente novamente.',
+        'gi'
+      );
+      v_clean_body := regexp_replace(
+        v_clean_body,
+        'Consulte a FAQ \(inserir link da FAQ\) para um passo a passo sobre como obter o API Token e configurar as permiss[^.]*\.',
+        'Consulte a documentação oficial da plataforma para gerar o API Token e configurar as permissões antes de testar a integração.',
+        'gi'
+      );
+
+      update public.knowledge_article_editorial_drafts
+      set summary = 'Para atualizar os dados de integração, siga os passos abaixo e valide as permissões da plataforma antes de salvar.',
+          body_md = v_clean_body,
+          updated_at = timezone('utc', now())
+      where article_id = v_article.id;
+    end if;
   end loop;
 end;
 $$;
