@@ -2218,7 +2218,7 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 
 - checkout: `C:\Projetos\GSO-old`
 - branch: `codex/release-consolidated-20260811`
-- HEAD auditado: `275ea73`
+- HEAD auditado: `0e72600`
 - fonte de verdade: Supabase vinculado, consultado por SQL somente leitura
 - escrita remota nesta etapa: não executada
 - relatório detalhado: `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`
