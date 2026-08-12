@@ -617,6 +617,7 @@ function GovernedActionDrawer({
         type="button"
       />
       <aside
+        data-responsive-drawer="true"
         aria-modal="true"
         className="relative z-10 flex h-full w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_28px_72px_rgba(15,23,42,0.22)]"
         role="dialog"

@@ -4874,7 +4874,7 @@ export function KnowledgeArticleEditorPage() {
           role={propertiesOpen ? 'dialog' : undefined}
         >
             {propertiesOpen ? <button aria-label="Fechar propriedades" className="absolute inset-0 cursor-default bg-[rgba(12,18,32,0.5)] backdrop-blur-sm xl:hidden" onClick={() => setPropertiesOpen(false)} tabIndex={-1} type="button" /> : null}
-            <aside className="gso-knowledge-editor-properties relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[440px] lg:max-w-[620px] xl:sticky xl:top-3 xl:h-fit xl:w-full xl:min-w-0 xl:max-w-none xl:shadow-none">
+            <aside data-responsive-drawer="true" className="gso-knowledge-editor-properties relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[440px] lg:max-w-[620px] xl:sticky xl:top-3 xl:h-fit xl:w-full xl:min-w-0 xl:max-w-none xl:shadow-none">
               <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] px-5 py-3.5">
                 <div className="min-w-0">
                   <h2 className="text-base font-semibold text-[color:var(--minimal-text)]" id="gso-article-properties-title">Configurações editoriais</h2>
