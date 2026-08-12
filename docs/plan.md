@@ -2280,5 +2280,6 @@ Recomendação técnica: opção 1 somente como exceção com prazo, lista nomin
 - registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
 - manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
 - corrigir o artigo com `chr(65533)` e remover o placeholder de FAQ a partir da origem local;
+- validação local concluída para o reparo por slug: `published/public`, sem `chr(65533)`, placeholder ou quebra de passo colapsada;
 - configurar canal público real em `brand_settings`;
 - executar eventual escrita remota somente depois do gate correspondente e de validação local.

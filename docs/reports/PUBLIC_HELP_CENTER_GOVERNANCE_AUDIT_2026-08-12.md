@@ -95,3 +95,7 @@ Recomendação técnica: opção 1 apenas como exceção com prazo e lista nomin
 ## Limitação e próximo gate
 
 Não foi executada escrita remota nesta auditoria. A inspeção read-only atual confirmou 128 assets públicos correspondentes aos 128 markers; a correção textual restante e qualquer alteração de visibilidade exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+
+### Validação local da correção preparada
+
+O reparo foi aplicado somente no Supabase local, usando `scripts/knowledge/generate-copy-repair-migration.mjs --apply-local --slug=como-atualizar-os-dados-de-integracao-do-e-commerce`. A consulta local confirmou `published/public`, `has_replacement = false`, `has_faq_placeholder = false` e nenhuma quebra de linha colapsada. Esse resultado não é evidência de publicação em produção.
