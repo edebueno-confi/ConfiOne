@@ -503,10 +503,10 @@ export function DashboardSourcesSettingsPage() {
       <section aria-labelledby="sources-conciliacao" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
         <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
           <h2 id="sources-conciliacao" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
-            Conciliação de empresas
+            Conciliação OMIE ↔ HubSpot
           </h2>
           <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
-            A conciliação manual HubSpot–OMIE entra aqui. Sugestões por nome não valem como vínculo até uma pessoa autorizada confirmar a evidência.
+            Esta é a fila operacional do vínculo financeiro. A sugestão é apenas um sinal; uma pessoa autorizada precisa revisar a evidência antes de confirmar.
           </p>
         </div>
         <CompanyReconciliationPanel />
