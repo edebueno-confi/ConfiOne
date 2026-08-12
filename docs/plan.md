@@ -2235,9 +2235,9 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 | Artigos com `chr(65533)` | 0 |
 | Artigos com mojibake confirmado | 0 |
 | Artigos com placeholder de FAQ | 0 |
-| `support_contacts` público | `{}` |
+| `support_contacts` público | `{ "websiteUrl": "https://www.geniusreturns.com.br/contato/" }` |
 
-Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, caractere de substituição ou placeholder de FAQ na consulta pública atual. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, caractere de substituição ou placeholder de FAQ na consulta pública atual. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé agora oferece a página oficial de contato registrada pelo backend; e-mail e WhatsApp permanecem ausentes porque não há fonte atual confirmada para esses canais.
 
 ### Registro de decisão para artigos sensíveis publicados
 
@@ -2279,5 +2279,5 @@ Cada linha abaixo foi confirmada como `published/public` no banco. `EXCEÇÃO_LE
 - manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
 - a consulta pública atual já confirmou a correção do artigo com `chr(65533)` e a remoção do placeholder de FAQ;
 - validação local concluída para o reparo por slug: `published/public`, sem `chr(65533)`, placeholder ou quebra de passo colapsada;
-- configurar canal público real em `brand_settings`;
+- canal público real configurado em `brand_settings` via RPC administrativo: `websiteUrl = https://www.geniusreturns.com.br/contato/`;
 - executar a escrita remota somente pelo fluxo administrativo autenticado e repetir a consulta read-only após a publicação.
