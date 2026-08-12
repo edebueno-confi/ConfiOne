@@ -99,3 +99,14 @@ A auditoria original foi read-only, mas a correção posterior foi aplicada pela
 ### Validação local da correção preparada
 
 O reparo foi aplicado no Supabase local, usando `scripts/knowledge/generate-copy-repair-migration.mjs --apply-local --slug=como-atualizar-os-dados-de-integracao-do-e-commerce`. A consulta local confirmou `published/public`, `has_replacement = false`, `has_faq_placeholder = false` e nenhuma quebra de linha colapsada. Em seguida, a consulta read-only da view pública retornou uma linha para o mesmo slug, sem caractere de substituição ou placeholder; isso confirma o estado público observado, mas não atribui a escrita a este turno.
+# Adendo de producao efetiva — 2026-08-12
+
+`publicado com ressalvas`: a Central pública está acessível, o contato oficial foi corrigido e o artigo de integração auditado foi republicado sem referências de imagem quebradas. A auditoria de produção encontrou um segundo estado de dados, distinto do Supabase local: 13 categorias e assets ausentes em parte dos artigos. Foram corrigidos e republicados os casos encontrados nas páginas 1–3 durante a varredura autenticada; a cobertura integral dos 69 artigos não foi comprovada nesta execução por instabilidade da sessão do navegador.
+
+- Espaço efetivamente publicado: `526f7658-8e15-4e74-a1a0-631fbf0e7285` (`genius`), com 69 artigos e 13 categorias.
+- Contato público configurado somente como `websiteUrl`: `https://www.geniusreturns.com.br/contato/`.
+- Artigo `como-atualizar-os-dados-de-integracao-do-e-commerce`: 8 referências legadas sem linha de asset; as referências foram removidas pelo editor autenticado e o artigo foi republicado.
+- Outros casos encontrados e republicados: `politica-para-estorno-do-frete`, `regra-para-segunda-solicitacao`, `posso-alterar-a-forma-de-reembolso-do-meu-consumidor`, `posso-alterar-o-e-mail-e-o-endereco-da-solicitacao`, `erro-ao-tentar-realizar-o-estorno`, `erro-nao-autorizado-ao-gerar-codigo-reverso-postagem`, `como-criar-um-usuario` e `como-informar-a-sku-durante-a-troca`.
+- Os artigos corrigidos foram verificados sem o aviso público de imagem indisponível e sem `inserir link da FAQ`.
+
+> Nota de reconciliação: a tabela e os parágrafos históricos abaixo registram o snapshot local anterior (12 categorias/128 assets). Eles ficam preservados como histórico, mas não são evidência do espaço de produção acima; para QA e release, prevalece o adendo de produção efetiva.
