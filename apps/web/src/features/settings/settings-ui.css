@@ -269,6 +269,8 @@
 .gso-access-modal-close { display: inline-grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--ui-border); border-radius: 0.45rem; background: transparent; color: var(--ui-text-secondary); font-size: 1.15rem; line-height: 1; cursor: pointer; }
 .gso-access-modal-close:hover { border-color: var(--ui-border-strong); color: var(--ui-text); }
 .gso-access-modal-body { padding: 1.25rem; }
+.gso-access-confirm-impact { margin: 0; color: var(--ui-text-secondary); font-size: 0.86rem; line-height: 1.6; }
+.gso-access-confirm-actions { justify-content: flex-end; margin-top: 1.25rem; }
 @media (max-width: 1180px) {
   .gso-po-v2-access .gso-ui-split--wide-detail {
     grid-template-columns: minmax(0, 1fr);

@@ -65,6 +65,7 @@ type Tab = 'users' | 'structure' | 'permissions';
 type LoadPhase = 'loading' | 'ready' | 'error' | 'denied';
 type Tone = 'positive' | 'warning' | 'critical';
 type ActionConfirmation = { title: string; impact: string };
+type PendingConfirmation = ActionConfirmation & { action: () => Promise<void> };
 
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'users', label: 'Usuários' },
@@ -115,6 +116,10 @@ function firstOrMatchingArea(user: AdminInternalAccessUserRow, areaKey?: string)
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+}
+
+function clearNativeConfirmation(_value: ActionConfirmation | undefined): ActionConfirmation | undefined {
+  return undefined;
 }
 
 export function InternalControlPlanePage() {
@@ -169,6 +174,7 @@ export function InternalControlPlanePage() {
   // Credencial de exibição única. Vive só na memória desta tela, sai da memória
   // quando o administrador fecha o aviso e nunca é gravada em lugar nenhum.
   const [issuedCredential, setIssuedCredential] = useState<{ label: string; password: string } | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
 
   async function load() {
     setPhase('loading');
@@ -208,6 +214,11 @@ export function InternalControlPlanePage() {
   }, [query, users, userAreaFilter, userFunctionFilter, userProfileFilter, userStatusFilter]);
 
   async function runAction(action: () => Promise<unknown>, success: string, confirmation?: ActionConfirmation) {
+    if (confirmation) {
+      setPendingConfirmation({ ...confirmation, action: async () => { await action(); setMessage({ text: success, tone: 'positive' }); await load(); } });
+      confirmation = clearNativeConfirmation(confirmation);
+      void 0;
+    }
     if (confirmation && !window.confirm(`${confirmation.title}\n\n${confirmation.impact}\n\nConfirma esta ação?`)) return;
     setBusy(true); setMessage(null);
     try { await action(); setMessage({ text: success, tone: 'positive' }); await load(); }
@@ -221,12 +232,28 @@ export function InternalControlPlanePage() {
    * repete a consulta.
    */
   async function resetPassword(user: AdminInternalAccessUserRow) {
+    setPendingConfirmation({
+      title: `Redefinir a senha de ${user.full_name || user.email || 'este usuÃ¡rio'}?`,
+      impact: 'A senha atual serÃ¡ substituÃ­da. O novo valor serÃ¡ exibido uma Ãºnica vez e a pessoa deverÃ¡ trocÃ¡-lo no prÃ³ximo acesso.',
+      action: async () => {
+        setBusy(true); setMessage(null); setIssuedCredential(null);
+        try {
+          const result = await resetAdminInternalUserPassword(user.user_id);
+          if (result?.temporaryPassword) setIssuedCredential({ label: user.email || user.full_name || user.user_id || 'usuário', password: result.temporaryPassword });
+          setMessage({ text: 'Senha redefinida. O valor aparece uma Ãºnica vez abaixo e a troca serÃ¡ exigida no prÃ³ximo acesso.', tone: 'positive' });
+        } catch (error) {
+          const classified = classifyAdminError(error, 'NÃ£o foi possÃ­vel redefinir a senha.');
+          setMessage({ text: classified.message, tone: 'critical' });
+        } finally { setBusy(false); }
+      },
+    });
+    return;
     if (!window.confirm(`Redefinir a senha de ${user.full_name || user.email || 'este usuário'}?\n\nA senha atual será substituída. O novo valor será exibido uma única vez e a pessoa deverá trocá-lo no próximo acesso.`)) return;
     setBusy(true); setMessage(null); setIssuedCredential(null);
     try {
       const result = await resetAdminInternalUserPassword(user.user_id);
       if (result?.temporaryPassword) {
-        setIssuedCredential({ label: user.email || user.full_name || user.user_id, password: result.temporaryPassword });
+        setIssuedCredential({ label: user.email || user.full_name || user.user_id || 'usuário', password: result.temporaryPassword ?? '' });
       }
       setMessage({ text: 'Senha redefinida. O valor aparece uma única vez abaixo e a troca será exigida no próximo acesso.', tone: 'positive' });
     } catch (error) {
@@ -487,7 +514,37 @@ export function InternalControlPlanePage() {
 
         </UiPage>
       </div>
+      <ConfirmActionModal
+        confirmation={pendingConfirmation}
+        busy={busy}
+        onCancel={() => setPendingConfirmation(null)}
+        onConfirm={async () => {
+          const pending = pendingConfirmation;
+          if (!pending) return;
+          setPendingConfirmation(null);
+          try { await pending.action(); }
+          catch (error) { const classified = classifyAdminError(error, 'NÃ£o foi possÃ­vel concluir a aÃ§Ã£o.'); setMessage({ text: classified.message, tone: 'critical' }); }
+        }}
+      />
     </div>
+  );
+}
+
+function ConfirmActionModal({ confirmation, busy, onCancel, onConfirm }: { confirmation: PendingConfirmation | null; busy: boolean; onCancel: () => void; onConfirm: () => Promise<void> }) {
+  return (
+    <AccessEditorModal
+      description="Revise o impacto antes de continuar. Esta aÃ§Ã£o serÃ¡ registrada no histÃ³rico de auditoria."
+      initialFocus="#access-confirm-cancel"
+      onClose={onCancel}
+      open={Boolean(confirmation)}
+      title={confirmation?.title ?? 'Confirmar aÃ§Ã£o'}
+    >
+      <p className="gso-access-confirm-impact">{confirmation?.impact}</p>
+      <div className="gso-ui-actions gso-access-confirm-actions">
+        <UiButton id="access-confirm-cancel" onClick={onCancel} variant="ghost" disabled={busy}>Cancelar</UiButton>
+        <UiButton onClick={() => void onConfirm()} variant="primary" disabled={busy}>{busy ? 'Processandoâ€¦' : 'Confirmar aÃ§Ã£o'}</UiButton>
+      </div>
+    </AccessEditorModal>
   );
 }
 
