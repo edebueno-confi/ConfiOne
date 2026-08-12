@@ -609,7 +609,19 @@ function CreateUserCard(props: {
   setForm: React.Dispatch<React.SetStateAction<{ fullName: string; email: string; areaKey: string; functionId: string; profileId: string }>>;
 }) {
   const { areas, busy, errors, form, functions, onCancel, onSubmit, profiles, setForm } = props;
+  const [step, setStep] = useState(1);
   const areaFunctions = functions.filter((item) => item.is_active && item.area_key === form.areaKey);
+  const presets = [
+    { key: 'platform-admin', label: 'Administrador da plataforma', description: 'Acesso amplo à operação e às configurações.', terms: ['admin', 'administrador'] },
+    { key: 'manager', label: 'Gestor de área', description: 'Leitura e gestão da área atribuída.', terms: ['gestor', 'manager', 'gerente'] },
+    { key: 'operator', label: 'Operador', description: 'Executa rotinas operacionais sem administrar acessos.', terms: ['operador', 'operator'] },
+    { key: 'viewer', label: 'Usuário', description: 'Consulta informações e navega nas áreas liberadas.', terms: ['usuário', 'usuario', 'viewer', 'leitor'] },
+  ];
+  function choosePreset(terms: string[]) {
+    const match = profiles.find((profile) => terms.some((term) => profile.name.toLowerCase().includes(term)));
+    setForm((current) => ({ ...current, profileId: match?.access_profile_id ?? '' }));
+    setStep(2);
+  }
 
   return (
     <UiCard labelledBy="create-user-title">
@@ -621,6 +633,16 @@ function CreateUserCard(props: {
         tone="primary"
       />
       <form className="gso-ui-card-body" onSubmit={(event) => void onSubmit(event)}>
+        <div className="mb-4 flex items-center gap-2 text-xs text-[color:var(--gso-text-secondary)]" aria-label="Etapas do cadastro">
+          {[['1', 'Perfil base'], ['2', 'Dados e área'], ['3', 'Revisão']].map(([number, label]) => <span className={step === Number(number) ? 'font-semibold text-[color:var(--gso-action-blue)]' : ''} key={number}>{number}. {label}</span>)}
+        </div>
+        {step === 1 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {presets.map((preset) => <button className="rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-4 text-left transition hover:border-[color:var(--gso-action-blue)]" key={preset.key} onClick={() => choosePreset(preset.terms)} type="button"><strong className="block text-sm text-[color:var(--gso-text-primary)]">{preset.label}</strong><span className="mt-1 block text-xs leading-5 text-[color:var(--gso-text-secondary)]">{preset.description}</span></button>)}
+            <p className="sm:col-span-2 text-xs text-[color:var(--gso-text-secondary)]">O perfil base define o padrão. A área e a função refinam o contexto, sem exigir a marcação de dezenas de permissões.</p>
+          </div>
+        ) : null}
+        {step > 1 ? (
         <div className="gso-ui-grid">
           <UiField error={errors.fullName} errorId="create-user-name-error" label="Nome completo">
             <input
@@ -687,16 +709,14 @@ function CreateUserCard(props: {
             </select>
           </UiField>
         </div>
+        ) : null}
+        {step === 2 ? <div className="gso-ui-actions"><UiButton disabled={busy} onClick={() => setStep(3)} type="button" variant="primary">Revisar acesso</UiButton><UiButton disabled={busy} onClick={() => setStep(1)} type="button" variant="ghost">Voltar</UiButton></div> : null}
+        {step === 3 ? <div className="rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] p-4 text-sm text-[color:var(--gso-text-primary)]"><strong>Resumo do acesso</strong><dl className="mt-3 grid gap-2 sm:grid-cols-2"><div><dt className="text-xs text-[color:var(--gso-text-secondary)]">Pessoa</dt><dd>{form.fullName || 'Não informado'} · {form.email || 'Não informado'}</dd></div><div><dt className="text-xs text-[color:var(--gso-text-secondary)]">Área</dt><dd>{areas.find((area) => area.area_key === form.areaKey)?.display_name || 'Não informado'}</dd></div><div><dt className="text-xs text-[color:var(--gso-text-secondary)]">Perfil</dt><dd>{profiles.find((profile) => profile.access_profile_id === form.profileId)?.name || 'Personalizado'}</dd></div></dl><div className="gso-ui-actions mt-4"><UiButton disabled={busy} icon="check" type="submit" variant="primary">{busy ? 'Criando…' : 'Confirmar e criar acesso'}</UiButton><UiButton disabled={busy} onClick={() => setStep(2)} type="button" variant="ghost">Voltar</UiButton></div></div> : null}
         <p className="gso-ui-note">
           O servidor gera uma senha temporária forte e a exibe uma única vez após a criação. Repasse pelo seu canal: a pessoa
           será obrigada a trocá-la no primeiro acesso.
         </p>
-        <div className="gso-ui-actions">
-          <UiButton disabled={busy} icon="check" type="submit" variant="primary">
-            {busy ? 'Criando…' : 'Criar usuário'}
-          </UiButton>
-          <UiButton disabled={busy} onClick={onCancel} variant="ghost">Cancelar</UiButton>
-        </div>
+        {step > 1 ? <div className="gso-ui-actions"><UiButton disabled={busy} onClick={onCancel} type="button" variant="ghost">Cancelar</UiButton></div> : null}
       </form>
     </UiCard>
   );
