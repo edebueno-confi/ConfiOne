@@ -6,6 +6,7 @@ import { createCompanyProperty, createCompanyPropertyGroup, listCompanyPropertyG
 const GROUP = { name: 'omie_financeiro', label: 'OMIE / Financeiro' };
 
 const PROPERTIES: Array<Record<string, unknown>> = [
+  { name: 'omie_cliente_id', label: 'OMIE - Código do cliente', type: 'string', fieldType: 'text', groupName: GROUP.name },
   { name: 'omie_saldo_aberto', label: 'OMIE - Saldo em aberto', type: 'number', fieldType: 'number', groupName: GROUP.name },
   { name: 'omie_saldo_vencido', label: 'OMIE - Saldo vencido', type: 'number', fieldType: 'number', groupName: GROUP.name },
   { name: 'omie_titulos_abertos', label: 'OMIE - Títulos em aberto', type: 'number', fieldType: 'number', groupName: GROUP.name },

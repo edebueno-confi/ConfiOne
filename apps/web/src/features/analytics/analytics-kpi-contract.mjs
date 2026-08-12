@@ -78,6 +78,8 @@ const REASON_MESSAGES = {
     'Parte das reaberturas ainda não foi carregada, então a taxa cobre apenas parte da base.',
   nome_exato:
     'Candidato encontrado por razão social exata; o vínculo ainda depende de confirmação humana.',
+  nome_contido:
+    'Candidato encontrado por nome contido; o vínculo ainda depende de confirmação humana.',
   nome_fantasia_exato:
     'Candidato encontrado por nome fantasia exato; o vínculo ainda depende de confirmação humana.',
   cnpj_exato:

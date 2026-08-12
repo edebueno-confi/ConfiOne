@@ -291,6 +291,14 @@ export interface FinanceUnmatchedCompany {
   balance: number;
   overdueBalance: number;
   nameMatches: number;
+  candidateCompanies: Array<{
+    companyId: string;
+    companyName: string;
+    taxId: string | null;
+    score: number;
+    confidence: string;
+    reason: string;
+  }>;
 }
 
 export interface FinanceIdentityIssue {
@@ -699,7 +707,26 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
       identityIncompleteBalance: toNumber(recon.identity_incomplete_balance),
       noHubspotCompanyBalance: toNumber(recon.no_hubspot_company_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
-      unmatchedCompanies: unmatchedCompanies.map((row) => ({ client: toText(row.client) || 'Empresa sem nome', taxId: row.tax_id ? toText(row.tax_id) : null, omieClientCode: row.omie_client_code ? toText(row.omie_client_code) : null, titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance), nameMatches: toNumber(row.name_matches) })),
+      unmatchedCompanies: unmatchedCompanies.map((row) => ({
+        client: toText(row.client) || 'Empresa sem nome',
+        taxId: row.tax_id ? toText(row.tax_id) : null,
+        omieClientCode: row.omie_client_code ? toText(row.omie_client_code) : null,
+        titles: toNumber(row.titles),
+        balance: toNumber(row.balance),
+        overdueBalance: toNumber(row.overdue_balance),
+        nameMatches: toNumber(row.name_matches),
+        candidateCompanies: Array.isArray(row.candidate_companies) ? row.candidate_companies.map((candidate) => {
+          const item = (candidate && typeof candidate === 'object' ? candidate : {}) as Record<string, unknown>;
+          return {
+            companyId: toText(item.company_id),
+            companyName: toText(item.company_name) || 'Empresa sem nome',
+            taxId: item.tax_id ? toText(item.tax_id) : null,
+            score: toNumber(item.score),
+            confidence: toText(item.confidence) || 'inconclusive',
+            reason: toText(item.reason) || 'nome_similar',
+          };
+        }) : [],
+      })),
       identityIssues: identityIssues.map((row) => ({ omieClientCode: toText(row.omie_client_code) || 'Sem código OMIE', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
     state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE indisponível' : 'OMIE API', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
