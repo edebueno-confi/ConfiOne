@@ -23,6 +23,23 @@ function scheduleContinuation(base: string, key: string, secret: string | null, 
   );
 }
 
+function scheduleAnalyticsContinuation(base: string, key: string, secret: string | null, authorization: string | null) {
+  EdgeRuntime.waitUntil(
+    fetch(`${base}/functions/v1/analytics-sequential-continue`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        'Content-Type': 'application/json',
+        ...(secret ? { 'x-analytics-sync-secret': secret } : {}),
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
+      body: '{}',
+    }).then((response) => {
+      if (!response.ok) console.warn(`Continuidade do ciclo OMIE retornou HTTP ${response.status}.`);
+    }).catch((error) => console.warn(`Nao foi possivel avancar o ciclo OMIE: ${error instanceof Error ? error.message : String(error)}`)),
+  );
+}
+
 async function finalizeIdleRuns(client: ReturnType<typeof createServiceClient>) {
   const { data: runs, error: runsError } = await client
     .from('hubspot_sync_runs')
@@ -66,6 +83,7 @@ Deno.serve(async (req) => {
     // O ultimo worker pode ter concluido a pagina antes de enxergar que era o
     // ultimo item. Quando a fila fica ociosa, a finalizacao e tentada de novo.
     const finalized = idle ? await finalizeIdleRuns(client) : [];
+    if (idle) scheduleAnalyticsContinuation(base, key, secret, authorization);
     const continuationScheduled = Boolean(secret || authorization) && !idle && results.length === 12;
     if (continuationScheduled) scheduleContinuation(base, key, secret, authorization);
 

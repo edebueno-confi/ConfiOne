@@ -5,8 +5,6 @@ import { authorizeCsRunner, classifyHubSpotError, runnerError, runnerMessage } f
 type FunctionResult = { status: number; payload: Record<string, unknown> | null };
 type InternalInvocationAuth = { authorization: string | null; secret: string | null };
 
-const TERMINAL_HUBSPOT_STATUSES = new Set(['success', 'succeeded', 'failed', 'error', 'abandoned', 'timed_out', 'cancelled']);
-
 function runtimeConfig() {
   const secret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();
   const baseUrl = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '');
@@ -38,10 +36,6 @@ async function callFunction(
   });
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
   return { status: response.status, payload };
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function activeHubspotRun(client: ReturnType<typeof createServiceClient>, correlationId: string) {
@@ -120,35 +114,37 @@ async function runHubspotToCompletion(
     run = { id: runId, status: String(started.payload?.status ?? 'queued'), correlation_id: correlationId };
   }
 
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    const progress = await hubspotProgress(client, run.id);
-    await updateCycle(client, cycleId, { current_step: 'hubspot' });
-    await updateStep(client, cycleId, 'hubspot', { status: 'running', run_id: run.id });
-    if (progress && TERMINAL_HUBSPOT_STATUSES.has(progress.status)) {
-      if (progress.status !== 'success' && progress.status !== 'succeeded') {
-        await updateStep(client, cycleId, 'hubspot', { status: progress.status === 'timed_out' ? 'timed_out' : 'failed', finished_at: progress.finished_at, sanitized_error: progress.error_message });
-        return { runId: run.id, status: 'failed', recordsPromoted: Number(progress.records_promoted ?? 0), message: progress.error_message || `A execucao HubSpot terminou com status ${progress.status}.` };
-      }
-      await updateStep(client, cycleId, 'hubspot', { status: 'succeeded', finished_at: progress.finished_at, processed_count: Number(progress.records_promoted ?? 0) });
-      return { runId: run.id, status: progress.status, recordsPromoted: Number(progress.records_promoted ?? 0) };
-    }
-
-    let dispatched: FunctionResult;
-    try {
-      dispatched = await callFunction(config.baseUrl, config.anonKey, auth, 'hubspot-orchestrator-dispatcher', correlationId, {});
-    } catch (error) {
-      const classified = classifyHubSpotError(error);
-      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
-      return { runId: run.id, status: 'failed', recordsPromoted: 0, message: classified.sanitizedMessage };
-    }
-    if (dispatched.status >= 400) {
-      const message = classifyHubSpotError(new Error(String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.'))).sanitizedMessage;
-      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
-      return { runId: run.id, status: 'failed', recordsPromoted: 0, message };
-    }
-    await wait(250);
+  const progress = await hubspotProgress(client, run.id);
+  await updateCycle(client, cycleId, { current_step: 'hubspot' });
+  await updateStep(client, cycleId, 'hubspot', { status: 'running', run_id: run.id });
+  if (progress && ['success', 'succeeded'].includes(progress.status)) {
+    return { runId: run.id, status: progress.status, recordsPromoted: Number(progress.records_promoted ?? 0) };
+  }
+  if (progress && ['failed', 'error', 'abandoned', 'timed_out', 'cancelled'].includes(progress.status)) {
+    return { runId: run.id, status: 'failed', recordsPromoted: Number(progress.records_promoted ?? 0), message: progress.error_message || `A execucao HubSpot terminou com status ${progress.status}.` };
   }
 
+  let dispatched: FunctionResult;
+  try {
+    dispatched = await callFunction(config.baseUrl, config.anonKey, auth, 'hubspot-orchestrator-dispatcher', correlationId, {});
+  } catch (error) {
+    const classified = classifyHubSpotError(error);
+    await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
+    return { runId: run.id, status: 'failed', recordsPromoted: 0, message: classified.sanitizedMessage };
+  }
+  if (dispatched.status >= 400) {
+    const message = classifyHubSpotError(new Error(String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.'))).sanitizedMessage;
+    await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
+    return { runId: run.id, status: 'failed', recordsPromoted: 0, message };
+  }
+
+  const afterDispatch = await hubspotProgress(client, run.id);
+  if (afterDispatch && ['success', 'succeeded'].includes(afterDispatch.status)) {
+    return { runId: run.id, status: afterDispatch.status, recordsPromoted: Number(afterDispatch.records_promoted ?? 0) };
+  }
+  if (afterDispatch && ['failed', 'error', 'abandoned', 'timed_out', 'cancelled'].includes(afterDispatch.status)) {
+    return { runId: run.id, status: 'failed', recordsPromoted: Number(afterDispatch.records_promoted ?? 0), message: afterDispatch.error_message || `A execucao HubSpot terminou com status ${afterDispatch.status}.` };
+  }
   return { runId: run.id, status: 'running', recordsPromoted: 0 };
 }
 

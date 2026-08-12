@@ -3645,3 +3645,15 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Evidência: `{"scenario":"settings-dashboard-sources","viewport":"1920x1080","tableRows":2}`
   e `output/local-qa/browser-platform_admin-settings-dashboard-sources-1920.png`.
 - Faltam quatro telas: Marcas, Central de ajuda, Geral e Usuários e acesso.
+## Atualização corrente — Continuação assíncrona HubSpot → OMIE — 2026-08-12
+
+- O ciclo sequencial do Dashboard não mantém mais a requisição original aberta
+  durante toda a fila HubSpot. O dispatcher continua os workers em segundo
+  plano e, ao concluir o HubSpot, aciona uma função interna que reivindica a
+  etapa OMIE de forma idempotente.
+- O reaper de ciclos preserva etapas `queued`/`running` legítimas enquanto a
+  sequência aguarda a próxima fonte. Falhas de transporte ou do OMIE encerram
+  o ciclo como `partial`, com erro sanitizado e sem deixar execução indefinida.
+- A correção foi implementada e validada somente no worktree local desta
+  branch. Nenhuma migration remota, sincronização externa, push ou deploy foi
+  executado.
