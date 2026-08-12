@@ -39,6 +39,9 @@ select is(
 
 create temporary table test_omie_batch_context (run_id uuid, snapshot_id uuid) on commit drop;
 
+set local request.jwt.claim.role = '';
+set local request.jwt.claims = '{"role":"service_role"}';
+
 with inserted as (
   insert into public.analytics_finance_sync_runs (source_key, status)
   values ('omie_receivables_api', 'completed')
