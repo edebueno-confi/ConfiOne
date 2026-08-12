@@ -327,7 +327,7 @@ export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery 
       p_aging_bucket: filters.priority || null,
       p_client_query: clientQuery.trim() || null,
     }),
-    client.rpc('rpc_analytics_finance_reconciliation_v1', {
+    client.rpc('rpc_analytics_finance_reconciliation_v2', {
       p_client_query: clientQuery.trim() || null,
       p_limit: 200,
     }),
