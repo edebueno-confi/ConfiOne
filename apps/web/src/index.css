@@ -7710,6 +7710,21 @@ table {
   min-width: 0;
 }
 
+.gso-topbar-mobile-genius {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .gso-topbar-mobile-genius {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .gso-analytics-shell > .gso-workspace-header {
   overflow: visible;
 }

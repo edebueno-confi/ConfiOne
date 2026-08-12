@@ -683,6 +683,9 @@ function ShellTopbar({
             <path d="M5 7h14M5 12h14M5 17h14" />
           </svg>
         </button>
+        <span aria-hidden="true" className="gso-topbar-mobile-genius lg:hidden">
+          <GeniusLamp animated={false} size="sm" />
+        </span>
         {canGoBack ? (
           <button
             aria-label="Voltar para a superfície anterior"

@@ -22,6 +22,7 @@ test('canvas principal preserva rolagem vertical e navegação mobile acessível
   assert.match(shell, /role="dialog"/);
   assert.match(shell, /gso-sidebar-drawer/);
   assert.match(shell, /overflow-y-auto/);
+  assert.match(shell, /gso-topbar-mobile-genius lg:hidden/);
 });
 
 test('contrato de tabelas responsivas usa overflow horizontal controlado', () => {
