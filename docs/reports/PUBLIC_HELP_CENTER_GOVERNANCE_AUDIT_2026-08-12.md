@@ -2,7 +2,7 @@
 
 ## Veredito
 
-`inconsistente com ressalvas críticas`: a Central pública está acessível e o corpus atual está publicado, os assets agora estão reconciliados, mas ainda há um artigo com caractere de substituição UTF-8, um placeholder de FAQ, nenhum canal de suporte configurado e artigos legados sensíveis publicados sem decisão individual registrada para o estado atual.
+`consistente com ressalvas`: a Central pública está acessível e o corpus atual está publicado, os assets estão reconciliados, a estratégia editorial foi decidida como exceção legada temporária e o artigo auditado já não apresenta o caractere de substituição nem o placeholder de FAQ. Permanece sem canal de suporte configurado e sem rota autenticada disponível neste checkout para novas escritas públicas.
 
 Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usando as views/tabelas públicas da Knowledge Base. Não houve escrita remota durante esta auditoria.
 
@@ -15,16 +15,16 @@ Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usan
 | Linhas em `knowledge_article_assets` para artigos públicos | 128 | `vw_public_knowledge_article_assets` |
 | Referências `knowledge-asset:<id>` em artigos públicos | 128 | `body_md` |
 | Referências de asset sem linha correspondente | 0 | comparação por UUID |
-| Artigos com caractere de substituição UTF-8 | 1 | `chr(65533)` em título, resumo e corpo |
+| Artigos com caractere de substituição UTF-8 | 0 | consulta atual em título, resumo e corpo |
 | Artigos com mojibake confirmado | 0 | detector de sequências malformadas (`Ã`/`Â` + byte de continuação, `â€`, `ðŸ`) |
-| Artigos com placeholder de FAQ | 1 | busca por `link da FAQ` |
+| Artigos com placeholder de FAQ | 0 | busca atual por `link da FAQ` |
 | Contatos públicos configurados | nenhum | `vw_public_knowledge_space_resolver.support_contacts = {}` |
 
-Os 128 markers `knowledge-asset:<id>` agora possuem 128 linhas correspondentes no read model público; a lacuna de assets foi resolvida externamente e precisa apenas permanecer coberta pela validação. A primeira busca por qualquer letra `Ã`/`â` gerava falso positivo em palavras portuguesas válidas; a consulta atual não confirmou mojibake, mas encontrou um artigo com `chr(65533)` e um placeholder de FAQ que ainda exigem correção editorial.
+Os 128 markers `knowledge-asset:<id>` agora possuem 128 linhas correspondentes no read model público. A primeira busca por qualquer letra `Ã`/`â` gerava falso positivo em palavras portuguesas válidas; a consulta atual não confirmou mojibake, caractere de substituição ou placeholder de FAQ.
 
 ## Os sete tópicos da migração Genius > Aftersale V2
 
-Todos os tópicos abaixo têm pelo menos um artigo `published/public`. Nenhum foi tratado como aprovado para novo publish; a decisão entre manter o legado corrigido ou substituir pelo canônico continua pendente de Produto/CS.
+Todos os tópicos abaixo têm pelo menos um artigo `published/public`. A decisão operacional deste lote mantém o legado corrigido; nenhum artigo foi tratado como aprovado para novo publish e a revisão formal de Produto/CS continua pendente para canônicos futuros.
 
 | Tópico | Artigo(s) publicado(s) confirmado(s) |
 | --- | --- |
@@ -42,10 +42,10 @@ Não foi encontrado artigo público com `antifraude` no título, resumo ou corpo
 
 - **Mojibake:** o export legado contém alguns campos históricos com representação mojibake em `article.json`, enquanto o corpus público atual passou pelo detector específico sem ocorrências confirmadas. O normalizador local `scripts/knowledge/legacy-normalization.mjs` foi robustecido para reparar também sequências Windows-1252 em futuras importações, sem alterar palavras portuguesas válidas.
 - **Imagens:** o índice local registra 129 assets em 53 artigos, e o runtime público agora expõe 128 linhas em `vw_public_knowledge_article_assets`, exatamente correspondentes aos 128 markers publicados. O reprocessamento de assets foi aplicado após o snapshot anterior.
-- **FAQ:** a migration de qualidade anterior não atingiu o artigo atual porque usava IDs históricos fixos; o artigo `como-atualizar-os-dados-de-integracao-do-e-commerce` ainda contém `inserir link da FAQ`.
+- **FAQ:** a migration de qualidade anterior não atingiu o artigo atual porque usava IDs históricos fixos; a correção por slug foi preparada e a consulta pública atual confirma que o artigo `como-atualizar-os-dados-de-integracao-do-e-commerce` não contém mais `inserir link da FAQ`.
 - **Suporte:** o resolver público lê `brand_settings.support_contacts`; o valor atual é `{}`, portanto não existe canal real para o frontend exibir.
 
-Não há artigos públicos com mojibake confirmado pelo detector específico atual; há, porém, um artigo com caractere de substituição UTF-8 que precisa ser recuperado da origem local antes da escrita remota.
+Não há artigos públicos com mojibake ou caractere de substituição confirmados pelo detector específico atual. O artigo de integração foi conferido na view pública após o reparo; o resultado público atual não é substituído por validação local.
 
 ## Artigos publicados com tema sensível explícito
 
@@ -75,27 +75,28 @@ Outros 15 artigos possuem um termo sensível apenas no `body_md`, frequentemente
 
 `como-automatizar-a-conclusao-de-uma-solicitacao`, `como-cadastrar-lojas-fisicas`, `como-configurar-a-cor-exibida-nos-filtros-basicos-das-solicitacoes`, `como-configurar-o-vale-compras-retencao`, `como-configurar-os-textos-do-front`, `como-criar-um-usuario`, `como-realizar-alteracoes-em-um-vale-compra-pendente`, `configurando-parametrizacao-geral`, `erro-nao-autorizado-ao-gerar-codigo-reverso-postagem`, `erro-de-autorizacao-ao-acessar-pedidos-na-vtex`, `erro-no-cep-ou-endereco-incorreto`, `pedidos-pagos-com-vale-compras`, `pendencia-de-logistica-reversa`, `permissoes-vtex` e `posso-alterar-a-forma-de-reembolso-do-meu-consumidor`.
 
-## Decisão necessária
+## Decisão adotada para este lote
 
-Há duas opções legítimas, e a escolha não deve ser inferida pelo frontend nem por este relatório:
+Foi adotada a opção 1 por delegação explícita do solicitante desta tarefa em 2026-08-12:
 
-1. **Exceção legada temporária:** manter os artigos já publicados para evitar regressão de cobertura, registrando Produto/Engenharia/Suporte/CS por artigo, removendo ou substituindo referências de imagem sem asset e proibindo novos artigos canônicos até aprovação.
-2. **Saneamento conservador:** retirar da visibilidade pública os artigos sensíveis e publicar apenas rewrites canônicos depois de aprovação explícita. Reduz risco editorial, mas remove cobertura imediata da Central.
+- **manter os artigos já publicados** para evitar regressão de cobertura;
+- **corrigir somente defeitos objetivos de qualidade**, sem reescrever regras de negócio sensíveis neste lote;
+- **bloquear novos artigos canônicos sensíveis** até revisão formal de Produto/Engenharia/Suporte/CS;
+- **tratar a exceção como temporária e nominal**, com revisão posterior por artigo.
 
-Recomendação técnica: opção 1 apenas como exceção com prazo e lista nominal, sem considerar o corpus aprovado para migração como aprovação de conteúdo atual. A exceção não libera credenciais, endpoints privados, permissões críticas ou regras financeiras novas.
+Esta é uma decisão operacional delegada do solicitante, não uma aprovação nominal de Produto/CS e não autoriza credenciais, endpoints privados, permissões críticas ou regras financeiras novas. A opção 2 fica descartada neste lote porque retiraria cobertura pública já existente sem um canônico aprovado para substituição.
 
 ## Bloqueadores para declarar a Central pronta
 
-- corrigir o artigo `como-atualizar-os-dados-de-integracao-do-e-commerce` a partir da origem local, removendo o caractere de substituição e o placeholder de FAQ;
 - cadastrar um canal público real de suporte em `brand_settings`, sem inventar e-mail ou WhatsApp;
-- obter e registrar a decisão humana por artigo sensível no registro de aprovações;
 - revisar semanticamente a watchlist lexical do corpo;
-- manter o runbook alinhado à exceção legada, sem usar a exceção como atalho para novas publicações.
+- manter o runbook alinhado à exceção legada, sem usar a exceção como atalho para novas publicações;
+- registrar, quando disponível, a revisão formal de Produto/CS sem sobrescrever a decisão delegada deste lote.
 
 ## Limitação e próximo gate
 
-Não foi executada escrita remota nesta auditoria. A inspeção read-only atual confirmou 128 assets públicos correspondentes aos 128 markers; a correção textual restante e qualquer alteração de visibilidade exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+Não foi executada escrita remota neste turno. A inspeção read-only atual confirmou 128 assets públicos correspondentes aos 128 markers e confirmou, na view pública, que o artigo auditado está acessível sem o caractere de substituição ou o placeholder de FAQ. O canal de suporte continua sem fonte autoritativa confirmada.
 
 ### Validação local da correção preparada
 
-O reparo foi aplicado somente no Supabase local, usando `scripts/knowledge/generate-copy-repair-migration.mjs --apply-local --slug=como-atualizar-os-dados-de-integracao-do-e-commerce`. A consulta local confirmou `published/public`, `has_replacement = false`, `has_faq_placeholder = false` e nenhuma quebra de linha colapsada. Esse resultado não é evidência de publicação em produção.
+O reparo foi aplicado no Supabase local, usando `scripts/knowledge/generate-copy-repair-migration.mjs --apply-local --slug=como-atualizar-os-dados-de-integracao-do-e-commerce`. A consulta local confirmou `published/public`, `has_replacement = false`, `has_faq_placeholder = false` e nenhuma quebra de linha colapsada. Em seguida, a consulta read-only da view pública retornou uma linha para o mesmo slug, sem caractere de substituição ou placeholder; isso confirma o estado público observado, mas não atribui a escrita a este turno.

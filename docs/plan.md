@@ -2232,16 +2232,16 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 | Linhas de asset editorial | 128 |
 | Referências `knowledge-asset:<id>` no corpo público | 128 |
 | Referências sem asset correspondente | 0 |
-| Artigos com `chr(65533)` | 1 |
+| Artigos com `chr(65533)` | 0 |
 | Artigos com mojibake confirmado | 0 |
-| Artigos com placeholder de FAQ | 1 |
+| Artigos com placeholder de FAQ | 0 |
 | `support_contacts` público | `{}` |
 
-Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, mas a consulta atual encontrou um artigo com `chr(65533)` e um placeholder de FAQ. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, caractere de substituição ou placeholder de FAQ na consulta pública atual. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
 
 ### Registro de decisão para artigos sensíveis publicados
 
-A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A consulta nominal dos sete tópicos da migração também confirmou artigos públicos de BlockList, estorno automático PIX, cálculo/estorno, vale-compra, motivos, logística reversa e prazo de postagem. Os IDs e slugs estão no relatório de auditoria. Para todos eles, o estado de decisão é `PENDENTE_PRODUCT_CS` (com Engenharia ou governança financeira quando indicado pelo subcluster), porque não existe evidência humana atual para escolher entre manutenção temporária da exceção legada ou retirada/substituição canônica.
+A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A consulta nominal dos sete tópicos da migração também confirmou artigos públicos de BlockList, estorno automático PIX, cálculo/estorno, vale-compra, motivos, logística reversa e prazo de postagem. Os IDs e slugs estão no relatório de auditoria. Para todos eles, o estado operacional deste lote é `EXCEÇÃO_LEGADA_DELEGADA`: continuam públicos para preservar cobertura, com correções objetivas permitidas, enquanto qualquer novo canônico permanece bloqueado até revisão formal.
 
 Os documentos canônicos existentes permanecem respeitados:
 
@@ -2253,7 +2253,7 @@ Além dos 15 artigos de alta confiança, há uma watchlist de 15 artigos com ter
 
 ### Matriz nominal dos sete tópicos da migração
 
-Cada linha abaixo foi confirmada como `published/public` no banco. `PENDENTE_PRODUCT_CS` é o estado documental real; a coluna de recomendação não substitui a aprovação humana exigida.
+Cada linha abaixo foi confirmada como `published/public` no banco. `EXCEÇÃO_LEGADA_DELEGADA` é o estado operacional deste lote; não substitui a futura revisão formal para um canônico novo. As células `PENDENTE_PRODUCT_CS` abaixo permanecem como status do gate formal, não como indicação de retirada imediata do legado.
 
 | Tópico | Artigo / ID / slug | Recomendação técnica | Estado |
 | --- | --- | --- | --- |
@@ -2267,19 +2267,17 @@ Cada linha abaixo foi confirmada como `published/public` no banco. `PENDENTE_PRO
 | Logística reversa | `b84c1f9e-528f-4d93-b577-db1fac69de31` / `como-o-consumidor-solicita-uma-reversa`; `d72b9732-b58b-47e6-96bc-6c7b82862442` / `habilitar-a-api-de-logistica-reversa-do-correios`; `d860e673-1912-4d34-9c47-6dc5f3420947` / `pendencia-de-logistica-reversa`; `7b3f7c81-1e17-4829-8bb3-a1fab5ef4228` / `posso-filtrar-as-solicitacoes-de-reversas`; `336f8f01-0c9d-4ba8-8612-2436e3731c77` / `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` | substituir por rewrites de logística/postagem aprovados; integração Correios continua bloqueada | `PENDENTE_PRODUCT_CS` |
 | Prazo de postagem | `8b00aec4-e373-4f94-a8cd-35ef7c825707` / `como-configurar-o-prazo-logistico-por-estado` | substituir por `KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` após aprovação | `PENDENTE_PRODUCT_CS` |
 
-### Opções submetidas ao gate humano
+### Regra operacional resultante
 
-1. **Exceção legada temporária:** manter nominalmente os artigos já publicados para evitar regressão, registrar Produto/Engenharia/Suporte/CS por artigo, reparar assets e bloquear novas publicações sensíveis.
-2. **Saneamento conservador:** retirar os artigos sensíveis da visibilidade pública e só publicar rewrites canônicos após aprovação explícita.
+1. Artigos já públicos permanecem públicos neste lote para evitar regressão.
+2. Correções textuais objetivas e reversíveis podem ser aplicadas pela origem local, por slug, preservando `published/public`.
+3. Novos canônicos sensíveis, alterações de regra financeira, integração ou permissão ficam bloqueados até revisão formal.
+4. A lista nominal e a watchlist devem ser reavaliadas antes de qualquer expansão de conteúdo.
 
-Recomendação técnica: opção 1 somente como exceção com prazo, lista nominal e proibição de conteúdo novo. A decisão final não foi inferida por este lote.
+### Ações restantes após a decisão
 
-### Ações dependentes de decisão
-
-- decidir por artigo a manutenção legada ou o saneamento conservador;
-- registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
 - manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
-- corrigir o artigo com `chr(65533)` e remover o placeholder de FAQ a partir da origem local;
+- a consulta pública atual já confirmou a correção do artigo com `chr(65533)` e a remoção do placeholder de FAQ;
 - validação local concluída para o reparo por slug: `published/public`, sem `chr(65533)`, placeholder ou quebra de passo colapsada;
 - configurar canal público real em `brand_settings`;
-- executar eventual escrita remota somente depois do gate correspondente e de validação local.
+- executar a escrita remota somente pelo fluxo administrativo autenticado e repetir a consulta read-only após a publicação.

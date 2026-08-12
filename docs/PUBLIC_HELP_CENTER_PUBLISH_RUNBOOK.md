@@ -125,8 +125,10 @@ Fila operacional vigente:
 
 A decisao historica de migrar uma Central de Ajuda publica legada nao equivale a aprovacao atual de cada regra tecnica ou financeira do artigo. Para eliminar a ambiguidade do fluxo:
 
+Neste lote, o solicitante delegou a decisao operacional de manter temporariamente o legado ja publicado, com correcoes objetivas de qualidade e sem novos canonicos sensiveis. Essa delegacao preserva cobertura, mas nao substitui o registro nominal de Produto/Suporte/CS nem libera novos publishes.
+
 - **Novo artigo ou rewrite canonico:** temas com PIX, estorno, Correios, sellers, antifraude, permissao critica, integracao sensivel ou regra financeira continuam bloqueados ate revisao humana explicita e registro nominal.
-- **Artigo legado ja `published/public`:** nao deve ser retirado automaticamente apenas pela ocorrencia de um termo. Ele precisa entrar em uma matriz nominal de excecao, com decisao de Produto e Suporte/CS (e Engenharia/governanca financeira quando aplicavel). Enquanto a decisao nao existir, o estado e `pendente de decisao`, nao `aprovado para novo publish`.
+- **Artigo legado ja `published/public`:** nao deve ser retirado automaticamente apenas pela ocorrencia de um termo. Neste lote, a matriz nominal registra a excecao legada delegada e preserva o artigo publicado; o registro humano continua `pendente` para fins de aprovacao formal e o artigo nao fica `aprovado para novo publish`.
 - **Risco tecnico critico:** credencial, token, segredo, endpoint privado, payload sensivel, permissao critica ou informacao pessoal continua sendo bloqueio automatico mesmo dentro da excecao legada.
 - **Asset ausente:** referencia `knowledge-asset:<id>` sem linha/objeto publico correspondente e bloqueador de readiness. Esconder a imagem na UI nao corrige o corpus; e necessario reconciliar o asset ou remover a referencia antes de declarar o artigo pronto.
 - **Canal de suporte:** o rodape so pode exibir e-mail, WhatsApp ou URL que exista em `brand_settings` e passe pelo resolver publico. Na ausencia de contato, exibir indisponibilidade honesta e abrir pendencia de configuracao; nunca fabricar canal no frontend.
