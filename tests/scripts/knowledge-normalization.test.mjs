@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -21,6 +22,18 @@ test('corrige aspas tipográficas e emoji codificados como Windows-1252', () => 
 
 test('preserva palavras válidas com a letra â', () => {
   assert.equal(repairMojibake('INTEGRAÇÃO, câmbio e parâmetro'), 'INTEGRAÇÃO, câmbio e parâmetro');
+});
+
+test('gera correção por slug sem placeholder ou ID histórico', () => {
+  const sql = execFileSync(
+    process.execPath,
+    ['scripts/knowledge/generate-copy-repair-migration.mjs', '--slug=como-atualizar-os-dados-de-integracao-do-e-commerce'],
+    { encoding: 'utf8' },
+  );
+
+  assert.match(sql, /ks\.slug = 'genius'/);
+  assert.match(sql, /ka\.slug = 'como-atualizar-os-dados-de-integracao-do-e-commerce'/);
+  assert.doesNotMatch(sql, /inserir link da FAQ|�|964e5bf7-7de7-4bf4-828e-f199ea40e45a/);
 });
 
 test('remove contato legado inline sem remover o conteúdo operacional', () => {

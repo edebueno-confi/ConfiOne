@@ -2218,7 +2218,7 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 
 - checkout: `C:\Projetos\GSO-old`
 - branch: `codex/release-consolidated-20260811`
-- HEAD auditado: `0e72600`
+- HEAD auditado: `3aed2f4`
 - fonte de verdade: Supabase vinculado, consultado por SQL somente leitura
 - escrita remota nesta etapa: não executada
 - relatório detalhado: `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`
@@ -2229,15 +2229,15 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 | --- | ---: |
 | Artigos `published/public` em `genius` | 69 |
 | Categorias públicas | 12 |
-| Linhas de asset editorial | 0 |
+| Linhas de asset editorial | 128 |
 | Referências `knowledge-asset:<id>` no corpo público | 128 |
-| Referências sem asset correspondente | 128 |
-| Artigos com `chr(65533)` | 0 |
+| Referências sem asset correspondente | 0 |
+| Artigos com `chr(65533)` | 1 |
 | Artigos com mojibake confirmado | 0 |
-| Artigos com placeholder de FAQ | 0 |
+| Artigos com placeholder de FAQ | 1 |
 | `support_contacts` público | `{}` |
 
-Conclusão: o placeholder foi removido e o detector específico de mojibake confirmou zero ocorrências públicas. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O normalizador local foi robustecido preventivamente. A correção de imagens ainda não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+Conclusão: os 128 assets públicos agora correspondem aos 128 markers do corpo. O detector específico não confirmou mojibake, mas a consulta atual encontrou um artigo com `chr(65533)` e um placeholder de FAQ. A busca anterior por qualquer `Ã`/`â` era ampla demais e confundia letras válidas em português. O rodapé permanece sem canal real, e nenhum contato pode ser inventado no frontend.
 
 ### Registro de decisão para artigos sensíveis publicados
 
@@ -2257,15 +2257,15 @@ Cada linha abaixo foi confirmada como `published/public` no banco. `PENDENTE_PRO
 
 | Tópico | Artigo / ID / slug | Recomendação técnica | Estado |
 | --- | --- | --- | --- |
-| BlockList | `22895093-a670-4836-8e18-ec9c21761e3b` / `como-configurar-o-blocklist` | manter somente como exceção legada corrigida ou arquivar; não há canônico aprovado | `PENDENTE_PRODUCT_CS` |
-| Estorno automático PIX | `15d7c880-4c8d-4833-902d-92c8e8c3abd7` / `como-configurar-o-estorno-automatico-via-pix` | saneamento conservador; rewrite depende de Produto + Engenharia + CS | `PENDENTE_PRODUCT_CS` |
-| Cálculo de estorno | `d72dd20e-9044-45ab-a339-15fb3f561668` / `como-configurar-o-calculo-do-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
-| Limite de estorno | `f2f5fba0-94ee-4159-b63b-0636edb6085c` / `limitando-o-valor-maximo-de-um-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
-| Política de frete | `b5b2972c-c45c-4d58-af90-bed28909c89d` / `politica-para-estorno-do-frete` | saneamento conservador; requer governança financeira/operacional | `PENDENTE_PRODUCT_CS` |
-| Vale-compra | `95654f3b-ac06-4b24-9947-39b436bef979` / `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `096d01bd-8b3c-4eb4-8392-8a381bf5e39b` / `como-configurar-o-vale-compras-retencao`; `40e23d70-cf7f-4442-a698-2c312574f739` / `como-realizar-alteracoes-em-um-vale-compra-pendente`; `cf5febab-ba03-4c95-bcd2-f0c01216a2ec` / `pedidos-pagos-com-vale-compras`; `7a148387-a690-4662-9492-7ef9958ed331` / `sellers-permitidos-para-criar-vale-compras` | manter apenas por exceção nominal ou retirar; não há rewrite aprovado | `PENDENTE_PRODUCT_CS` |
-| Motivos de troca/devolução | `3d3b6d48-7b06-435b-aeaf-018d3670fcef` / `como-cadastrar-motivos-para-troca-ou-devolucao`; `96c630b8-7912-45c0-a456-aa4b89789dad` / `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` | substituir por recorte canônico após aprovação de Produto + CS | `PENDENTE_PRODUCT_CS` |
-| Logística reversa | `f6e84831-4299-4df1-a69b-3042164a1041` / `como-o-consumidor-solicita-uma-reversa`; `7224ca4a-286b-4b58-9fab-5c57d6e1ba0c` / `habilitar-a-api-de-logistica-reversa-do-correios`; `672b1a48-a89a-494b-8f86-22c29c44e35c` / `pendencia-de-logistica-reversa`; `e361c695-8391-4736-aab0-9879a9df03bd` / `posso-filtrar-as-solicitacoes-de-reversas`; `10fe946f-7407-43ce-85b9-68b6ef14ab70` / `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` | substituir por rewrites de logística/postagem aprovados; integração Correios continua bloqueada | `PENDENTE_PRODUCT_CS` |
-| Prazo de postagem | `beea958a-1e18-465a-b919-5defcb199135` / `como-configurar-o-prazo-logistico-por-estado` | substituir por `KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` após aprovação | `PENDENTE_PRODUCT_CS` |
+| BlockList | `19826c33-03f4-4d8b-8f21-29f184f39125` / `como-configurar-o-blocklist` | manter somente como exceção legada corrigida ou arquivar; não há canônico aprovado | `PENDENTE_PRODUCT_CS` |
+| Estorno automático PIX | `33a45a4a-5862-4022-85b6-27b949f5358d` / `como-configurar-o-estorno-automatico-via-pix` | saneamento conservador; rewrite depende de Produto + Engenharia + CS | `PENDENTE_PRODUCT_CS` |
+| Cálculo de estorno | `a1ab38c7-010a-40ba-b35c-53b696ef9ad2` / `como-configurar-o-calculo-do-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Limite de estorno | `68668759-0b69-438c-93a0-6be50b3ebf8b` / `limitando-o-valor-maximo-de-um-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Política de frete | `978e536d-c789-4a74-8f6b-5c89185a0e1c` / `politica-para-estorno-do-frete` | saneamento conservador; requer governança financeira/operacional | `PENDENTE_PRODUCT_CS` |
+| Vale-compra | `8ece5891-4613-44cf-9f61-9d2bda71258e` / `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `470da711-46b1-4b56-b18d-059fd829f409` / `como-configurar-o-vale-compras-retencao`; `0c76840c-9a49-4e76-94c8-78aec2e36bdc` / `como-realizar-alteracoes-em-um-vale-compra-pendente`; `0766342f-e8eb-4927-a4ba-c5f3284a5982` / `pedidos-pagos-com-vale-compras`; `e15c47b4-ddf5-4747-8f2d-64c37c88bd31` / `sellers-permitidos-para-criar-vale-compras` | manter apenas por exceção nominal ou retirar; não há rewrite aprovado | `PENDENTE_PRODUCT_CS` |
+| Motivos de troca/devolução | `38e67946-8956-43d3-98f4-b1bcb31bbf79` / `como-cadastrar-motivos-para-troca-ou-devolucao`; `40270318-8a7e-4114-bc49-3486c52cb96c` / `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` | substituir por recorte canônico após aprovação de Produto + CS | `PENDENTE_PRODUCT_CS` |
+| Logística reversa | `b84c1f9e-528f-4d93-b577-db1fac69de31` / `como-o-consumidor-solicita-uma-reversa`; `d72b9732-b58b-47e6-96bc-6c7b82862442` / `habilitar-a-api-de-logistica-reversa-do-correios`; `d860e673-1912-4d34-9c47-6dc5f3420947` / `pendencia-de-logistica-reversa`; `7b3f7c81-1e17-4829-8bb3-a1fab5ef4228` / `posso-filtrar-as-solicitacoes-de-reversas`; `336f8f01-0c9d-4ba8-8612-2436e3731c77` / `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` | substituir por rewrites de logística/postagem aprovados; integração Correios continua bloqueada | `PENDENTE_PRODUCT_CS` |
+| Prazo de postagem | `8b00aec4-e373-4f94-a8cd-35ef7c825707` / `como-configurar-o-prazo-logistico-por-estado` | substituir por `KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` após aprovação | `PENDENTE_PRODUCT_CS` |
 
 ### Opções submetidas ao gate humano
 
@@ -2279,6 +2279,6 @@ Recomendação técnica: opção 1 somente como exceção com prazo, lista nomin
 - decidir por artigo a manutenção legada ou o saneamento conservador;
 - registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
 - manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
-- reconciliar ou remover as 128 referências de imagem;
+- corrigir o artigo com `chr(65533)` e remover o placeholder de FAQ a partir da origem local;
 - configurar canal público real em `brand_settings`;
 - executar eventual escrita remota somente depois do gate correspondente e de validação local.

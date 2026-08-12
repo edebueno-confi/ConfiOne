@@ -2,7 +2,7 @@
 
 ## Veredito
 
-`inconsistente com ressalvas críticas`: a Central pública está acessível e o corpus atual está publicado, mas a baseline ainda contém referências de imagens sem assets correspondentes, não possui canal de suporte configurado e mantém artigos legados sensíveis publicados sem uma decisão individual registrada para o estado atual.
+`inconsistente com ressalvas críticas`: a Central pública está acessível e o corpus atual está publicado, os assets agora estão reconciliados, mas ainda há um artigo com caractere de substituição UTF-8, um placeholder de FAQ, nenhum canal de suporte configurado e artigos legados sensíveis publicados sem decisão individual registrada para o estado atual.
 
 Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usando as views/tabelas públicas da Knowledge Base. Não houve escrita remota durante esta auditoria.
 
@@ -12,15 +12,15 @@ Esta auditoria foi executada contra o banco Supabase vinculado ao checkout, usan
 | --- | ---: | --- |
 | Artigos `published/public` no espaço `genius` | 69 | `knowledge_articles` |
 | Categorias `public` no espaço `genius` | 12 | `knowledge_categories` |
-| Linhas em `knowledge_article_assets` para artigos públicos | 0 | `knowledge_article_assets` |
+| Linhas em `knowledge_article_assets` para artigos públicos | 128 | `vw_public_knowledge_article_assets` |
 | Referências `knowledge-asset:<id>` em artigos públicos | 128 | `body_md` |
-| Referências de asset sem linha correspondente | 128 | `LEFT JOIN` por UUID |
-| Artigos com caractere de substituição UTF-8 | 0 | `chr(65533)` em título, resumo e corpo |
+| Referências de asset sem linha correspondente | 0 | comparação por UUID |
+| Artigos com caractere de substituição UTF-8 | 1 | `chr(65533)` em título, resumo e corpo |
 | Artigos com mojibake confirmado | 0 | detector de sequências malformadas (`Ã`/`Â` + byte de continuação, `â€`, `ðŸ`) |
-| Artigos com placeholder de FAQ | 0 | busca por `link da FAQ` |
+| Artigos com placeholder de FAQ | 1 | busca por `link da FAQ` |
 | Contatos públicos configurados | nenhum | `vw_public_knowledge_space_resolver.support_contacts = {}` |
 
-O frontend esconder a imagem ausente evita um placeholder quebrado na tela, mas não corrige a fonte de dados: o artigo continua contendo a referência e o asset não existe no read model público. A primeira busca por qualquer letra `Ã`/`â` gerava falso positivo em palavras portuguesas válidas; a consulta atual usa sequências malformadas e confirmou zero artigos públicos com mojibake.
+Os 128 markers `knowledge-asset:<id>` agora possuem 128 linhas correspondentes no read model público; a lacuna de assets foi resolvida externamente e precisa apenas permanecer coberta pela validação. A primeira busca por qualquer letra `Ã`/`â` gerava falso positivo em palavras portuguesas válidas; a consulta atual não confirmou mojibake, mas encontrou um artigo com `chr(65533)` e um placeholder de FAQ que ainda exigem correção editorial.
 
 ## Os sete tópicos da migração Genius > Aftersale V2
 
@@ -28,24 +28,24 @@ Todos os tópicos abaixo têm pelo menos um artigo `published/public`. Nenhum fo
 
 | Tópico | Artigo(s) publicado(s) confirmado(s) |
 | --- | --- |
-| BlockList | `22895093-a670-4836-8e18-ec9c21761e3b` — `como-configurar-o-blocklist` |
-| Estorno automático PIX | `15d7c880-4c8d-4833-902d-92c8e8c3abd7` — `como-configurar-o-estorno-automatico-via-pix` |
-| Regra/cálculo de estorno | `d72dd20e-9044-45ab-a339-15fb3f561668` — `como-configurar-o-calculo-do-estorno`; `f2f5fba0-94ee-4159-b63b-0636edb6085c` — `limitando-o-valor-maximo-de-um-estorno`; `b5b2972c-c45c-4d58-af90-bed28909c89d` — `politica-para-estorno-do-frete` |
-| Vale-compra | `95654f3b-ac06-4b24-9947-39b436bef979` — `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `096d01bd-8b3c-4eb4-8392-8a381bf5e39b` — `como-configurar-o-vale-compras-retencao`; `40e23d70-cf7f-4442-a698-2c312574f739` — `como-realizar-alteracoes-em-um-vale-compra-pendente`; `cf5febab-ba03-4c95-bcd2-f0c01216a2ec` — `pedidos-pagos-com-vale-compras`; `7a148387-a690-4662-9492-7ef9958ed331` — `sellers-permitidos-para-criar-vale-compras` |
-| Motivos de troca/devolução | `3d3b6d48-7b06-435b-aeaf-018d3670fcef` — `como-cadastrar-motivos-para-troca-ou-devolucao`; `96c630b8-7912-45c0-a456-aa4b89789dad` — `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` |
-| Logística reversa | `f6e84831-4299-4df1-a69b-3042164a1041` — `como-o-consumidor-solicita-uma-reversa`; `7224ca4a-286b-4b58-9fab-5c57d6e1ba0c` — `habilitar-a-api-de-logistica-reversa-do-correios`; `672b1a48-a89a-494b-8f86-22c29c44e35c` — `pendencia-de-logistica-reversa`; `e361c695-8391-4736-aab0-9879a9df03bd` — `posso-filtrar-as-solicitacoes-de-reversas`; `10fe946f-7407-43ce-85b9-68b6ef14ab70` — `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` |
-| Prazo de postagem | `beea958a-1e18-465a-b919-5defcb199135` — `como-configurar-o-prazo-logistico-por-estado` |
+| BlockList | `19826c33-03f4-4d8b-8f21-29f184f39125` — `como-configurar-o-blocklist` |
+| Estorno automático PIX | `33a45a4a-5862-4022-85b6-27b949f5358d` — `como-configurar-o-estorno-automatico-via-pix` |
+| Regra/cálculo de estorno | `a1ab38c7-010a-40ba-b35c-53b696ef9ad2` — `como-configurar-o-calculo-do-estorno`; `68668759-0b69-438c-93a0-6be50b3ebf8b` — `limitando-o-valor-maximo-de-um-estorno`; `978e536d-c789-4a74-8f6b-5c89185a0e1c` — `politica-para-estorno-do-frete` |
+| Vale-compra | `8ece5891-4613-44cf-9f61-9d2bda71258e` — `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `470da711-46b1-4b56-b18d-059fd829f409` — `como-configurar-o-vale-compras-retencao`; `0c76840c-9a49-4e76-94c8-78aec2e36bdc` — `como-realizar-alteracoes-em-um-vale-compra-pendente`; `0766342f-e8eb-4927-a4ba-c5f3284a5982` — `pedidos-pagos-com-vale-compras`; `e15c47b4-ddf5-4747-8f2d-64c37c88bd31` — `sellers-permitidos-para-criar-vale-compras` |
+| Motivos de troca/devolução | `38e67946-8956-43d3-98f4-b1bcb31bbf79` — `como-cadastrar-motivos-para-troca-ou-devolucao`; `40270318-8a7e-4114-bc49-3486c52cb96c` — `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` |
+| Logística reversa | `b84c1f9e-528f-4d93-b577-db1fac69de31` — `como-o-consumidor-solicita-uma-reversa`; `d72b9732-b58b-47e6-96bc-6c7b82862442` — `habilitar-a-api-de-logistica-reversa-do-correios`; `d860e673-1912-4d34-9c47-6dc5f3420947` — `pendencia-de-logistica-reversa`; `7b3f7c81-1e17-4829-8bb3-a1fab5ef4228` — `posso-filtrar-as-solicitacoes-de-reversas`; `336f8f01-0c9d-4ba8-8612-2436e3731c77` — `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` |
+| Prazo de postagem | `8b00aec4-e373-4f94-a8cd-35ef7c825707` — `como-configurar-o-prazo-logistico-por-estado` |
 
 Não foi encontrado artigo público com `antifraude` no título, resumo ou corpo na consulta atual.
 
 ## Causa raiz dos problemas de qualidade
 
 - **Mojibake:** o export legado contém alguns campos históricos com representação mojibake em `article.json`, enquanto o corpus público atual passou pelo detector específico sem ocorrências confirmadas. O normalizador local `scripts/knowledge/legacy-normalization.mjs` foi robustecido para reparar também sequências Windows-1252 em futuras importações, sem alterar palavras portuguesas válidas.
-- **Imagens:** o índice local registra 129 assets em 53 artigos, e os arquivos dos sete tópicos auditados existem no export local. O runtime público, porém, tem zero linhas em `knowledge_article_assets`, enquanto os corpos publicados já carregam 128 markers `knowledge-asset:<id>`. A causa é a separação entre a migration editorial que gravou os markers e o reprocessador de assets `scripts/knowledge/reprocess-octadesk-article-assets.mjs`, que ainda não foi aplicado ao ambiente público.
-- **FAQ:** o placeholder foi removido no forward-fix de qualidade e a consulta atual não encontrou ocorrência publicada.
+- **Imagens:** o índice local registra 129 assets em 53 artigos, e o runtime público agora expõe 128 linhas em `vw_public_knowledge_article_assets`, exatamente correspondentes aos 128 markers publicados. O reprocessamento de assets foi aplicado após o snapshot anterior.
+- **FAQ:** a migration de qualidade anterior não atingiu o artigo atual porque usava IDs históricos fixos; o artigo `como-atualizar-os-dados-de-integracao-do-e-commerce` ainda contém `inserir link da FAQ`.
 - **Suporte:** o resolver público lê `brand_settings.support_contacts`; o valor atual é `{}`, portanto não existe canal real para o frontend exibir.
 
-Não há artigos públicos com mojibake confirmado pelo detector específico atual.
+Não há artigos públicos com mojibake confirmado pelo detector específico atual; há, porém, um artigo com caractere de substituição UTF-8 que precisa ser recuperado da origem local antes da escrita remota.
 
 ## Artigos publicados com tema sensível explícito
 
@@ -53,21 +53,21 @@ O conjunto abaixo foi detectado por termo no título ou resumo, portanto é a li
 
 | Tema | ID | Slug | Encaminhamento canônico/documental | Decisão atual |
 | --- | --- | --- | --- | --- |
-| Correios | `c81f6e3c-4fc6-4515-b8a8-353c794c9141` | `erros-na-integracao-do-contrato-do-correios` | `KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md` — integração bloqueada por risco | Pendente Produto + Engenharia + Suporte/CS |
-| Correios | `7224ca4a-286b-4b58-9fab-5c57d6e1ba0c` | `habilitar-a-api-de-logistica-reversa-do-correios` | Mesmo fechamento — API/autorização fora da trilha pública atual | Pendente Produto + Engenharia + Suporte/CS |
-| Correios | `135e946f-0892-465c-8fe3-701527e8666c` | `integracao-e-configuracao-com-os-correios` | Mesmo fechamento — integração técnica sensível | Pendente Produto + Engenharia + Suporte/CS |
-| Estorno | `95654f3b-ac06-4b24-9947-39b436bef979` | `como-automatizar-o-pagamento-de-estorno-e-vale-compra` | `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` — automação financeira, sem candidato público aprovado | Pendente Produto + Engenharia + Suporte/CS |
-| Estorno | `d72dd20e-9044-45ab-a339-15fb3f561668` | `como-configurar-o-calculo-do-estorno` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — risco financeiro alto | Pendente Produto + Suporte/CS |
-| Estorno | `77ec5001-4d8e-4845-b1b7-a362959f4ffb` | `configurando-as-formas-de-estorno` | `KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md` — canônico candidato ainda pendente | Pendente Produto + Suporte/CS |
-| Estorno | `14f93f8e-dbb3-4b6f-b795-0c4b0f863abe` | `erro-ao-tentar-realizar-o-estorno` | `KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md` — revisar recorte técnico | Pendente Produto + Engenharia + Suporte/CS |
-| Estorno | `a5afc13f-c192-439c-b399-7536738acb63` | `formas-de-estorno-por-motivo` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — política por motivo | Pendente Produto + Suporte/CS |
-| Estorno | `f2f5fba0-94ee-4159-b63b-0636edb6085c` | `limitando-o-valor-maximo-de-um-estorno` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — teto financeiro | Pendente Produto + governança financeira/operacional |
-| Estorno | `b5b2972c-c45c-4d58-af90-bed28909c89d` | `politica-para-estorno-do-frete` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — política comercial/financeira | Pendente Produto + Suporte/CS |
-| Estorno/Sellers | `c8aa09a0-c79a-46f6-8a7c-bfd7a0eae5cd` | `regras-de-cadastro-e-configuracoes-de-sellers-estorno-e-logistica` | `KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md` e `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` | Pendente Produto + Engenharia + Suporte/CS |
-| Estorno | `15f439cb-baaf-43c7-ad65-f561ecc020cb` | `valor-manual-para-estorno-automatico` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — valor manual em automação | Pendente Produto + Engenharia |
-| PIX | `15d7c880-4c8d-4833-902d-92c8e8c3abd7` | `como-configurar-o-estorno-automatico-via-pix` | `KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md` — bloquear por risco | Pendente Produto + Engenharia + Suporte/CS |
-| Sellers | `9740640b-388d-4d16-8956-cfe019e251ca` | `configuracao-de-sellers-permitidos` | `KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md` — permissões e integração | Pendente Produto + Engenharia + Suporte/CS |
-| Sellers | `7a148387-a690-4662-9492-7ef9958ed331` | `sellers-permitidos-para-criar-vale-compras` | `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` — seller e crédito | Pendente Produto + Engenharia + Suporte/CS |
+| Correios | `b35d53cb-fdad-43ce-a4ef-bdd181d205cb` | `erros-na-integracao-do-contrato-do-correios` | `KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md` — integração bloqueada por risco | Pendente Produto + Engenharia + Suporte/CS |
+| Correios | `d72b9732-b58b-47e6-96bc-6c7b82862442` | `habilitar-a-api-de-logistica-reversa-do-correios` | Mesmo fechamento — API/autorização fora da trilha pública atual | Pendente Produto + Engenharia + Suporte/CS |
+| Correios | `41df576d-bf61-4b2f-b4f3-3579cf889920` | `integracao-e-configuracao-com-os-correios` | Mesmo fechamento — integração técnica sensível | Pendente Produto + Engenharia + Suporte/CS |
+| Estorno | `8ece5891-4613-44cf-9f61-9d2bda71258e` | `como-automatizar-o-pagamento-de-estorno-e-vale-compra` | `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` — automação financeira, sem candidato público aprovado | Pendente Produto + Engenharia + Suporte/CS |
+| Estorno | `a1ab38c7-010a-40ba-b35c-53b696ef9ad2` | `como-configurar-o-calculo-do-estorno` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — risco financeiro alto | Pendente Produto + Suporte/CS |
+| Estorno | `ca1760c3-aca8-4051-89d0-6c4e38d7f4da` | `configurando-as-formas-de-estorno` | `KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md` — canônico candidato ainda pendente | Pendente Produto + Suporte/CS |
+| Estorno | `9e3b5ad3-1cc2-42e2-bc80-b74e28258733` | `erro-ao-tentar-realizar-o-estorno` | `KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md` — revisar recorte técnico | Pendente Produto + Engenharia + Suporte/CS |
+| Estorno | `21e2a3c3-cb72-4789-b9d0-5e574379ecb0` | `formas-de-estorno-por-motivo` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — política por motivo | Pendente Produto + Suporte/CS |
+| Estorno | `68668759-0b69-438c-93a0-6be50b3ebf8b` | `limitando-o-valor-maximo-de-um-estorno` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — teto financeiro | Pendente Produto + governança financeira/operacional |
+| Estorno | `978e536d-c789-4a74-8f6b-5c89185a0e1c` | `politica-para-estorno-do-frete` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — política comercial/financeira | Pendente Produto + Suporte/CS |
+| Estorno/Sellers | `1491e1d1-b2b9-4497-b22e-57aa836ef89a` | `regras-de-cadastro-e-configuracoes-de-sellers-estorno-e-logistica` | `KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md` e `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` | Pendente Produto + Engenharia + Suporte/CS |
+| Estorno | `2cb9651b-0d25-48e7-af10-0be572132469` | `valor-manual-para-estorno-automatico` | `KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md` — valor manual em automação | Pendente Produto + Engenharia |
+| PIX | `33a45a4a-5862-4022-85b6-27b949f5358d` | `como-configurar-o-estorno-automatico-via-pix` | `KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md` — bloquear por risco | Pendente Produto + Engenharia + Suporte/CS |
+| Sellers | `91bb9872-114c-4589-b63c-5b0f0df35868` | `configuracao-de-sellers-permitidos` | `KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md` — permissões e integração | Pendente Produto + Engenharia + Suporte/CS |
+| Sellers | `e15c47b4-ddf5-4747-8f2d-64c37c88bd31` | `sellers-permitidos-para-criar-vale-compras` | `KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md` — seller e crédito | Pendente Produto + Engenharia + Suporte/CS |
 
 ### Watchlist lexical no corpo
 
@@ -86,7 +86,7 @@ Recomendação técnica: opção 1 apenas como exceção com prazo e lista nomin
 
 ## Bloqueadores para declarar a Central pronta
 
-- reconciliar as 128 referências de imagem: fazer upload/aprovação dos assets reais ou remover as referências do conteúdo;
+- corrigir o artigo `como-atualizar-os-dados-de-integracao-do-e-commerce` a partir da origem local, removendo o caractere de substituição e o placeholder de FAQ;
 - cadastrar um canal público real de suporte em `brand_settings`, sem inventar e-mail ou WhatsApp;
 - obter e registrar a decisão humana por artigo sensível no registro de aprovações;
 - revisar semanticamente a watchlist lexical do corpo;
@@ -94,4 +94,4 @@ Recomendação técnica: opção 1 apenas como exceção com prazo e lista nomin
 
 ## Limitação e próximo gate
 
-Não foi executada escrita remota nesta auditoria. O dry-run do reprocessador local não avançou porque o ambiente não tinha `KNOWLEDGE_ADMIN_EMAIL/PASSWORD`; a inspeção read-only confirmou que os arquivos de asset existem no export. A publicação/alteração do corpus público e a reconciliação de assets exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+Não foi executada escrita remota nesta auditoria. A inspeção read-only atual confirmou 128 assets públicos correspondentes aos 128 markers; a correção textual restante e qualquer alteração de visibilidade exigem decisão humana explícita de Produto/CS (e Engenharia quando houver integração), conforme `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
