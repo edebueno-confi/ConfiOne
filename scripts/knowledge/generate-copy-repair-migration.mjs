@@ -34,8 +34,8 @@ function walk(directory) {
 
 function cleanBody(title, plainText) {
   const lines = repairMojibake(plainText)
-    .replace(/Consulte a FAQ\s*\(inserir link da FAQ\)[^.]*\.\s*/gi, '')
-    .replace(/Se precisar de mais informações ou ajuda, consulte a FAQ ou entre em contato com o nosso suporte!\s*/gi, '')
+    .replace(/Consulte a FAQ\s*\(inserir link da FAQ\)[^.]*\.\s*/gi, '\n')
+    .replace(/Se precisar de mais informações ou ajuda, consulte a FAQ ou entre em contato com o nosso suporte!\s*/gi, '\n')
     .replace(/\r\n/g, '\n')
     .trim()
     .split('\n')

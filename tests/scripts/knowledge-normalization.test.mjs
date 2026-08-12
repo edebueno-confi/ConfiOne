@@ -33,6 +33,7 @@ test('gera correção por slug sem placeholder ou ID histórico', () => {
 
   assert.match(sql, /ks\.slug = 'genius'/);
   assert.match(sql, /ka\.slug = 'como-atualizar-os-dados-de-integracao-do-e-commerce'/);
+  assert.match(sql, /habilitadas\.\n2\. Shopify/);
   assert.doesNotMatch(sql, /inserir link da FAQ|�|964e5bf7-7de7-4bf4-828e-f199ea40e45a/);
 });
 
