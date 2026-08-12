@@ -569,7 +569,7 @@ function PreferencesModal({
       <div
         aria-label="Preferências do usuário"
         aria-modal="true"
-        className="relative w-full max-w-md rounded-[12px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] p-6 shadow-[0_20px_48px_rgba(0,0,0,0.45)] z-10 text-[color:var(--one-text-primary,#E6ECF5)] space-y-5"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[12px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] p-6 shadow-[0_20px_48px_rgba(0,0,0,0.45)] z-10 text-[color:var(--one-text-primary,#E6ECF5)] space-y-5"
         role="dialog"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--one-border-default,#22324D)] pb-4">
@@ -683,6 +683,9 @@ function ShellTopbar({
             <path d="M5 7h14M5 12h14M5 17h14" />
           </svg>
         </button>
+        <span aria-hidden="true" className="gso-topbar-mobile-genius lg:hidden">
+          <GeniusLamp animated={false} size="sm" />
+        </span>
         {canGoBack ? (
           <button
             aria-label="Voltar para a superfície anterior"
@@ -717,7 +720,7 @@ function ShellTopbar({
       </div>
 
       {/* Busca global do Gênio */}
-      <div className="gso-topbar-search max-w-[420px] w-full flex justify-center mx-3">
+      <div className="gso-topbar-search min-w-0 max-w-[420px] w-full flex justify-center mx-3">
         <GeniusGlobalSearch permissions={searchPermissions} />
       </div>
 
@@ -894,7 +897,7 @@ export function MinimalAppShell({
             </div>
           ) : null}
 
-          <main className="gso-main-canvas min-h-0 min-w-0 flex-1 overflow-hidden" id="conteudo-principal">{children}</main>
+          <main className="gso-main-canvas min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto" id="conteudo-principal">{children}</main>
         </div>
       </div>
 

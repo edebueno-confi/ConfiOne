@@ -357,6 +357,7 @@ export function GovernedActionDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end overflow-hidden bg-[rgba(7,15,35,0.42)] backdrop-blur-[3px]">
       <section
+        data-responsive-drawer="true"
         aria-modal="true"
         className={cx(
           'flex h-dvh w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[30px] border-l border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_32px_90px_rgba(10,22,50,0.28)]',
