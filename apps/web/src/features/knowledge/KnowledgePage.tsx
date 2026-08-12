@@ -785,8 +785,10 @@ export function KnowledgePage() {
     (field) => humanConfirmationsDraft[field.key] === true,
   ).length;
   const sortedCategories = [...categories].sort((left, right) => {
-    if (left.category_sort_order !== right.category_sort_order) {
-      return left.category_sort_order - right.category_sort_order;
+    const leftSortOrder = left.category_sort_order ?? 0;
+    const rightSortOrder = right.category_sort_order ?? 0;
+    if (leftSortOrder !== rightSortOrder) {
+      return leftSortOrder - rightSortOrder;
     }
 
     return left.name.localeCompare(right.name, 'pt-BR');
@@ -2198,41 +2200,6 @@ export function KnowledgePage() {
         </div>
       </section>
 
-      <section aria-label="Centrais de ajuda disponíveis" className="grid shrink-0 gap-3 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-3 sm:grid-cols-2 xl:grid-cols-3">
-        {spaces.map((space) => {
-          const active = space.id === selectedSpaceId;
-          return (
-            <button
-              aria-pressed={active}
-              className={cx(
-                'rounded-xl border px-4 py-3 text-left transition',
-                active ? 'border-[color:var(--color-brand-blue)] bg-[rgba(47,107,255,0.08)] shadow-[0_8px_24px_rgba(47,107,255,0.1)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] hover:border-[color:var(--minimal-border-strong)]',
-              )}
-              key={space.id}
-              onClick={() => {
-                setSelectedSpaceId(space.id);
-                setSelectedCategoryId('all');
-                setCurrentPage(1);
-              }}
-              type="button"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[color:var(--minimal-text)]">{space.display_name}</p>
-                  <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">{space.brand_name ?? space.slug}</p>
-                </div>
-                <StatusPill tone={space.status === 'active' ? 'positive' : 'default'}>{space.status === 'active' ? 'Ativa' : space.status}</StatusPill>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[color:var(--minimal-border)] pt-3 text-xs">
-                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.article_count}</strong>artigos</span>
-                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.published_article_count}</strong>publicados</span>
-                <span><strong className="block text-sm text-[color:var(--minimal-text)]">{space.category_count}</strong>categorias</span>
-              </div>
-            </button>
-          );
-        })}
-      </section>
-
       <div className="min-h-0 flex-none overflow-visible">
         <div className="gso-knowledge-cockpit-grid grid min-w-0 pt-[var(--one-space-component-gap)] xl:grid-cols-[minmax(0,1fr)_290px]">
           <main className="gso-knowledge-articles-pane flex min-w-0 flex-col !overflow-visible">
@@ -2669,6 +2636,31 @@ export function KnowledgePage() {
           </main>
 
           <aside className="gso-knowledge-category-rail hidden min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
+            {selectedSpace ? (
+              <section className="border-b border-[color:var(--minimal-border)] px-4 py-4" aria-label="Resumo da central ativa">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                    Central ativa
+                  </h2>
+                  <StatusPill tone={selectedSpace.status === 'active' ? 'positive' : 'default'}>
+                    {selectedSpace.status === 'active' ? 'Ativa' : selectedSpace.status}
+                  </StatusPill>
+                </div>
+                <article className="mt-3 border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-3">
+                  <p className="truncate text-sm font-semibold text-[color:var(--minimal-text)]">
+                    {selectedSpace.display_name}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)]">
+                    {selectedSpace.brand_name ?? selectedSpace.slug}
+                  </p>
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[color:var(--minimal-border)] pt-3 text-[0.68rem] text-[color:var(--minimal-text-secondary)]">
+                    <span><strong className="block text-sm text-[color:var(--minimal-text)]">{selectedSpace.article_count}</strong>artigos</span>
+                    <span><strong className="block text-sm text-[color:var(--minimal-text)]">{selectedSpace.published_article_count}</strong>publicados</span>
+                    <span><strong className="block text-sm text-[color:var(--minimal-text)]">{selectedSpace.category_count}</strong>categorias</span>
+                  </div>
+                </article>
+              </section>
+            ) : null}
             <section className="border-b border-[color:var(--minimal-border)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
