@@ -120,6 +120,18 @@ Fila operacional vigente:
 - novos lotes que nao tenham origem publica legada aprovada continuam exigindo advisory, checklist e revisao humana antes de publicacao.
 - para o corpus Octadesk ja migrado, esses documentos permanecem como historico e apoio a curadoria dos bloqueados; a baseline publica atual esta em `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md`.
 
+## Distincao obrigatoria: legado ja publicado x novo conteudo
+
+A decisao historica de migrar uma Central de Ajuda publica legada nao equivale a aprovacao atual de cada regra tecnica ou financeira do artigo. Para eliminar a ambiguidade do fluxo:
+
+- **Novo artigo ou rewrite canonico:** temas com PIX, estorno, Correios, sellers, antifraude, permissao critica, integracao sensivel ou regra financeira continuam bloqueados ate revisao humana explicita e registro nominal.
+- **Artigo legado ja `published/public`:** nao deve ser retirado automaticamente apenas pela ocorrencia de um termo. Ele precisa entrar em uma matriz nominal de excecao, com decisao de Produto e Suporte/CS (e Engenharia/governanca financeira quando aplicavel). Enquanto a decisao nao existir, o estado e `pendente de decisao`, nao `aprovado para novo publish`.
+- **Risco tecnico critico:** credencial, token, segredo, endpoint privado, payload sensivel, permissao critica ou informacao pessoal continua sendo bloqueio automatico mesmo dentro da excecao legada.
+- **Asset ausente:** referencia `knowledge-asset:<id>` sem linha/objeto publico correspondente e bloqueador de readiness. Esconder a imagem na UI nao corrige o corpus; e necessario reconciliar o asset ou remover a referencia antes de declarar o artigo pronto.
+- **Canal de suporte:** o rodape so pode exibir e-mail, WhatsApp ou URL que exista em `brand_settings` e passe pelo resolver publico. Na ausencia de contato, exibir indisponibilidade honesta e abrir pendencia de configuracao; nunca fabricar canal no frontend.
+
+O registro corrente desta excecao e a auditoria `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`, complementada pelo adendo em `docs/plan.md`.
+
 ## Como publicar corpus legado publico aprovado
 Use este fluxo apenas quando houver decisao de produto explicita de que a origem era uma Central de Ajuda publica existente.
 
@@ -158,7 +170,7 @@ Filtros obrigatorios em `/admin/knowledge`:
 - priorizar `draft`
 - revisar `visibility` atual antes de qualquer promote
 
-Sinais para rejeicao imediata:
+Sinais para rejeicao imediata de novo artigo ou rewrite:
 - menciona credenciais, tokens ou chaves
 - inclui endpoints, payloads ou detalhes internos de API
 - aborda PIX, estorno, Correios, sellers, antifraude ou permissao critica
@@ -166,7 +178,8 @@ Sinais para rejeicao imediata:
 - conserva linguagem legado/B2C inadequada para documentacao tecnica B2B
 
 Observacao:
-- em migracao de Central de Ajuda publica legada aprovada, linguagem legada leve e dependencia de asset nao revisado nao bloqueiam por si so; o bloqueio deve focar risco tecnico critico e exposicao indevida.
+- a excecao legada vale apenas para artigos ja publicados e listados na matriz nominal de decisao; ela nao autoriza novo publish, rewrite ou promocao automatica.
+- linguagem legada leve pode permanecer somente enquanto a decisao de excecao estiver pendente. Asset ausente nao e aceite como estado de readiness e exige reconciliacao.
 
 ## Como revisar `title`, `summary` e `body_md`
 ### Titulo

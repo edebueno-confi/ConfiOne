@@ -2211,3 +2211,56 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Corrigido: o cabeçalho Financeiro consulta e mostra a última execução do OMIE junto da origem financeira.
 - Não alterado: contratos de dados, RPCs, regras de frescor, RLS ou credenciais.
 - Pendências técnicas: telemetria por request, atomicidade do bloco compartilhado HubSpot, tombstones/arquivamentos e smoke visual autenticado em todos os viewports.
+
+## Adendo corrente — auditoria de governança da Central pública — 12/08/2026
+
+### Escopo e estado de execução
+
+- checkout: `C:\Projetos\GSO-old`
+- branch: `codex/release-consolidated-20260811`
+- HEAD auditado: `275ea73`
+- fonte de verdade: Supabase vinculado, consultado por SQL somente leitura
+- escrita remota nesta etapa: não executada
+- relatório detalhado: `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`
+
+### Evidência atual do corpus público
+
+| Medida | Resultado |
+| --- | ---: |
+| Artigos `published/public` em `genius` | 69 |
+| Categorias públicas | 12 |
+| Linhas de asset editorial | 0 |
+| Referências `knowledge-asset:<id>` no corpo público | 128 |
+| Referências sem asset correspondente | 128 |
+| Artigos com `chr(65533)` | 0 |
+| Artigos com placeholder de FAQ | 0 |
+| `support_contacts` público | `{}` |
+
+Conclusão: a correção de encoding e placeholder foi confirmada no banco. A correção de imagens ainda não está concluída: esconder uma imagem ausente na UI não reconcilia a fonte de dados. O rodapé também permanece sem canal real, e nenhum contato pode ser inventado no frontend.
+
+### Registro de decisão para artigos sensíveis publicados
+
+A consulta por tema no título/resumo confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. Os IDs e slugs nominais estão no relatório de auditoria. Para todos eles, o estado de decisão é `PENDENTE_PRODUCT_CS` (com Engenharia ou governança financeira quando indicado pelo subcluster), porque não existe evidência humana atual para escolher entre manutenção temporária da exceção legada ou retirada/substituição canônica.
+
+Os documentos canônicos existentes permanecem respeitados:
+
+- Pix, cálculo/limites, vale-compra, integrações e gateway continuam bloqueados ou pendentes;
+- os rewrites de formas de estorno, motivos de troca/devolução, prazo de postagem, pendência de logística reversa e CEP/endereço são candidatos, não publicações aprovadas;
+- nenhuma aprovação foi simulada e nenhum canônico foi publicado nesta etapa.
+
+Além dos 15 artigos de alta confiança, há uma watchlist de 15 artigos com termo sensível apenas no corpo, muitas vezes em link relacionado, exemplo ou alt de imagem. Ela exige classificação semântica antes de ser tratada como violação; o runbook foi ajustado para não confundir ocorrência lexical incidental com decisão editorial.
+
+### Opções submetidas ao gate humano
+
+1. **Exceção legada temporária:** manter nominalmente os artigos já publicados para evitar regressão, registrar Produto/Engenharia/Suporte/CS por artigo, reparar assets e bloquear novas publicações sensíveis.
+2. **Saneamento conservador:** retirar os artigos sensíveis da visibilidade pública e só publicar rewrites canônicos após aprovação explícita.
+
+Recomendação técnica: opção 1 somente como exceção com prazo, lista nominal e proibição de conteúdo novo. A decisão final não foi inferida por este lote.
+
+### Ações dependentes de decisão
+
+- decidir por artigo a manutenção legada ou o saneamento conservador;
+- registrar as respostas no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`;
+- reconciliar ou remover as 128 referências de imagem;
+- configurar canal público real em `brand_settings`;
+- executar eventual escrita remota somente depois do gate correspondente e de validação local.
