@@ -317,9 +317,8 @@ export function PublicHelpHeader({
 }) {
   const [portalNoticeOpen, setPortalNoticeOpen] = useState(false);
   const portalCloseRef = useRef<HTMLButtonElement | null>(null);
-  const resolvedLogoUrl = resolvePublicLogoUrl(logoAssetUrl) ?? (
-    spaceSlug === 'genius' ? '/brand-assets/genius-returns-help.svg' : null
-  );
+  const portalDialogRef = useRef<HTMLElement | null>(null);
+  const resolvedLogoUrl = spaceSlug === 'genius' ? null : resolvePublicLogoUrl(logoAssetUrl);
 
   useEffect(() => {
     if (!portalNoticeOpen) return;
@@ -332,6 +331,30 @@ export function PublicHelpHeader({
     function handlePortalKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setPortalNoticeOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusable = Array.from(
+        portalDialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
@@ -358,6 +381,7 @@ export function PublicHelpHeader({
         aria-modal="true"
         className="relative w-full max-w-md rounded-[24px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-6 shadow-[0_24px_80px_rgba(8,20,52,0.28)]"
         onClick={(event) => event.stopPropagation()}
+        ref={portalDialogRef}
         role="dialog"
       >
         <button
@@ -403,7 +427,16 @@ export function PublicHelpHeader({
     <header className="gso-help-header border-b border-[var(--help-border)] bg-[var(--help-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
-          {resolvedLogoUrl ? (
+          {spaceSlug === 'genius' ? (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[var(--help-accent-strong)] shadow-sm">
+              <GeniusMascot
+                alt={`${brandName} — mascote da Central de Ajuda`}
+                animated={false}
+                size="sm"
+                surface="avatar"
+              />
+            </div>
+          ) : resolvedLogoUrl ? (
             <img alt={brandName} className="h-10 w-10 shrink-0 rounded-[12px] object-cover shadow-sm" src={resolvedLogoUrl} />
           ) : (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--help-accent-strong)] text-sm font-semibold text-[var(--help-hero-text)]">
@@ -471,7 +504,7 @@ export function PublicHelpHeader({
         </div>
 
         <details className="relative md:hidden">
-          <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] text-[var(--help-ink)]">
+          <summary aria-label="Abrir menu da Central de Ajuda" className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] text-[var(--help-ink)]">
             <HelpIcon kind="menu" />
           </summary>
           <div className="absolute right-0 top-[calc(100%+10px)] z-30 grid min-w-[210px] gap-1 rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-2 shadow-[var(--help-shadow)]">
@@ -656,15 +689,15 @@ export function PublicSupportAction({
 
   if (href.startsWith('http')) {
     return (
-      <a className="inline-flex w-full" href={href} rel="noreferrer" target="_blank">
-        <GhostButton className="w-full justify-between">{content}</GhostButton>
+      <a className="inline-flex min-h-10 w-full items-center justify-between rounded-[12px] border border-[var(--help-border)] px-3.5 font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-link)]" href={href} rel="noopener noreferrer" target="_blank">
+        {content}
       </a>
     );
   }
 
   return (
-    <a className="inline-flex w-full" href={href}>
-      <GhostButton className="w-full justify-between">{content}</GhostButton>
+    <a className="inline-flex min-h-10 w-full items-center justify-between rounded-[12px] border border-[var(--help-border)] px-3.5 font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-link)]" href={href}>
+      {content}
     </a>
   );
 }

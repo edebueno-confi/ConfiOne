@@ -42,6 +42,21 @@ export function getCategoryVisuals(name: string | null | undefined) {
   return { icon: 'doc' as const, tone: 'neutral' as const };
 }
 
+export function getCategoryDescription(name: string | null | undefined) {
+  const normalized = (name ?? '')
+    .normalize('NFD')
+    .replace(DIACRITICS, '')
+    .toLowerCase();
+
+  if (normalized.includes('integr')) return 'Conecte seus canais e mantenha a operação em ordem.';
+  if (normalized.includes('config') || normalized.includes('cadastro')) return 'Encontre orientações para preparar e ajustar a operação.';
+  if (normalized.includes('oper') || normalized.includes('reversa') || normalized.includes('troca')) return 'Acompanhe as etapas dos fluxos de troca e devolução.';
+  if (normalized.includes('relat') || normalized.includes('solu') || normalized.includes('problem') || normalized.includes('pend')) return 'Resolva ocorrências com orientações claras e práticas.';
+  if (normalized.includes('seller') || normalized.includes('loja')) return 'Organize lojas, sellers e os canais da sua operação.';
+  if (normalized.includes('suporte')) return 'Encontre os caminhos oficiais para pedir ajuda.';
+  return 'Explore as orientações disponíveis para esta frente.';
+}
+
 export function formatRelativePublicDate(value: string | null | undefined) {
   if (!value) {
     return 'Atualizado recentemente';

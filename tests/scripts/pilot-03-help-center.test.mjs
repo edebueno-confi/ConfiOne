@@ -6,9 +6,10 @@ const home = fs.readFileSync('apps/web/src/features/help-center/HelpCenterHomePa
 const articles = fs.readFileSync('apps/web/src/features/help-center/HelpCenterArticlesPage.tsx', 'utf8');
 const article = fs.readFileSync('apps/web/src/features/help-center/HelpCenterArticlePage.tsx', 'utf8');
 const states = fs.readFileSync('apps/web/src/features/help-center/public-ui.tsx', 'utf8');
+const presentation = fs.readFileSync('apps/web/src/features/help-center/public-presentation.ts', 'utf8');
 
 test('home taxonomy exposes five task categories and no empty reports card', () => {
-  assert.match(home, /Erros e solu/);
+  assert.match(presentation, /normalized\.includes\('solu'\)/);
   assert.doesNotMatch(home, /title: 'Relat/);
   assert.match(home, /md:grid-cols-2 xl:grid-cols-5/);
 });

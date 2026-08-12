@@ -94,7 +94,7 @@ export interface PublicKnowledgeArticleListRow {
   slug: string;
   summary: string | null;
   published_at: IsoTimestamp | null;
-  updated_at: IsoTimestamp;
+  updated_at: IsoTimestamp | null;
 }
 
 export interface PublicKnowledgeArticleDetailRow {

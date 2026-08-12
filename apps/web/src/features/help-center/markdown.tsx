@@ -825,14 +825,7 @@ export function MarkdownDocument({
           const asset = block.assetId ? assets[block.assetId] : null;
 
           if (!asset?.signed_url) {
-            return (
-              <div
-                key={key}
-              className="max-w-[78ch] rounded-[18px] border border-dashed border-[var(--help-content-note-border)] bg-[var(--help-content-note)] px-4 py-4 text-sm leading-6 text-[color:var(--help-muted)]"
-              >
-                A imagem não está disponível no momento. O conteúdo do artigo continua disponível em texto.
-              </div>
-            );
+            return null;
           }
 
           return (

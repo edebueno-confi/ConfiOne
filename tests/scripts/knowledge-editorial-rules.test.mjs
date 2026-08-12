@@ -38,7 +38,7 @@ test('permite resumos editoriais acima do limite legado de 160 caracteres', () =
 });
 
 test('mapeia as categorias novas para ícones específicos em vez do documento genérico', () => {
-  const source = fs.readFileSync('apps/web/src/features/help-center/public-ui.tsx', 'utf8');
+  const source = fs.readFileSync('apps/web/src/features/help-center/public-presentation.ts', 'utf8');
   assert.match(source, /normalized\.includes\('solu'\)/);
   assert.match(source, /normalized\.includes\('seller'\)/);
   assert.match(source, /normalized\.includes\('loja'\)/);
