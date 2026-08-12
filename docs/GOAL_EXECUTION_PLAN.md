@@ -313,5 +313,5 @@ Entrega:
 - evidência: `docs/reports/2026-08-04_react-router-v8-migration.md` e análise
   anterior em `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
 - validações: lint, web typecheck, contracts typecheck, build, secret scan,
-  quality gate, `git diff --check` e QA real no navegador em 4173 e 4174.
+  quality gate, `git diff --check` e QA real no navegador em 4173.
 - operações não realizadas: banco, deploy, push, merge e QA autenticado.

@@ -8,6 +8,8 @@ import type { SyncRequestTelemetryEvent } from './sync-request-telemetry.ts';
 
 const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
 const HUBSPOT_REQUEST_TIMEOUT_MS = 20_000;
+export const HUBSPOT_ASSOCIATION_BATCH_LIMIT = 100;
+export const HUBSPOT_HISTORY_BATCH_LIMIT = 50;
 
 export interface HubSpotStage {
   stageId: string;
@@ -59,6 +61,13 @@ export interface HubSpotTicketPageOptions {
 export type HubSpotRequestObserver = {
   record(event: SyncRequestTelemetryEvent): void;
 };
+
+export function chunkIds(ids: string[], limit: number): string[][] {
+  if (!Number.isInteger(limit) || limit <= 0) throw new Error('Limite de lote HubSpot inválido.');
+  const chunks: string[][] = [];
+  for (let offset = 0; offset < ids.length; offset += limit) chunks.push(ids.slice(offset, offset + limit));
+  return chunks;
+}
 
 export interface HubSpotTicketPage {
   records: HubSpotRecord[];
@@ -119,6 +128,92 @@ export function nextHubSpotCursor(previous: string | undefined | null, candidate
   const next = String(candidate).trim();
   if (!next || next === previous) throw new Error(`Cursor HubSpot sem progresso em ${context}.`);
   return next;
+}
+
+type HubSpotAssociationBatchResult = {
+  from?: { id?: string };
+  to?: Array<{ toObjectId?: string; associationTypes?: Array<{ associationCategory?: string; associationTypeId?: number | string }> }>;
+};
+
+export async function fetchAssociationsBatch(
+  fromObjectType: 'tickets' | 'deals',
+  toObjectType: 'companies' | 'contacts',
+  ids: string[],
+  tokenOverride?: string,
+): Promise<Array<{ from_id: string; to_id: string; label: string | null }>> {
+  if (ids.length > HUBSPOT_ASSOCIATION_BATCH_LIMIT) {
+    throw new Error(`Lote de associations acima do limite de ${HUBSPOT_ASSOCIATION_BATCH_LIMIT}.`);
+  }
+  if (ids.length === 0) return [];
+
+  const response = await hubspotFetch(
+    `/crm/v4/associations/${fromObjectType}/${toObjectType}/batch/read`,
+    { method: 'POST', body: JSON.stringify({ inputs: ids.map((id) => ({ id })) }) },
+    0,
+    tokenOverride,
+  );
+  const payload = await response.json() as { results?: HubSpotAssociationBatchResult[] };
+  const rows: Array<{ from_id: string; to_id: string; label: string | null }> = [];
+  for (const result of payload.results ?? []) {
+    const fromId = String(result.from?.id ?? '').trim();
+    if (!fromId) continue;
+    for (const association of result.to ?? []) {
+      const toId = String(association.toObjectId ?? '').trim();
+      if (!toId) continue;
+      const label = association.associationTypes?.[0]?.associationCategory
+        ? String(association.associationTypes[0].associationCategory)
+        : null;
+      rows.push({ from_id: fromId, to_id: toId, label });
+    }
+  }
+  return rows;
+}
+
+type HubSpotHistoryValue = { value?: string | null; timestamp?: string | null };
+type HubSpotHistoryBatchResult = {
+  id?: string;
+  properties?: Record<string, string | null>;
+  propertiesWithHistory?: Record<string, HubSpotHistoryValue[]>;
+};
+
+export async function fetchStageHistoryBatch(
+  objectType: 'tickets' | 'deals',
+  ids: string[],
+  tokenOverride?: string,
+): Promise<Array<{ object_id: string; changed_at: string; stage_id: string; pipeline_id: string | null }>> {
+  if (ids.length > HUBSPOT_HISTORY_BATCH_LIMIT) {
+    throw new Error(`Lote de historico acima do limite de ${HUBSPOT_HISTORY_BATCH_LIMIT}.`);
+  }
+  if (ids.length === 0) return [];
+
+  const stageProperty = objectType === 'tickets' ? 'hs_pipeline_stage' : 'dealstage';
+  const pipelineProperty = objectType === 'tickets' ? 'hs_pipeline' : 'pipeline';
+  const response = await hubspotFetch(
+    `/crm/v3/objects/${objectType}/batch/read`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        inputs: ids.map((id) => ({ id })),
+        properties: [pipelineProperty],
+        propertiesWithHistory: [stageProperty],
+      }),
+    },
+    0,
+    tokenOverride,
+  );
+  const payload = await response.json() as { results?: HubSpotHistoryBatchResult[] };
+  const rows: Array<{ object_id: string; changed_at: string; stage_id: string; pipeline_id: string | null }> = [];
+  for (const result of payload.results ?? []) {
+    const objectId = String(result.id ?? '').trim();
+    if (!objectId) continue;
+    const pipelineId = result.properties?.[pipelineProperty] ?? null;
+    for (const event of result.propertiesWithHistory?.[stageProperty] ?? []) {
+      const stageId = String(event.value ?? '').trim();
+      const changedAt = event.timestamp ? toTimestamp(event.timestamp) : null;
+      if (stageId && changedAt) rows.push({ object_id: objectId, changed_at: changedAt, stage_id: stageId, pipeline_id: pipelineId });
+    }
+  }
+  return rows;
 }
 
 // Fetch com backoff em 429/5xx respeitando Retry-After (proteção de rate limit).

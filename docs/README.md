@@ -1,5 +1,7 @@
 # Docs
 
+- [Handoff Recharts 3 e reconciliação da suíte](./reports/2026-08-11_recharts-suite-reconciliation-handoff.md) — migração concluída e falhas amplas classificadas para a próxima publicação.
+
 ## Decisão visual vigente — Administração e Configurações
 
 - [Contrato Visual de Administração e Configurações V1](./specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md) — precedência local para shell, Usuários, Histórico, Fontes e Integrações a partir de 2026-08-09.
@@ -9,6 +11,7 @@
 
 - [context-handoff/00_CONTEXT_PACK_INDEX.md](./context-handoff/00_CONTEXT_PACK_INDEX.md)
 - [ACCESS_AREAS_ROLES_PORTFOLIOS_SPEC_V1.md](./ACCESS_AREAS_ROLES_PORTFOLIOS_SPEC_V1.md)
+- [ACCESS_CONTROL_V2_2026-08-11.md](./reports/ACCESS_CONTROL_V2_2026-08-11.md) — ciclo de vida, dependências e evidência de permissões efetivas do control plane.
 - [GIT_BRANCHING_AND_RELEASE_POLICY.md](./GIT_BRANCHING_AND_RELEASE_POLICY.md)
 - [reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md](./reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md)
 - [reports/SDD_CONTINUITY_AUDIT_2026-07-21.md](./reports/SDD_CONTINUITY_AUDIT_2026-07-21.md)

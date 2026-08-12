@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { getSupportQueueHealth, updatePipelineQueueRole, type QueueRole } from '../analytics/analytics-api';
 import { readQueueHealth } from '../analytics/analytics-queue-health.mjs';
+import { UiCard } from './ui/UiCard';
 
 /**
  * Fontes do Dashboard: quais pipelines contam, e como.
@@ -131,10 +132,12 @@ export function PipelineRoleSettings() {
   const faltam = saude.total - saude.classified;
 
   return (
-    <section className="space-y-4">
+    <UiCard labelledBy="pipeline-role-settings-title">
+      <div className="gso-ui-card-body">
+      <section className="space-y-4">
       <header className="space-y-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Quais pipelines contam na fila</h3>
+          <h3 id="pipeline-role-settings-title" className="text-sm font-semibold text-[color:var(--minimal-text)]">Quais pipelines contam na fila</h3>
           <p className="text-xs tabular-nums text-[color:var(--minimal-text-secondary)]">
             {faltam === 0
               ? 'Todos decididos'
@@ -255,6 +258,8 @@ export function PipelineRoleSettings() {
         A operação de cada pipeline é sugerida pelo nome usado no HubSpot; confirmar cabe a quem conhece a estrutura do
         grupo.
       </p>
-    </section>
+      </section>
+      </div>
+    </UiCard>
   );
 }

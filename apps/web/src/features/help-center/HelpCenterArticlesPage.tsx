@@ -1,8 +1,10 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router';
 import { GhostButton } from '../../components/ui';
 import type { PublicKnowledgeNavigationRow } from '../../contracts/public-contracts';
+import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
+import { listPublicKnowledgeArticlePage } from './public-api';
 import {
   HelpIcon,
   PublicBreadcrumb,
@@ -61,30 +63,61 @@ export function HelpCenterArticlesPage() {
         : null,
     [context.navigation, selectedCategoryId],
   );
-  const searchQuery = searchParams.get('q')?.trim().toLowerCase() ?? '';
+  const searchQuery = searchParams.get('q')?.trim() ?? '';
   const [searchInput, setSearchInput] = useState(searchParams.get('q')?.trim() ?? '');
   const pageSize = 10;
   const requestedPage = Number.parseInt(searchParams.get('page') ?? '1', 10);
+  const [pagePhase, setPagePhase] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
+  const [pageMessage, setPageMessage] = useState<string | null>(null);
+  const [pageRows, setPageRows] = useState<HelpCenterSpaceContext['articles']>([]);
+  const [totalArticles, setTotalArticles] = useState(0);
+  const currentPage = Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1);
+  const pageCount = Math.max(1, Math.ceil(totalArticles / pageSize));
+  const categoryIds = useMemo(
+    () => (selectedCategoryTreeIds ? Array.from(selectedCategoryTreeIds) : []),
+    [selectedCategoryTreeIds],
+  );
 
-  const filteredArticles = useMemo(() => {
-    return context.articles.filter((article) => {
-      const matchesCategory = selectedCategoryTreeIds
-        ? Boolean(article.category_id && selectedCategoryTreeIds.has(article.category_id))
-        : true;
-      const haystack = [
-        article.title,
-        article.summary ?? '',
-        article.category_name ?? '',
-      ]
-        .join(' ')
-        .toLowerCase();
-      const matchesQuery = searchQuery ? haystack.includes(searchQuery) : true;
-      return matchesCategory && matchesQuery;
-    });
-  }, [context.articles, searchQuery, selectedCategoryTreeIds]);
-  const pageCount = Math.max(1, Math.ceil(filteredArticles.length / pageSize));
-  const currentPage = Math.min(Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1), pageCount);
-  const visibleArticles = filteredArticles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const loadPage = useCallback(async () => {
+    setPagePhase('loading');
+    try {
+      const result = await listPublicKnowledgeArticlePage(
+        context.primaryRoute.knowledge_space_slug,
+        {
+          categoryIds,
+          page: currentPage,
+          pageSize,
+          query: searchQuery,
+        },
+      );
+
+      const nextPageCount = Math.max(1, Math.ceil(result.total / result.pageSize));
+      if (result.total > 0 && currentPage > nextPageCount) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('page', String(nextPageCount));
+        setSearchParams(nextParams, { replace: true });
+        return;
+      }
+
+      setPageRows(result.rows);
+      setTotalArticles(result.total);
+      setPageMessage(null);
+      setPagePhase(result.rows.length > 0 ? 'ready' : 'empty');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível carregar os artigos públicos.',
+      );
+      setPageRows([]);
+      setTotalArticles(0);
+      setPageMessage(classified.message);
+      setPagePhase('error');
+    }
+  }, [categoryIds, context.primaryRoute.knowledge_space_slug, currentPage, searchParams, searchQuery, setSearchParams]);
+
+  useEffect(() => {
+    void loadPage();
+  }, [loadPage]);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,23 +167,27 @@ export function HelpCenterArticlesPage() {
           </div>
 
           <div className="grid w-full gap-3 md:w-auto md:grid-cols-[420px_220px]">
-            <form className="relative" onSubmit={handleSearchSubmit}>
+            <form aria-label="Buscar artigos" className="relative" onSubmit={handleSearchSubmit}>
               <HelpIcon
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--help-muted)]"
                 kind="search"
               />
               <input
+                aria-label="Buscar artigos nesta lista"
                 autoComplete="off"
                 className="h-11 w-full rounded-[14px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] pl-10 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[var(--help-focus)]"
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Buscar artigos nesta lista..."
+                name="q"
                 type="search"
                 value={searchInput}
               />
             </form>
 
             <label className="relative">
+              <span className="sr-only">Filtrar por categoria</span>
               <select
+                aria-label="Filtrar por categoria"
                 className="h-11 w-full appearance-none rounded-[14px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 pr-10 text-sm text-[var(--help-ink)] outline-none focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[var(--help-focus)]"
                 onChange={(event) => handleCategorySelect(event.target.value)}
                 value={selectedCategoryId}
@@ -219,7 +256,26 @@ export function HelpCenterArticlesPage() {
               <span>Categoria</span>
               <span>Atualizado em</span>
             </div>
-            {filteredArticles.length === 0 ? (
+            {pagePhase === 'loading' ? (
+              <div className="bg-[var(--help-surface-strong)] px-4 py-5 sm:px-6" aria-busy="true">
+                <PublicSearchStateCard
+                  description="Estamos consultando os artigos publicados para este filtro."
+                  showMascot={false}
+                  title="Carregando artigos"
+                  tone="loading"
+                />
+              </div>
+            ) : pagePhase === 'error' ? (
+              <div className="bg-[var(--help-surface-strong)] px-4 py-5 sm:px-6">
+                <PublicSearchStateCard
+                  action={<GhostButton onClick={() => void loadPage()}>Tentar novamente</GhostButton>}
+                  description={pageMessage ?? 'Não foi possível carregar os artigos desta lista.'}
+                  showMascot={false}
+                  title="Falha ao carregar artigos"
+                  tone="error"
+                />
+              </div>
+            ) : pagePhase === 'empty' ? (
               <div className="bg-[var(--help-surface-strong)] px-4 py-5 sm:px-6">
                 <PublicSearchStateCard
                   description={selectedCategory || searchQuery ? 'Não encontramos artigos públicos para este filtro. Revise os termos ou volte para a lista completa.' : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'}
@@ -237,7 +293,7 @@ export function HelpCenterArticlesPage() {
               </div>
             ) : (
               <div className="divide-y divide-[var(--help-border)] bg-[var(--help-surface-strong)]">
-                {visibleArticles.map((article) => (
+                {pageRows.map((article) => (
                   <Link
                     key={article.id}
                     className="grid gap-2 px-5 py-4 no-underline transition hover:bg-[var(--help-surface)] md:grid-cols-[minmax(0,1fr)_220px_180px] md:items-center md:gap-4"
@@ -262,9 +318,9 @@ export function HelpCenterArticlesPage() {
                 ))}
               </div>
             )}
-            {filteredArticles.length > 0 ? (
+            {pagePhase === 'ready' ? (
               <nav aria-label="Paginação de artigos" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--help-border)] bg-[var(--help-surface)] px-5 py-4">
-                <p className="text-xs text-[var(--help-muted)]">Página {currentPage} de {pageCount} · {filteredArticles.length} artigos</p>
+                <p aria-live="polite" className="text-xs text-[var(--help-muted)]">Página {currentPage} de {pageCount} · {totalArticles} artigos</p>
                 <div className="flex items-center gap-2">
                   <button className="rounded-[12px] border border-[var(--help-border)] px-3 py-2 text-sm font-semibold text-[var(--help-link)] disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => { const next = new URLSearchParams(searchParams); next.set('page', String(currentPage - 1)); setSearchParams(next, { replace: true }); }} type="button">Anterior</button>
                   <button className="rounded-[12px] border border-[var(--help-border)] px-3 py-2 text-sm font-semibold text-[var(--help-link)] disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === pageCount} onClick={() => { const next = new URLSearchParams(searchParams); next.set('page', String(currentPage + 1)); setSearchParams(next, { replace: true }); }} type="button">Próxima</button>

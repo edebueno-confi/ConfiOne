@@ -21,6 +21,7 @@ import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { AnalyticsOperationScope } from './AnalyticsOperationScope';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { SupportStageChart, TicketStatusChart } from './charts/AnalyticsCharts';
+import { SupportOwnerPerformanceChart, type SupportOwnerPerformanceRow } from './charts/OwnerPerformanceCharts';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
@@ -159,6 +160,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   }
 
   const { byStatus, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
+  const supportOwnerPerformance = readSupportOwnerPerformance(kpiPayload);
   const stages = readStageBreakdown(stagePayload);
   const stageOptions = byStatus.map((status) => ({ value: status.stageId, label: status.label }));
   const priorityOptions = [{ value: 'HIGH', label: 'Alta' }, { value: 'MEDIUM', label: 'Média' }, { value: 'LOW', label: 'Baixa' }];
@@ -195,8 +197,8 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
               quando distinguir espera de abandono. */}
           {dataState?.status !== 'empty' ? (
             <ChartCard
-              title="Fila por etapa"
-              description="Etapas cruzadas entre pipelines aparecem somadas em uma única barra; o tooltip abre a composição por pipeline. A ordem segue o fluxo do atendimento."
+              title="Atendimentos / Service desk · fila por etapa"
+              description="O painel de atendimentos concentra a fila operacional. Etapas cruzadas entre pipelines aparecem somadas; o tooltip abre a composição por pipeline."
             >
               {stages.available ? (
                 <>
@@ -227,12 +229,27 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
               )}
             </ChartCard>
           ) : null}
+          {kpiPayload ? <ChartCard title="Performance do suporte por responsável" description="Fila atual e movimento do período atribuídos ao responsável nativo do atendimento no HubSpot.">
+            {supportOwnerPerformance.length ? <>
+              <SupportOwnerPerformanceChart owners={supportOwnerPerformance} />
+              <div className="mt-4 overflow-x-auto">
+                <table className="gso-analytics-responsive-table w-full min-w-[660px] text-xs text-left">
+                  <thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]"><tr><th className="px-2 py-2 font-medium">Responsável</th><th className="px-2 py-2 text-right font-medium">Em aberto</th><th className="px-2 py-2 text-right font-medium">Entraram</th><th className="px-2 py-2 text-right font-medium">Resolvidos</th><th className="px-2 py-2 text-right font-medium">Mediana até resolução</th></tr></thead>
+                  <tbody>{supportOwnerPerformance.map((owner) => <tr key={owner.name} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Responsável" className="px-2 py-2 font-medium text-[color:var(--minimal-text)]">{owner.name}</td><td data-label="Em aberto" className="px-2 py-2 text-right tabular-nums">{owner.openTickets.toLocaleString('pt-BR')}</td><td data-label="Entraram" className="px-2 py-2 text-right tabular-nums">{owner.createdTickets.toLocaleString('pt-BR')}</td><td data-label="Resolvidos" className="px-2 py-2 text-right tabular-nums">{owner.resolvedTickets.toLocaleString('pt-BR')}</td><td data-label="Mediana até resolução" className="px-2 py-2 text-right tabular-nums">{owner.medianResolutionDays === null ? 'Indisponível' : `${owner.medianResolutionDays.toLocaleString('pt-BR')} dias`}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">A mediana por pessoa segue a mesma cobertura do tempo de resolução publicado pelo read model. Tarefas, reuniões, ligações e e-mails não são inferidos de atendimentos.</p>
+            </> : <MinimalState title="Sem performance por responsável" description="O período não publicou atendimentos atribuídos com movimento suficiente para separar a equipe." />}
+          </ChartCard> : null}
+          <ChartCard title="Tarefas e atividades de suporte" description="A fila de atendimentos não é tratada como uma segunda lista de tarefas.">
+            <MinimalState title="Atividades indisponíveis" description="O contrato atual publica atendimentos e suas métricas de fila, mas não tarefas, reuniões, ligações ou e-mails. A experiência de chat também permanece fora do read model confirmado." />
+          </ChartCard>
           {dataState?.status !== 'empty' ? <ChartCard title="Origem, pipeline e responsável" description={`O recorte reúne os pipelines ativos de CS / Suporte. Último atendimento registrado: ${latestTicketCreatedAt ? new Date(latestTicketCreatedAt).toLocaleString('pt-BR') : 'indisponível'}.`}>
             <div className="grid gap-4 lg:grid-cols-3"><Breakdown title="Por origem" rows={bySource.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por pipeline" rows={byPipeline.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por responsável" rows={byOwner.slice(0, 8).map((row) => ({ label: row.ownerName, value: row.ticketCount }))} /></div>
             <OwnerPipelineNote owners={byOwner.slice(0, 8)} />
           </ChartCard> : null}
-          <ChartCard title="Chat" description="A origem por chat ainda não foi confirmada para este ambiente; os números cobrem apenas os atendimentos registrados.">
-            <MinimalState title="Chat indisponível" description="O atendimento por chat ainda não está integrado. Os números desta tela cobrem apenas os atendimentos registrados, e nada é estimado para o que falta." />
+          <ChartCard title="Chat / Conversas" description="Painel separado para não misturar conversas com atendimentos enquanto a fonte real ainda não está conectada.">
+            <MinimalState title="Chat indisponível" description="A fonte de conversas ainda não possui read model confirmado neste ambiente. O painel fica separado e nenhum atendimento é contado como chat por aproximação." />
           </ChartCard>
         </div>
       ),
@@ -254,6 +271,32 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
     </div>
     </AnalyticsHdDomainFrame>
   );
+}
+
+function readSupportOwnerPerformance(value: unknown): SupportOwnerPerformanceRow[] {
+  const payload = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const rawRows = Array.isArray(payload.by_owner) ? payload.by_owner : [];
+  return rawRows
+    .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .map((row) => ({
+      name: typeof row.owner_name === 'string' && row.owner_name.trim() ? row.owner_name : 'Sem responsável',
+      openTickets: numericValue(row.open_tickets),
+      createdTickets: numericValue(row.created_tickets),
+      resolvedTickets: numericValue(row.resolved_tickets),
+      medianResolutionDays: nullableNumericValue(row.median_resolution_days),
+    }))
+    .filter((row) => row.openTickets > 0 || row.createdTickets > 0 || row.resolvedTickets > 0);
+}
+
+function numericValue(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function nullableNumericValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function applyConfiguredPipelineLabels(snapshot: CsSnapshot, configs: AnalyticsSourceConfig[]): CsSnapshot {
@@ -352,7 +395,7 @@ function Breakdown({ title, rows }: { title: string; rows: Array<{ label: string
 
 function OwnerPipelineNote({ owners }: { owners: CsOwnerPoint[] }) {
   return <div className="mt-4 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
-    <div className="flex items-center gap-1.5"><h4 className="text-xs font-semibold text-[color:var(--minimal-text)]">Detalhamento dos responsáveis por pipeline</h4><MetricInfo ariaLabel="Como os responsáveis são consolidados" text="Responsáveis com o mesmo nome são consolidados no total. Esta lista mostra em quais pipelines cada responsável aparece e quantos tickets foram encontrados em cada um." /></div>
+    <div className="flex items-center gap-1.5"><h4 className="text-xs font-semibold text-[color:var(--minimal-text)]">Detalhamento dos responsáveis por pipeline</h4><MetricInfo ariaLabel="Como os responsáveis são consolidados" text="Responsáveis com o mesmo nome são consolidados no total. Esta lista mostra em quais pipelines cada responsável aparece e quantos atendimentos foram encontrados em cada um." /></div>
     <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">{owners.length ? owners.map((owner) => <div key={`${owner.ownerId ?? 'none'}-${owner.ownerName}`} className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 py-2 text-[11px]"><div className="flex items-center justify-between gap-2"><span className="truncate font-medium text-[color:var(--minimal-text)]" title={owner.ownerName}>{owner.ownerName}</span><span className="font-semibold tabular-nums text-[color:var(--minimal-text)]">{owner.ticketCount.toLocaleString('pt-BR')}</span></div><p className="mt-1 text-[color:var(--minimal-text-tertiary)]">{formatPipelineBreakdown(owner.pipelineBreakdown) || 'Pipeline indisponível'}</p></div>) : <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem dados.</p>}</div>
   </div>;
 }

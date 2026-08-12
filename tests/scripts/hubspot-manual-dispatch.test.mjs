@@ -13,3 +13,9 @@ test('start manual despacha com a identidade já autorizada, sem depender do seg
   assert.match(dispatcher, /authorization\s*=\s*requester === 'scheduler' \? null : req\.headers\.get\('authorization'\)/);
   assert.match(dispatcher, /\{ Authorization: authorization \}/);
 });
+
+test('continuidade manual preserva a autorizacao quando o segredo do scheduler nao existe', () => {
+  assert.match(dispatcher, /Boolean\(secret \|\| authorization\)/);
+  assert.match(dispatcher, /scheduleContinuation\(base, key, secret, authorization\)/);
+  assert.match(dispatcher, /\.\.\.\(authorization \? \{ Authorization: authorization \} : \{\}\)/);
+});

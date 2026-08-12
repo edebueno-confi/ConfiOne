@@ -16,7 +16,7 @@ import { loadQaEnv } from './assert-local-supabase.mjs';
 
 const qa = loadQaEnv();
 
-const BASE_URL = process.env.LOCAL_QA_WEB_URL || 'http://127.0.0.1:4174';
+const BASE_URL = process.env.LOCAL_QA_WEB_URL || 'http://127.0.0.1:4173';
 const OUTPUT_DIR = path.resolve(process.cwd(), 'output/playwright/2026-08-11-mock-removal-qa');
 
 /** Strings que só existiam como dado fabricado. Nenhuma pode voltar ao DOM. */
@@ -37,12 +37,16 @@ const FORBIDDEN = [
   '-0,8 dias vs. mês anterior',
   '5,2 dias',
   '+1 vs. mês anterior',
+  'Hoje, 08:45',
+  '3 de 5',
+  '2 fontes aguardando integração',
 ];
 
 const VIEWPORTS = [
   { theme: 'dark', width: 1920, height: 1080 },
   { theme: 'light', width: 1920, height: 1080 },
   { theme: 'dark', width: 1366, height: 768 },
+  { theme: 'light', width: 1366, height: 768 },
 ];
 
 const SCREENS = [
@@ -52,6 +56,10 @@ const SCREENS = [
   { key: 'settings-overview', route: '/admin/settings', label: 'Configurações — Visão geral' },
   { key: 'settings-help-center', route: '/admin/settings/help-center', label: 'Configurações — Central de ajuda' },
   { key: 'settings-integrations', route: '/admin/settings/integrations', label: 'Configurações — Integrações' },
+  { key: 'governanca-fontes', route: '/admin/settings/dashboard-sources?tab=sources', label: 'Governança de dados — Fontes', governanceOrder: 1 },
+  { key: 'governanca-pipelines', route: '/admin/settings/dashboard-sources?tab=pipelines', label: 'Governança de dados — Pipelines', governanceOrder: 2 },
+  { key: 'governanca-etapas', route: '/admin/settings/dashboard-sources?tab=stages', label: 'Governança de dados — Etapas', governanceOrder: 3 },
+  { key: 'governanca-conciliacao', route: '/admin/settings/dashboard-sources?tab=reconciliation', label: 'Governança de dados — Conciliação', governanceOrder: 4 },
 ];
 
 function srgb(c) {
@@ -120,6 +128,13 @@ async function run() {
       await page.goto(`${BASE_URL}${screen.route}`, { waitUntil: 'domcontentloaded' });
       await applyTheme(page, theme);
       await page.waitForTimeout(1400);
+      if (screen.key === 'governanca-conciliacao') {
+        try {
+          await page.waitForFunction(() => !document.body.innerText.includes('Carregando conciliação'), { timeout: 15_000 });
+        } catch {
+          findings.push({ theme, viewport: width, screen: screen.key, kind: 'loading_state', detail: 'A fila de conciliação permaneceu carregando durante a janela de QA.' });
+        }
+      }
 
       const text = await page.evaluate(() => document.body.innerText);
       for (const needle of FORBIDDEN) {
@@ -157,8 +172,12 @@ async function run() {
 
       measurements.push({ theme, viewport: width, screen: screen.key, label: screen.label, ...probe });
 
+      const governanceOffset = theme === 'dark' ? (width === 1920 ? 0 : 8) : (width === 1920 ? 4 : 12);
+      const screenshotName = screen.governanceOrder
+        ? `${String(governanceOffset + screen.governanceOrder).padStart(2, '0')}-${screen.key}-${theme}-${width}.png`
+        : `${theme}-${width}-${screen.key}.png`;
       await page.screenshot({
-        path: path.join(OUTPUT_DIR, `${theme}-${width}-${screen.key}.png`),
+        path: path.join(OUTPUT_DIR, screenshotName),
         fullPage: false,
       });
     }

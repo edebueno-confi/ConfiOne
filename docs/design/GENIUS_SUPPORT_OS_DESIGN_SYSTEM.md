@@ -830,12 +830,18 @@ Rota:
 `/admin/access`
 
 Objetivo:
-control plane de usuários, papéis, convites e permissões.
+control plane de usuários internos, estrutura organizacional, perfis e permissões.
+
+Estado corrente da superfície (2026-08-11): a UI usa somente `Usuários`,
+`Estrutura` e `Perfis`. Convites não é uma aba; o cadastro de usuário é direto.
+Estrutura e Perfis usam listas compactas e diálogos de edição contextuais, e os
+catálogos de telas por perfil/colaborador usam painéis paralelos com rolagem
+interna. As referências a Convites abaixo pertencem ao histórico deste contrato.
 
 Estrutura:
 - sidebar Admin;
 - header compacto;
-- tabs: Usuários, Papéis, Convites, Permissões;
+- tabs correntes: Usuários, Estrutura, Perfis;
 - coluna esquerda com filtros;
 - lista central;
 - rail de detalhe.

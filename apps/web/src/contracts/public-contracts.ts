@@ -76,6 +76,8 @@ export interface PublicKnowledgeNavigationRow {
   article_count: number;
   subtree_article_count: number;
   articles: PublicKnowledgeNavigationArticleItem[];
+  parent_category_sort_order: number;
+  category_sort_order: number;
 }
 
 export interface PublicKnowledgeArticleListRow {
@@ -92,7 +94,7 @@ export interface PublicKnowledgeArticleListRow {
   slug: string;
   summary: string | null;
   published_at: IsoTimestamp | null;
-  updated_at: IsoTimestamp;
+  updated_at: IsoTimestamp | null;
 }
 
 export interface PublicKnowledgeArticleDetailRow {

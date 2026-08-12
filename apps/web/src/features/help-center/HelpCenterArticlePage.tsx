@@ -248,6 +248,7 @@ export function HelpCenterArticlePage() {
           setArticleAssetPhase('ready');
           try {
             assets = await listPublicKnowledgeArticleAssets(data.id);
+            setArticleAssetPhase(assets.length > 0 ? 'ready' : 'unavailable');
           } catch {
             // The article remains readable, but the UI must make the incomplete
             // visual experience explicit instead of silently claiming success.

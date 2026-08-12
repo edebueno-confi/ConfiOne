@@ -8,6 +8,10 @@ function toNumber(value: unknown): number {
   return parseAnalyticsNumber(value) ?? 0;
 }
 
+function toNullableNumber(value: unknown): number | null {
+  return parseAnalyticsNumber(value);
+}
+
 function normalizePercentage(value: unknown): number {
   const parsed = toNumber(value);
   const ratio = parsed > 1 ? parsed / 100 : parsed;
@@ -50,8 +54,12 @@ export interface CommercialKpiOwner {
   ownerId: string | null;
   ownerName: string;
   openDeals: number;
+  openAmount: number;
   wonDeals: number;
+  lostDeals: number;
   wonAmount: number;
+  winRate: number | null;
+  medianCycleDays: number | null;
 }
 
 export interface CommercialClosedWin {
@@ -935,8 +943,12 @@ export function mapCommercialKpiDetails(value: unknown): CommercialKpiDetails {
       ownerId: row.owner_id ? toText(row.owner_id) : null,
       ownerName: toText(row.owner_name) || 'Sem responsável',
       openDeals: toNumber(row.open_deals),
+      openAmount: toNumber(row.open_amount),
       wonDeals: toNumber(row.won_deals),
+      lostDeals: toNumber(row.lost_deals),
       wonAmount: toNumber(row.won_amount),
+      winRate: toNullableNumber(row.win_rate),
+      medianCycleDays: toNullableNumber(row.median_cycle_days),
     })),
     closedWins: rows('closed_wins').map((row) => ({
       dealId: toText(row.deal_id),

@@ -58,8 +58,8 @@ export function readStageBreakdown(payload) {
 function buildNotice(unmapped, pendingReview) {
   if (unmapped > 0) {
     return unmapped === 1
-      ? 'Uma etapa ainda não foi cruzada e aparece separada, como "Não classificada". O cruzamento é definido em Configurações, Fontes do Dashboard.'
-      : `${unmapped} etapas ainda não foram cruzadas e aparecem separadas, como "Não classificada". O cruzamento é definido em Configurações, Fontes do Dashboard.`;
+      ? 'Uma etapa ainda não foi cruzada e aparece separada, como "Não classificada". O cruzamento é definido em Configurações, Governança de dados.'
+      : `${unmapped} etapas ainda não foram cruzadas e aparecem separadas, como "Não classificada". O cruzamento é definido em Configurações, Governança de dados.`;
   }
   if (pendingReview > 0) {
     return `O cruzamento inicial foi feito por semelhança de nome e ${pendingReview} etapa(s) ainda aguardam revisão de uma pessoa.`;

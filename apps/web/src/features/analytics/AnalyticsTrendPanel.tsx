@@ -113,14 +113,14 @@ export function AnalyticsTrendPanel({ domain }: { domain: TimeseriesDomain }) {
 
   return (
     <ChartCard title={copy.title} description={copy.description}>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Granularidade da evolução">
         {GRAOS.map((option) => (
           <button
             key={option}
             type="button"
             onClick={() => setGrain(option)}
             aria-pressed={option === grain}
-            className={`min-h-8 rounded-md border px-2.5 py-1 text-[11px] font-medium transition ${
+            className={`min-h-8 touch-manipulation rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] ${
               option === grain
                 ? 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]'
                 : 'border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--minimal-text-secondary)]'

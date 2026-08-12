@@ -18,7 +18,6 @@ import {
 } from './branding';
 import {
   getPublicKnowledgeSpace,
-  listPublicKnowledgeArticles,
   listPublicKnowledgeNavigation,
   listPublicKnowledgeSpaces,
 } from './public-api';
@@ -36,6 +35,7 @@ interface HelpCenterSpaceSummary {
   knowledgeSpaceSlug: string;
   displayName: string;
   brandName: string;
+  logoAssetUrl: string | null;
   defaultLocale: string;
   organizationDisplayName: string;
 }
@@ -43,7 +43,7 @@ interface HelpCenterSpaceSummary {
 function PublicHelpLoadingSurface() {
   return (
     <div className="min-h-screen bg-[var(--help-surface)]">
-      <PublicHelpHeader active="articles" brandName="Genius Returns" showOtherCenters={false} spaceSlug="genius" tertiaryLabel="Categorias" />
+      <PublicHelpHeader active="articles" brandName="Central de Ajuda" showOtherCenters={false} spaceSlug="genius" tertiaryLabel="Categorias" />
       <main className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <section aria-busy="true" className="flex min-h-[160px] flex-col items-center justify-center rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-5 py-6 text-center shadow-[var(--help-shadow)] sm:min-h-[250px] sm:px-8">
           <div className="flex h-32 w-32 items-center justify-center sm:h-44 sm:w-44">
@@ -72,6 +72,7 @@ function buildSpaceSummary(
     knowledgeSpaceSlug: primaryRoute.knowledge_space_slug,
     displayName: primaryRoute.knowledge_space_display_name,
     brandName: primaryRoute.brand_name,
+    logoAssetUrl: primaryRoute.logo_asset_url,
     defaultLocale: primaryRoute.default_locale,
     organizationDisplayName: primaryRoute.organization_display_name,
   };
@@ -91,6 +92,40 @@ function groupSpaceSummaries(rows: PublicKnowledgeSpaceResolverRow[]) {
     .sort((left, right) => left.displayName.localeCompare(right.displayName, 'pt-BR'));
 }
 
+function buildNavigationArticleRows(
+  primaryRoute: PublicKnowledgeSpaceResolverRow,
+  navigation: HelpCenterSpaceContext['navigation'],
+) {
+  const rows = new Map<string, HelpCenterSpaceContext['articles'][number]>();
+
+  for (const category of navigation) {
+    for (const article of category.articles) {
+      rows.set(article.id, {
+        id: article.id,
+        knowledge_space_id: primaryRoute.knowledge_space_id,
+        knowledge_space_slug: primaryRoute.knowledge_space_slug,
+        knowledge_space_display_name: primaryRoute.knowledge_space_display_name,
+        brand_name: primaryRoute.brand_name,
+        default_locale: primaryRoute.default_locale,
+        category_id: category.category_id,
+        category_slug: category.category_slug,
+        category_name: category.category_name,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        published_at: article.published_at,
+        updated_at: null,
+      });
+    }
+  }
+
+  return Array.from(rows.values()).sort((left, right) => {
+    const leftTime = left.published_at ? Date.parse(left.published_at) : 0;
+    const rightTime = right.published_at ? Date.parse(right.published_at) : 0;
+    return rightTime - leftTime || left.title.localeCompare(right.title, 'pt-BR');
+  });
+}
+
 export function HelpCenterPage() {
   const didLoadRef = useRef(false);
   const [phase, setPhase] = useState<LoadPhase>('loading');
@@ -98,9 +133,9 @@ export function HelpCenterPage() {
   const [spaces, setSpaces] = useState<HelpCenterSpaceSummary[]>([]);
 
   useHelpCenterDocumentMeta({
-    title: 'ConfiOne | Central de Ajuda B2B',
+    title: 'Central de Ajuda | Genius Support OS',
     description:
-      'Documentação oficial para clientes B2B, com centrais públicas de configuração, operação e resolução de dúvidas.',
+      'Centrais públicas de configuração, operação e resolução de dúvidas.',
   });
 
   // Carregador do diretório público, usado pelo Effect inicial e pelos botões de
@@ -181,6 +216,7 @@ export function HelpCenterPage() {
       <PublicHelpHeader
         active="directory"
         brandName={primarySpace?.brandName ?? 'Genius Returns'}
+        logoAssetUrl={primarySpace?.logoAssetUrl}
         showOtherCenters={spaces.length > 1}
         spaceSlug={primarySpace?.knowledgeSpaceSlug ?? 'genius'}
       />
@@ -256,10 +292,9 @@ export function HelpCenterSpaceLayout() {
   // nova tentativa. Não captura valor reativo: só o parâmetro e setters.
   const loadSpace = useCallback(async (targetSpaceSlug: string) => {
     try {
-      const [routes, navigation, articles, directory] = await Promise.all([
+      const [routes, navigation, directory] = await Promise.all([
         getPublicKnowledgeSpace(targetSpaceSlug),
         listPublicKnowledgeNavigation(targetSpaceSlug),
-        listPublicKnowledgeArticles(targetSpaceSlug),
         listPublicKnowledgeSpaces(),
       ]);
 
@@ -292,7 +327,7 @@ export function HelpCenterSpaceLayout() {
         routes,
         primaryRoute,
         navigation: publicNavigation,
-        articles,
+        articles: buildNavigationArticleRows(primaryRoute, publicNavigation),
       });
       setMessage(null);
       setPhase('ready');
@@ -390,6 +425,8 @@ export function HelpCenterSpaceLayout() {
   const active =
     location.pathname === `/help/${spaceSlug}`
       ? 'overview'
+      : location.pathname.startsWith(`/help/${spaceSlug}/categories`)
+        ? 'directory'
       : location.pathname.startsWith(`/help/${spaceSlug}/articles`)
         ? 'articles'
         : 'directory';
@@ -399,9 +436,10 @@ export function HelpCenterSpaceLayout() {
       <PublicHelpHeader
         active={active}
         brandName={space.brand_name}
+        logoAssetUrl={space.logo_asset_url}
         showOtherCenters={availableSpaces.length > 1}
         spaceSlug={space.knowledge_space_slug}
-        tertiaryHref={`/help/${space.knowledge_space_slug}#categorias`}
+        tertiaryHref={`/help/${space.knowledge_space_slug}/categories`}
         tertiaryLabel="Categorias"
         portalHref={portalHref}
       />

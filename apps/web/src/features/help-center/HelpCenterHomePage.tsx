@@ -18,6 +18,7 @@ import {
 } from './public-ui';
 import {
   formatRelativePublicDate,
+  getCategoryDescription,
   getCategoryVisuals,
   getPublicCategoryLabel,
 } from './public-presentation';
@@ -78,7 +79,7 @@ const heroMascotByState: Record<HeroAssistantState, {
     expression: 'happy',
   },
   processing: {
-    message: 'Consultando a documentação...',
+    message: 'Consultando a documentação…',
     pose: 'think',
     expression: 'happy',
   },
@@ -104,8 +105,8 @@ type CategoryCard = {
   title: string;
   description: string;
   count: number;
-  icon: 'puzzle' | 'gear' | 'truck' | 'chart' | 'cap';
-  tone: 'blue' | 'pink';
+  icon: 'puzzle' | 'gear' | 'truck' | 'chart' | 'cap' | 'doc' | 'support';
+  tone: 'blue' | 'pink' | 'neutral';
   to: string;
 };
 
@@ -120,17 +121,28 @@ function buildSuggestedArticleLinks(
   spaceSlug: string,
   articles: PublicKnowledgeArticleListRow[],
 ): SuggestedArticle[] {
-  return suggestedArticleDefinitions.flatMap((definition) => {
+  const selected = new Set<string>();
+  const matches = suggestedArticleDefinitions.flatMap((definition) => {
     const article = articles.find((candidate) => normalize(candidate.title) === definition.match);
-    if (!article) return [];
-
-    return [{
-      id: definition.id,
-      title: article.title,
-      articleId: article.id,
-      to: `/help/${spaceSlug}/articles/${article.slug}`,
-    }];
+    if (!article || selected.has(article.id)) return [];
+    selected.add(article.id);
+    return [{ definition, article }];
   });
+
+  const fallback = articles
+    .filter((article) => !selected.has(article.id))
+    .slice(0, Math.max(0, 3 - matches.length))
+    .map((article, index) => ({
+      definition: { id: `fallback-${index + 1}` },
+      article,
+    }));
+
+  return [...matches, ...fallback].slice(0, 3).map(({ definition, article }) => ({
+    id: definition.id,
+    title: article.title,
+    articleId: article.id,
+    to: `/help/${spaceSlug}/articles/${article.slug}`,
+  }));
 }
 
 function resolveHeroAssistantState({
@@ -173,12 +185,12 @@ function buildCategoryCards(
     });
   }
 
-  return [...byCategory.entries()].map(([id, category], index) => {
-    const visual = resolveCategoryVisual({ category_id: id, category_name: category.name, category_slug: category.slug ?? id } as PublicKnowledgeNavigationRow, index);
+  return [...byCategory.entries()].map(([id, category]) => {
+    const visual = getCategoryVisuals(category.name);
     return {
       id,
       title: getPublicCategoryLabel(category.name),
-      description: visual.description,
+      description: getCategoryDescription(category.name),
       count: category.count,
       icon: visual.icon,
       tone: visual.tone,
@@ -187,72 +199,19 @@ function buildCategoryCards(
   });
 }
 
-const categoryVisualDefinitions: Array<{
-  patterns: string[];
-  description: string;
-  icon: CategoryCard['icon'];
-  tone: CategoryCard['tone'];
-}> = [
-  {
-    patterns: ['integr', 'api', 'conect'],
-    description: 'Conecte seus canais e mantenha a operação em ordem.',
-    icon: 'puzzle',
-    tone: 'blue',
-  },
-  {
-    patterns: ['config', 'parametr', 'cadastro'],
-    description: 'Encontre orientações para preparar e ajustar a operação.',
-    icon: 'gear',
-    tone: 'pink',
-  },
-  {
-    patterns: ['troca', 'devolu', 'reversa', 'logistic'],
-    description: 'Acompanhe as etapas dos fluxos de troca e devolução.',
-    icon: 'truck',
-    tone: 'blue',
-  },
-  {
-    patterns: ['erro', 'solu', 'pend', 'proble'],
-    description: 'Resolva ocorrências com orientações claras e práticas.',
-    icon: 'chart',
-    tone: 'pink',
-  },
-  {
-    patterns: ['seller', 'loja', 'canal'],
-    description: 'Organize lojas, sellers e os canais da sua operação.',
-    icon: 'cap',
-    tone: 'blue',
-  },
-];
-
-function resolveCategoryVisual(category: PublicKnowledgeNavigationRow, index: number) {
-  const haystack = normalize([category.category_slug, category.category_name].join(' '));
-  const matched = categoryVisualDefinitions.find((definition) =>
-    definition.patterns.some((pattern) => haystack.includes(pattern)),
-  );
-
-  if (matched) return matched;
-
-  return {
-    description: 'Explore as orientações disponíveis para esta frente.',
-    icon: index % 2 === 0 ? 'puzzle' : 'gear',
-    tone: index % 2 === 0 ? 'blue' : 'pink',
-  } satisfies Pick<CategoryCard, 'description' | 'icon' | 'tone'>;
-}
-
 function buildTaxonomyCategoryCards(
   spaceSlug: string,
   rootCategories: PublicKnowledgeNavigationRow[],
 ) {
   return rootCategories
-    .map((category, index) => {
-      const visual = resolveCategoryVisual(category, index);
+    .map((category) => {
+      const visual = getCategoryVisuals(category.category_name);
       const count = category.subtree_article_count ?? category.article_count ?? 0;
 
       return {
         id: category.category_id,
         title: getPublicCategoryLabel(category.category_name),
-        description: category.category_description?.trim() || visual.description,
+        description: category.category_description?.trim() || getCategoryDescription(category.category_name),
         count,
         icon: visual.icon,
         tone: visual.tone,
@@ -356,7 +315,7 @@ export function HelpCenterHomePage() {
         <PublicSearchStateCard
           description="Estamos consultando a documentação para você."
           showMascot={false}
-          title="Buscando..."
+          title="Buscando…"
           tone="loading"
         />
       );
@@ -369,7 +328,7 @@ export function HelpCenterHomePage() {
           <p className="mt-1 text-sm leading-6 text-[var(--help-muted)]">Tente usar outras palavras ou explore as categorias disponíveis.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <GhostButton onClick={clearSearch}>Limpar busca</GhostButton>
-            <Link className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" to="#categorias">Explorar categorias</Link>
+            <Link className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/categories`}>Explorar categorias</Link>
           </div>
         </div>
       );
@@ -500,7 +459,7 @@ export function HelpCenterHomePage() {
             <h2 className="text-[1.65rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">Explore por categoria</h2>
             <p className="mt-1 text-sm leading-6 text-[var(--help-muted)]">Encontre orientações organizadas por tema.</p>
           </div>
-          <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>Ver todas as categorias <HelpIcon className="ml-1 inline-block" kind="chevron-right" /></Link>
+          <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/categories`}>Ver todas as categorias <HelpIcon className="ml-1 inline-block" kind="chevron-right" /></Link>
         </div>
 
         <div className="grid gap-3 md:hidden">
@@ -528,11 +487,10 @@ export function HelpCenterHomePage() {
 }
 
 function CategoryCard({ card, mobile = false }: { card: CategoryCard; mobile?: boolean }) {
-  const visual = getCategoryVisuals(card.title);
   const sizeClass = mobile ? 'min-h-0' : 'min-h-[220px]';
   return (
     <Link className={`group flex ${sizeClass} flex-col rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-4 no-underline shadow-[var(--help-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--help-accent)] ${mobile ? '' : 'px-5 py-5'}`} to={card.to}>
-      <PublicIconBadge className={mobile ? 'h-10 w-10 rounded-[14px]' : ''} icon={visual.icon} tone={visual.tone} />
+      <PublicIconBadge className={mobile ? 'h-10 w-10 rounded-[14px]' : ''} icon={card.icon} tone={card.tone} />
       <h3 className="mt-4 text-base font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">{card.title}</h3>
       <p className="mt-2 text-sm leading-6 text-[var(--help-muted)]">{card.description}</p>
       <span className="mt-auto flex items-center justify-between gap-3 pt-5 text-sm font-semibold text-[var(--help-link)]">

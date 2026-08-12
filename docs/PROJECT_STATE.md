@@ -1,6 +1,35 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — Recharts 3 e reconciliação de suíte — 2026-08-11
+
+- `apps/web` usa `recharts` `3.10.1`; a migração a partir de `2.15.4` foi
+  validada com typecheck, build, lint sem erros, quality gate, auditoria de
+  dependências, testes focados e QA local desktop/mobile.
+- Os gráficos de Analytics mantêm `Tooltip`, `Legend`, eixos, grids multi-eixo,
+  `ResponsiveContainer`, `Cell`, `ReferenceLine`, barras, linhas e áreas sem
+  uso de APIs internas ou removidas do Recharts 3.
+- A suíte ampla atual possui 531 testes, com 492 aprovados e 39 falhos. As
+  falhas estão documentadas em
+  `docs/reports/2026-08-11_recharts-suite-reconciliation-handoff.md` e são
+  principalmente divergências de contratos legados/stale em Access, HubSpot,
+  Analytics/read models, UI/brand e harness.
+- A suíte ampla não deve ser declarada verde nem simplesmente ignorada em
+  releases de Access ou HubSpot. A migração Recharts pode ser validada pelo
+  lote focado enquanto a reconciliação dos demais contratos permanece pendente.
+- O checkout está sujeito a alterações de sessões paralelas. Qualquer commit,
+  push ou deploy deve usar staging seletivo e revisar o diff por proprietário.
+
 > **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+
+## Atualização corrente — ACCESS CONTROL V2 / UX operacional — 2026-08-11
+
+- `/admin/access` permanece limitado a colaboradores internos e continua usando `vw_admin_access_*`/RPCs reais; clientes do Portal não entram na listagem.
+- A estrutura organizacional agora distingue referência ativa de dependência histórica. Áreas ativas são a seleção padrão; áreas com vínculos, funções, convites ou referência legada devem ser desativadas, nunca apagadas fisicamente.
+- O detalhe de usuário recebe `effective_permissions` do backend, com origem, escopo, fontes e conflito. O frontend não calcula precedência nem transforma tela em permissão de ação.
+- A UI corrente mantém somente as abas `Usuários`, `Estrutura` e `Perfis`; Convites não é mais uma superfície do produto. O cadastro de usuário ocorre diretamente em Usuários. Registros e APIs históricas permanecem preservados fora da UI.
+- Estrutura e Perfis usam listas compactas no lugar de tabelas largas; seleção e detalhe permanecem no mesmo quadro, e edição de área/perfil abre diálogo contextual com foco e fechamento explícitos.
+- As concessões de telas por perfil e colaborador ficam em painéis compactos lado a lado, com rolagem interna por grupo. O frontend continua consumindo read models e RPCs reais, sem calcular permissões.
+- Runtime local oficial: `npm run dev` em `http://127.0.0.1:4173`, sem fallback de porta. Sem push, deploy, migration remota ou alteração de secret.
 
 ## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
 
@@ -1042,7 +1071,7 @@ Documentos históricos:
 - A camada pública da KB não expõe `source_path`, `source_hash`, `tenant_id`, autores internos nem HTML legado.
 - A Central Pública mínima agora consome apenas `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list` e `vw_public_knowledge_article_detail`.
 - A Central Pública mínima agora também consulta `rpc_public_search_knowledge_articles` para busca textual simples por `knowledge_space`.
-- A Central Pública mínima renderiza apenas `body_md` com Markdown seguro, sem `dangerouslySetInnerHTML` e sem depender de filtro de visibilidade no frontend.
+- A Central Pública mínima renderiza apenas `body_md` com Markdown seguro, sem HTML bruto e sem depender de filtro de visibilidade no frontend.
 - A identidade visual pública usa os dados públicos do `knowledge_space` e fallback seguro quando branding detalhado não estiver projetado nos read models públicos.
 - O resolver público agora expõe branding sanitizado mínimo (`brand_name`, `logo_asset_url`, `theme_tokens`, `seo_defaults` e `support_contacts` públicos) sem abrir acesso direto a `brand_settings`.
 - A busca pública agora expõe apenas metadados mínimos de resultado e nunca retorna `body_md` completo, `source_path`, `source_hash` ou metadados internos.
@@ -3645,3 +3674,11 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Evidência: `{"scenario":"settings-dashboard-sources","viewport":"1920x1080","tableRows":2}`
   e `output/local-qa/browser-platform_admin-settings-dashboard-sources-1920.png`.
 - Faltam quatro telas: Marcas, Central de ajuda, Geral e Usuários e acesso.
+## Atualização corrente — Runtime web único em 4173 e UX de acesso — 2026-08-11
+
+- O runtime web local usa exclusivamente `http://127.0.0.1:4173`.
+- `npm run dev` verifica o processo da porta, reinicia apenas a instância
+  marcada como deste projeto e falha sem fallback quando o processo é
+  desconhecido.
+- Em `/admin/access`, Estrutura e Perfis mantêm lista e detalhe no mesmo quadro;
+  as tabelas são compactas e têm rolagem interna quando necessário.

@@ -92,7 +92,7 @@ export const GENIUS_SETTINGS_TARGETS = [
   {
     id: 'set-dashboard-fontes',
     sectionId: 'dashboard-fontes',
-    label: 'Fontes do Dashboard',
+    label: 'Governança de dados',
     hint: 'Configurações · pipelines e fontes dos indicadores',
     keywords: ['fonte', 'fontes', 'pipeline', 'dashboard', 'dados', 'configuracao do dashboard'],
   },

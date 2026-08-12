@@ -50,7 +50,8 @@ export async function listPublicKnowledgeNavigation(spaceSlug: string) {
     .from('vw_public_knowledge_navigation')
     .select('*')
     .eq('knowledge_space_slug', spaceSlug)
-    .order('parent_category_slug', { ascending: true, nullsFirst: true })
+    .order('parent_category_sort_order', { ascending: true, nullsFirst: true })
+    .order('category_sort_order', { ascending: true })
     .order('category_name', { ascending: true });
 
   if (error) {
@@ -65,20 +66,70 @@ export async function listPublicKnowledgeNavigation(spaceSlug: string) {
   })) as PublicKnowledgeNavigationRow[];
 }
 
-export async function listPublicKnowledgeArticles(spaceSlug: string) {
+export interface PublicKnowledgeArticlePage {
+  rows: PublicKnowledgeArticleListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+function sanitizeArticleSearchQuery(value: string | null | undefined) {
+  return (value ?? '')
+    .trim()
+    .replace(/[%,*()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 120);
+}
+
+export async function listPublicKnowledgeArticlePage(
+  spaceSlug: string,
+  {
+    page = 1,
+    pageSize = 10,
+    categoryIds = [],
+    query = '',
+  }: {
+    page?: number;
+    pageSize?: number;
+    categoryIds?: string[];
+    query?: string;
+  } = {},
+): Promise<PublicKnowledgeArticlePage> {
   const client = requireClient();
-  const { data, error } = await client
+  const safePageSize = Math.min(Math.max(Math.trunc(pageSize), 1), 50);
+  const safePage = Math.max(Math.trunc(page), 1);
+  const safeQuery = sanitizeArticleSearchQuery(query);
+  let request = client
     .from('vw_public_knowledge_articles_list')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('knowledge_space_slug', spaceSlug)
     .order('published_at', { ascending: false, nullsFirst: false })
     .order('title', { ascending: true });
+
+  if (categoryIds.length > 0) {
+    request = request.in('category_id', categoryIds);
+  }
+
+  if (safeQuery.length >= 2) {
+    const pattern = `%${safeQuery}%`;
+    request = request.or(
+      `title.ilike.${pattern},summary.ilike.${pattern},category_name.ilike.${pattern}`,
+    );
+  }
+
+  const from = (safePage - 1) * safePageSize;
+  const { data, error, count } = await request.range(from, from + safePageSize - 1);
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar os artigos públicos.');
   }
 
-  return (data ?? []) as PublicKnowledgeArticleListRow[];
+  return {
+    rows: (data ?? []) as PublicKnowledgeArticleListRow[],
+    total: count ?? 0,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 }
 
 export async function getPublicKnowledgeArticle(

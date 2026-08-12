@@ -5,6 +5,7 @@ import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard } from './analytics-ui';
 import { MinimalState } from '../../components/minimal-states';
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
+import { CustomerSuccessOwnerPerformanceChart } from './charts/OwnerPerformanceCharts';
 import { toAnalyticsBlockState } from './analytics-kpi-contract.mjs';
 
 const CS_BANDS: BoardBand[] = [
@@ -51,6 +52,8 @@ interface OwnerRow {
   mrr: number | null;
   overdue_customers: number;
   overdue_amount: number;
+  customers_with_tickets: number;
+  inactive_customers: number;
 }
 
 interface RiskRow {
@@ -125,6 +128,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
 
 
   const owners = rows<OwnerRow>(payload, 'by_owner');
+  const ownersWithMrr = owners.filter((owner) => owner.mrr !== null);
   const risks = rows<RiskRow>(payload, 'risk_signals');
   const overdue = rows<OverdueRow>(payload, 'top_overdue_customers');
   const financialIdentity = ((payload as Record<string, unknown>).financial_identity ?? {}) as FinancialIdentity;
@@ -137,20 +141,25 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartCard
-          title="Carteira por responsável"
-          description="Clientes ativos, recorrência e exposição a atraso de cada responsável."
+          title="Performance da carteira por responsável"
+          description="Carteira, MRR e sinais operacionais por pessoa. O gráfico usa somente MRR publicado pelo read model."
         >
           {owners.length === 0 ? (
             <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhum cliente ativo na carteira.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="gso-analytics-responsive-table w-full min-w-[520px] text-left text-xs">
+            <>
+            {ownersWithMrr.length > 0 ? <CustomerSuccessOwnerPerformanceChart owners={ownersWithMrr.map((owner) => ({ name: owner.owner_name, customers: owner.customers, mrr: owner.mrr ?? 0, overdueCustomers: owner.overdue_customers, inactiveCustomers: owner.inactive_customers }))} /> : <MinimalState title="MRR por responsável indisponível" description="A carteira possui responsáveis, mas o read model não publicou MRR suficiente para traçar a comparação." />}
+            <div className="mt-4 overflow-x-auto">
+                <table className="gso-analytics-responsive-table w-full min-w-[760px] text-left text-xs">
                 <thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]">
                   <tr>
                     <th className="px-2 py-2 font-medium">Responsável</th>
                     <th className="px-2 py-2 text-right font-medium">Clientes</th>
                     <th className="px-2 py-2 text-right font-medium">Recorrência</th>
                     <th className="px-2 py-2 text-right font-medium">Em atraso</th>
+                    <th className="px-2 py-2 text-right font-medium">Valor em atraso</th>
+                    <th className="px-2 py-2 text-right font-medium">Atendimentos abertos</th>
+                    <th className="px-2 py-2 text-right font-medium">Sem contato</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,11 +169,16 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
                       <td data-label="Clientes" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.customers.toLocaleString('pt-BR')}</td>
                       <td data-label="Recorrência" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{currency(row.mrr)}</td>
                       <td data-label="Em atraso" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.overdue_customers.toLocaleString('pt-BR')}</td>
+                      <td data-label="Valor em atraso" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{currency(row.overdue_amount)}</td>
+                      <td data-label="Atendimentos abertos" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.customers_with_tickets.toLocaleString('pt-BR')}</td>
+                      <td data-label="Sem contato" className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.inactive_customers.toLocaleString('pt-BR')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <p className="mt-3 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">Atribuição baseada no responsável de CS publicado no cadastro da empresa. Health score, churn, NRR/GRR e tarefas de relacionamento continuam indisponíveis quando o histórico ou a atividade não são publicados pela origem.</p>
+            </>
           )}
         </ChartCard>
 
@@ -189,6 +203,10 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
           )}
         </ChartCard>
       </div>
+
+      <ChartCard title="Tarefas e atividades de Customer Success" description="Pendências por pessoa exigem um read model de atividades do HubSpot.">
+        <MinimalState title="Atividades indisponíveis" description="O contrato atual publica carteira, MRR, atendimentos e data de última interação, mas não tarefas, reuniões, ligações ou e-mails. Nenhuma atividade é inferida a partir da carteira." />
+      </ChartCard>
 
       <ChartCard
         title="Clientes com maior valor vencido"

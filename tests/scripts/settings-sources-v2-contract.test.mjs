@@ -7,6 +7,7 @@ const settings = await readFile(new URL('../../apps/web/src/features/settings/Se
 const integrations = await readFile(new URL('../../apps/web/src/features/settings/SettingsIntegrationsPanel.tsx', import.meta.url), 'utf8');
 const sources = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const history = await readFile(new URL('../../apps/web/src/features/settings/SyncHistorySettingsPage.tsx', import.meta.url), 'utf8');
+const stages = await readFile(new URL('../../apps/web/src/features/settings/StageMappingSettings.tsx', import.meta.url), 'utf8');
 const migration = await readFile(new URL('../../supabase/migrations/20260802110000_settings_sources_catalog_v2.sql', import.meta.url), 'utf8');
 const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-worker/index.ts', import.meta.url), 'utf8');
 
@@ -69,6 +70,14 @@ test('Fontes do Dashboard concentra agenda, ações reais e catálogo', () => {
 test('Histórico agrupa ciclos e publica campos operacionais', () => {
   for (const field of ['correlationId', 'startedAt', 'finishedAt', 'durationMs', 'processedCount', 'errorMessage', 'triggerKind']) assert.match(history, new RegExp(field));
   assert.doesNotMatch(history, /payload|stack trace|secret/i);
+  assert.match(history, /SORT_OPTIONS/);
+  assert.doesNotMatch(history, /counts\.total \|\|/);
+});
+
+test('Etapas permitem confirmar rótulo correto e agrupam IDs duplicadas sem apagar origem', () => {
+  assert.match(stages, /Confirmar revisão/);
+  assert.match(stages, /duplicateCount/);
+  assert.match(stages, /for \(const row of group\.rows\)/);
 });
 
 test('catálogo descobre, ativa e arquiva pipelines sem apagar histórico', () => {

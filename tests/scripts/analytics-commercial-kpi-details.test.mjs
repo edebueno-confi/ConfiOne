@@ -15,8 +15,8 @@ test('preserva ganhos fechados por responsável e o detalhamento auditável do p
   });
 
   assert.deepEqual(result.byOwner, [
-    { ownerId: 'owner-pedro', ownerName: 'Pedro Santos', openDeals: 22, wonDeals: 1, wonAmount: 4000 },
-    { ownerId: 'owner-lucas', ownerName: 'Lucas Sacramento', openDeals: 24, wonDeals: 1, wonAmount: 3000 },
+    { ownerId: 'owner-pedro', ownerName: 'Pedro Santos', openDeals: 22, openAmount: 0, wonDeals: 1, lostDeals: 0, wonAmount: 4000, winRate: null, medianCycleDays: null },
+    { ownerId: 'owner-lucas', ownerName: 'Lucas Sacramento', openDeals: 24, openAmount: 0, wonDeals: 1, lostDeals: 0, wonAmount: 3000, winRate: null, medianCycleDays: null },
   ]);
   assert.deepEqual(result.closedWins, [
     { dealId: '54744523356', dealName: 'Contrato Pedro', ownerName: 'Pedro Santos', closedOn: '2026-08-06', amountHome: 4000 },

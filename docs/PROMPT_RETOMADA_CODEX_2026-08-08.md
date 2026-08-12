@@ -155,8 +155,10 @@ node scripts/local-qa/dashboard-subabas-evolucao-qa.mjs   # QA visual, 18 combin
 node scripts/local-qa/dev-server-monta.mjs               # confere que o dev sobe
 ```
 
-O ambiente local roda em `http://127.0.0.1:4173` (dev) e `4174` (preview do
-build). Confirme as portas antes de reiniciar qualquer processo.
+O ambiente local roda exclusivamente em `http://127.0.0.1:4173`. O launcher
+verifica o processo que ocupa a porta, reinicia apenas a instância marcada
+como deste projeto e não usa porta alternativa. Relatórios históricos podem
+conter referências a outros previews, mas isso não representa o fluxo atual.
 
 ## Mantenha o que funcionou
 

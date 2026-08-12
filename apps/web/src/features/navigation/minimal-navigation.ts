@@ -61,7 +61,7 @@ const RELEASE_SETTINGS_SUBMENU: ReadonlyArray<{
   to: string;
 }> = [
   { id: 'admin-settings-integrations', sectionId: 'integracoes', label: 'Integrações', to: '/admin/settings/integrations' },
-  { id: 'admin-settings-dashboard-sources', sectionId: 'dashboard-fontes', label: 'Fontes do Dashboard', to: '/admin/settings/dashboard-sources' },
+  { id: 'admin-settings-dashboard-sources', sectionId: 'dashboard-fontes', label: 'Governança de dados', to: '/admin/settings/dashboard-sources' },
   { id: 'admin-settings-sync-history', sectionId: 'dashboard-historico', label: 'Histórico de sincronizações', to: '/admin/settings/sync-history' },
   { id: 'admin-settings-brands', sectionId: 'marcas', label: 'Marcas', to: '/admin/settings/brands' },
   { id: 'admin-settings-help-center', sectionId: 'central-ajuda', label: 'Central de ajuda', to: '/admin/settings/help-center' },

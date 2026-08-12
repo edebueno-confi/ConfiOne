@@ -1,12 +1,17 @@
 # Admin Access Design Spec
 
+> **Contrato corrente — 2026-08-11.** A superfície vigente possui somente as abas
+> `Usuários`, `Estrutura` e `Perfis`. A criação é direta em `Usuários`; a aba
+> `Convites` não existe mais na UI. Registros e APIs históricas de convite são
+> preservados fora da superfície operacional.
+
 ## Tela
 
 `/admin/access`
 
 ## Objetivo
 
-Gerenciar usuários, memberships, papéis, permissões e convites da plataforma.
+Gerenciar usuários internos, estrutura organizacional, perfis e permissões da plataforma.
 
 Deve comunicar governança e segurança, não apenas cadastro de usuários.
 
@@ -24,46 +29,53 @@ Pills:
 
 ### Cabeçalho
 
-Título: `Access`.
+Título: `Usuários e acessos`.
 
 Subtítulo:
-- Governança de acesso, papéis, convites e memberships.
+- Governança de acesso, estrutura, perfis e permissões.
 
 ### Tabs
 
 Usar:
 - Usuários, ativo.
-- Memberships.
-- Convites.
-- Papéis.
+- Estrutura.
+- Perfis.
+
+Não exibir `Convites`: a criação de usuário é direta e o histórico de convite
+não é uma superfície de trabalho.
+
+### Padrão de interação corrente
+
+- Estrutura e Perfis usam listas compactas com uma ação primária por linha;
+  não usar tabela larga para repetir contagens e estados.
+- A seleção abre o detalhe ao lado no mesmo quadro de trabalho.
+- `Editar área` e `Editar perfil` abrem diálogo modal identificado pelo recurso
+  selecionado, com foco no primeiro campo, `Esc` e botão de cancelar.
+- As permissões de telas por perfil e por colaborador ficam em painéis lado a
+  lado; cada catálogo possui rolagem interna, sem empurrar a lista principal.
 
 ### KPIs
 
 - Usuários ativos.
-- Convites pendentes.
+- Usuários sem estrutura.
 - Admins.
-- Sem tenant.
+- Perfis ativos.
 
 ## Layout principal
 
-Grid em 3 colunas.
+Grid de trabalho em 2 colunas: lista compacta à esquerda e detalhe contextual
+à direita. Em Perfis, os catálogos de telas aparecem abaixo em dois painéis
+paralelos.
 
-### Coluna esquerda: governança
+### Coluna esquerda: lista operacional
 
-Card `Controle de acesso`.
+Card da superfície selecionada (`Usuários`, `Estrutura` ou `Perfis`).
 
 Conteúdo:
-- Listas rápidas:
-  - Admins.
-  - Convites pendentes.
-  - Sem tenant.
-  - Inativos.
-- Filtros:
-  - Papel.
-  - Tenant.
-  - Status.
-  - Último acesso.
-- Botão `Convidar usuário`.
+- Busca e filtros compactos.
+- Uma linha por recurso, com nome, metadados úteis, status e ações.
+- Filtros específicos da superfície: área, perfil, tipo ou status.
+- CTA contextual: `Criar usuário`, `Criar área` ou `Criar perfil`.
 
 ### Centro: usuários
 

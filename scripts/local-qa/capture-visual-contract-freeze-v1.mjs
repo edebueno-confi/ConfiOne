@@ -12,7 +12,7 @@ import { join } from 'node:path';
  * Nao reidrata banco, nao altera dado e nao executa provedor externo.
  */
 
-const BASE_URL = process.env.QA_BASE_URL ?? 'http://127.0.0.1:4174';
+const BASE_URL = process.env.QA_BASE_URL ?? 'http://127.0.0.1:4173';
 const OUT_DIR = join(process.cwd(), 'output', 'playwright', 'visual-contract-freeze-v1');
 
 const VIEWPORTS = [
