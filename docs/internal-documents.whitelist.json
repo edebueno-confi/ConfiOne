@@ -9,7 +9,7 @@
     "owner": "Produto",
     "surfaces": ["product-docs", "build-journal"],
     "allow_inline_reader": true,
-    "description": "Define o Genius Support OS como cockpit operacional CX B2B técnico, seus limites e princípios estruturais."
+    "description": "Define o ConfiOne como cockpit operacional CX B2B técnico, seus limites e princípios estruturais."
   },
   {
     "slug": "design",

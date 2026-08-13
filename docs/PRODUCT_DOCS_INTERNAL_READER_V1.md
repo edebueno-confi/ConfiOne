@@ -3,7 +3,12 @@
 ## Objetivo
 Definir a V1 da área interna `Documentos do Produto`, disponível em `/admin/product-docs`.
 
-A tela expõe uma seleção controlada de documentos estratégicos do Genius Support OS para consulta interna. Ela complementa o `Diário de Construção`: o Diário explica como o produto foi construído; Documentos do Produto apresenta a fonte oficial controlada que orienta visão, arquitetura, segurança, operação, design e governança.
+Atualização de 2026-08-13: o leitor continua sendo a fonte controlada para
+documentos oficiais do ConfiOne. O novo Painel de Desenvolvimento apenas
+referencia esses documentos por slug; ele não copia corpos markdown nem cria
+um leitor concorrente.
+
+A tela expõe uma seleção controlada de documentos estratégicos do ConfiOne para consulta interna. Ela complementa o `Diário de Construção`: o Diário explica como o produto foi construído; Documentos do Produto apresenta a fonte oficial controlada que orienta visão, arquitetura, segurança, operação, design e governança.
 
 Atualização de 2026-05-16: a fase `Build Journal Experience Upgrade V1` fez ajustes leves na UX de `/admin/product-docs` sem alterar o modelo da superfície. A rota continuou protegida pelo gate administrativo existente e limitada pela mesma whitelist explícita. Foram adicionados `Por onde começar`, trilhas de leitura por tema e copy mais clara para reforçar que a tela é fonte oficial controlada, não explorador de arquivos.
 

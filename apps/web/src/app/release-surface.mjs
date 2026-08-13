@@ -37,7 +37,7 @@ const INTERNAL_ROUTE_FAMILIES = [
 ];
 
 /** Screens published in the first release. */
-const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access'];
+const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access', 'product'];
 
 /**
  * Internal routes published in the first release.
@@ -48,6 +48,11 @@ const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access
  * a separate release decision.
  */
 const FIRST_RELEASE_ROUTES = [
+  {
+    path: '/engineering/control',
+    screenKey: 'product',
+    rationale: 'Painel interno simples para acompanhar o desenvolvimento do ConfiOne.',
+  },
   {
     path: '/admin/analytics',
     screenKey: 'analytics',

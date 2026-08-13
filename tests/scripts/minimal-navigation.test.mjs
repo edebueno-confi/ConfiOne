@@ -55,7 +55,7 @@ test('shows only the MVP surfaces to platform admins', () => {
 
   const ids = itemIds(navigation);
 
-  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge', 'admin-cockpit', 'admin-settings', 'admin-access']);
+  assert.deepEqual(ids, ['engineering-workspace', 'development-control', 'admin-analytics', 'admin-knowledge', 'admin-cockpit', 'admin-settings', 'admin-access']);
   assert.equal(ids.includes('admin-access'), true);
   assert.equal(ids.includes('admin-tenants'), false);
   assert.equal(ids.includes('support-queue'), false);

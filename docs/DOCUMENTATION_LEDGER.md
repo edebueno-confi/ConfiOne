@@ -1,5 +1,26 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Painel de Desenvolvimento V1 — 2026-08-13
+
+- **Escopo:** superfície interna simples para backlog geral, execução, resultado,
+  validação e links documentais do ConfiOne; sem substituir o Engineering
+  Workspace de tickets.
+- **Entrega:** rota `/engineering/control`, cards com cinco estados, prioridade,
+  área, executor, resultado, validação, bloqueio, atualização curta e links para
+  documentos oficiais por slug.
+- **Contratos:** tabelas `internal_build_tasks` e
+  `internal_build_task_updates`; views `vw_internal_build_tasks_board` e
+  `vw_internal_build_task_updates`; RPCs de criação, assumir, atualização e
+  registro de nota.
+- **Segurança:** escopo explícito `confi_one_development`, leitura e escrita
+  restritas a perfis internos ativos com papel de plataforma ou engenharia,
+  DML direto bloqueado e auditoria por trigger append-only.
+- **Documentação relacionada:** `docs/DEVELOPMENT_CONTROL_PANEL_V1.md`,
+  `docs/BUILD_JOURNAL_STRATEGY.md`,
+  `docs/ENGINEERING_WORKSPACE_OPERATIONAL_CORE_V3.md` e `docs/README.md`.
+- **Limites:** sem sprint, dependências complexas, anexos, sync GitHub ou
+  automações que movam cards sozinhas.
+
 ## ACCESS CONTROL V2 — ciclo de vida e evidência de permissões — 2026-08-11
 
 - **Escopo:** `/admin/access`, control plane interno; sem Dashboard, governança de dados, integrações, push, deploy ou migration remota.

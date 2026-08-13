@@ -29,7 +29,6 @@ export interface CustomerDebtReading {
 }
 
 export declare const PRIORITY_LABELS: Record<DebtPriority, string>;
-export declare function debtPriority(company: Partial<DebtCompany> | null): DebtPriority;
 export declare function humanizeSilence(days: number): string;
 export declare function readCustomerDebt(payload: unknown): CustomerDebtReading;
 export declare function toDebtRows(reading: CustomerDebtReading): Array<Record<string, string | number>>;

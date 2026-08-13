@@ -18,7 +18,18 @@
 - [superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md)
 - [superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md)
 
-Fonte oficial da documentação do Genius Support OS.
+Fonte oficial da documentação do ConfiOne.
+
+## Controle de desenvolvimento
+
+- [Painel de Desenvolvimento V1](./DEVELOPMENT_CONTROL_PANEL_V1.md) — escopo
+  simples para backlog, execução, resultado, validação e links documentais do
+  ConfiOne.
+
+O painel runtime fica em `/engineering/control`. Ele não substitui o
+`Engineering Workspace`, o Diário de Construção, o Git ou os documentos
+versionados; apenas organiza o trabalho de desenvolvimento em uma visão
+operacional auditável.
 
 ## Regra de leitura
 
@@ -126,7 +137,7 @@ Fonte oficial da documentação do Genius Support OS.
 - [BUILD_JOURNAL_STRATEGY.md](./BUILD_JOURNAL_STRATEGY.md)
 - [BUILD_JOURNAL_SCREEN_SPEC.md](./BUILD_JOURNAL_SCREEN_SPEC.md)
 
-Área interna para explicar como o Genius Support OS foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex. A experiência runtime atual usa conteúdo estático versionado no frontend, em composição dark compacta e desktop-first, sem criar backend, migrations, RPCs, tabelas ou RLS nova.
+Área interna para explicar como o ConfiOne foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex. A experiência runtime atual mantém a narrativa editorial no frontend e usa o reader documental governado para aprofundamento, sem leitura arbitrária do repositório.
 
 Na fase `Build Journal Immersive Blueprint Fidelity V1`, a rota foi redesenhada com hero dark horizontal, paisagem abstrata, faixa `A jornada em uma visão`, mapa da construção, timeline por fases, documentos-fonte curados, arquitetura explicada, papel da IA, estado atual e fechamento editorial, sempre preservando shell real, gate administrativo existente, ausência de backend novo e ausência de alteração em Product Docs nesta rodada.
 
@@ -140,7 +151,7 @@ Direção já registrada para a próxima rodada: conectar a narrativa do Diário
 - [PRODUCT.md](../PRODUCT.md)
 - [DESIGN.md](../DESIGN.md)
 
-Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do Genius Support OS. A experiência atual consome o catálogo e o detalhe oficiais por contratos reais de documentos internos, com `Por onde começar`, trilhas de leitura, rail de governança e índice interno derivado do markdown sanitizado, sem parser de filesystem ou leitura arbitrária de arquivos.
+Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do ConfiOne. A experiência atual consome o catálogo e o detalhe oficiais por contratos reais de documentos internos, com `Por onde começar`, trilhas de leitura, rail de governança e índice interno derivado do markdown sanitizado, sem parser de filesystem ou leitura arbitrária de arquivos.
 
 Direção já registrada para a próxima rodada: evoluir a biblioteca para leitura mais profunda e navegação documental mais rica, mantendo whitelist explícita, curadoria, sanitização e ausência de leitura arbitrária do repositório.
 

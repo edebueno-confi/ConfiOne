@@ -25,6 +25,7 @@ export interface QueuePipeline {
   stagnant: number;
   unknownActivity: number;
   stagnantRate: number | null;
+  suggestsInbox: boolean;
   arrived30d: number;
   medianAgeDays: number | null;
 }
@@ -59,4 +60,3 @@ export interface QueueHealthReading {
 
 export declare function queueRoleLabel(role: string): string;
 export declare function readQueueHealth(payload: unknown): QueueHealthReading;
-export declare function suggestsInbox(pipeline: QueuePipeline, threshold?: number): boolean;

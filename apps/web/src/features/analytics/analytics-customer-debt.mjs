@@ -5,23 +5,6 @@
 // de clientes que ficaram sem resposta por mais tempo do que qualquer explicação
 // justifica, e a tela precisa dizer isso sem rodeio.
 
-/**
- * Prioridade de tratamento.
- *
- * Deriva de duas coisas que a operação consegue verificar: há quanto tempo o
- * cliente espera e quantos pedidos dele estão parados. Não usa porte de empresa
- * nem receita — isso seria decidir por quem atender com base em quanto o cliente
- * paga, e essa é uma escolha da operação, não do painel.
- */
-export function debtPriority(company) {
-  if (!company) return 'baixa';
-  const dias = Number(company.oldestDaysSilent ?? 0);
-  const qtd = Number(company.tickets ?? 0);
-  if (dias >= 365 || qtd >= 10) return 'alta';
-  if (dias >= 270 || qtd >= 3) return 'media';
-  return 'baixa';
-}
-
 export const PRIORITY_LABELS = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 
 /** Transforma dias em uma frase que uma pessoa lê sem converter nada. */
@@ -46,6 +29,7 @@ export function readCustomerDebt(payload) {
     oldestDaysSilent: Number(row?.oldest_days_silent ?? 0),
     avgDaysSilent: Number(row?.avg_days_silent ?? 0),
     inWorkedQueue: Number(row?.tickets_in_worked_queue ?? 0),
+    priority: ['alta', 'media', 'baixa'].includes(row?.priority) ? row.priority : 'baixa',
     details: Array.isArray(row?.tickets_detail)
       ? row.tickets_detail.map((t) => ({
           ticketId: String(t?.ticket_id ?? ''),
@@ -56,19 +40,17 @@ export function readCustomerDebt(payload) {
       : [],
   }));
 
-  for (const company of companies) company.priority = debtPriority(company);
-
   return {
     available: companies.length > 0,
     threshold: Number(payload.threshold_days ?? 0) || null,
     totalTickets: Number(payload.total_tickets ?? 0),
     totalCompanies: Number(payload.total_companies ?? 0),
     companies,
-    highPriority: companies.filter((c) => c.priority === 'alta').length,
+    highPriority: Number(payload.high_priority ?? 0),
     // O que está esquecido dentro da fila que o time trabalha é mais grave do
     // que o esquecido numa caixa de entrada que ninguém abre: ali não houve nem
     // a desculpa de o canal não ter dono.
-    inWorkedQueue: companies.reduce((soma, c) => soma + c.inWorkedQueue, 0),
+    inWorkedQueue: Number(payload.in_worked_queue ?? 0),
   };
 }
 

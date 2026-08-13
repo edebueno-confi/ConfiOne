@@ -28,6 +28,7 @@ const postLoginSource = await readFile(
 );
 
 const PUBLISHED_ROUTES = [
+  '/engineering/control',
   '/admin/analytics',
   '/admin/knowledge',
   '/admin/knowledge/new',
@@ -116,11 +117,11 @@ test('manifest has no internal inconsistency', () => {
   assert.deepEqual(findReleaseSurfaceInconsistencies(), []);
 });
 
-// A tela `access` passou a integrar o release: usuarios, convites e permissoes
-// sao necessarios para operar as demais telas publicadas.
-test('publishes exactly the four approved screens', () => {
-  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access']);
-  for (const key of ['analytics', 'knowledge', 'settings', 'access']) {
+// O painel de desenvolvimento passou a integrar o release reduzido para
+// permitir o acompanhamento operacional do produto.
+test('publishes exactly the approved screens', () => {
+  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access', 'product']);
+  for (const key of ['analytics', 'knowledge', 'settings', 'access', 'product']) {
     assert.equal(isScreenPublishedInRelease(key), true, key);
   }
   // `access` saiu desta lista de negados junto com a publicacao da tela.
@@ -133,7 +134,7 @@ test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
     // `/admin/access` acompanha a publicacao da tela `access`.
-    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
+    ['/engineering/control', '/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
   );
 });
 
@@ -293,7 +294,7 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     screenKeys: platformAdminContext().screenKeys,
   });
 
-  assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'administration']);
+  assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'operations', 'administration']);
   // O item generico `admin-settings` deu lugar ao submenu real de Configuracoes
   // na sidebar global; a segunda coluna de navegacao dentro da tela foi removida.
   assert.deepEqual(itemIds(navigation), [
@@ -301,8 +302,8 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-knowledge',
     'admin-knowledge-new',
     'public-help-center',
+    'development-control',
     'admin-access',
-    'admin-cockpit',
     'admin-settings-integrations',
     'admin-settings-dashboard-sources',
     'admin-settings-sync-history',

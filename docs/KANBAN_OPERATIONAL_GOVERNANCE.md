@@ -2,7 +2,12 @@
 
 ## Objetivo
 
-Registrar a operação durável de desenvolvimento do Genius Support OS no Hermes Kanban sem misturar esta governança com código de produto.
+Registrar a operação durável de desenvolvimento do ConfiOne no Hermes Kanban sem misturar esta governança com código de produto.
+
+Atualização de 2026-08-13: o Hermes Kanban permanece um registro histórico de
+governança externa. A superfície runtime simples do ConfiOne está documentada
+em `DEVELOPMENT_CONTROL_PANEL_V1.md` e não depende de perfis, cron ou automações
+do Hermes para funcionar.
 
 Esta fase cria a camada operacional para trabalho contínuo:
 
@@ -15,7 +20,7 @@ Esta fase cria a camada operacional para trabalho contínuo:
 ## Board oficial
 
 - board slug: `genius-support-os`
-- nome: `Genius Support OS`
+- nome: `ConfiOne`
 - workdir padrão: `C:\Projetos\Genius-Support-OS`
 - objetivo: isolar o fluxo operacional do projeto em um board próprio, separado de outros contextos Hermes.
 

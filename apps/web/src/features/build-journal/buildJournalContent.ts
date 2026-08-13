@@ -183,7 +183,7 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
     title: 'Visão e produto',
     eyebrow: 'Origem e norte',
     description:
-      'Define por que o Genius Support OS existe, qual dor operacional resolve e como a construção evolui sem virar CRM genérico.',
+      'Define por que o ConfiOne existe, qual dor operacional resolve e como a construção evolui sem virar CRM genérico.',
     role: 'Serve como bússola para priorização, narrativa de produto e leitura executiva do buildout.',
     tone: 'pink',
     icon: 'target',

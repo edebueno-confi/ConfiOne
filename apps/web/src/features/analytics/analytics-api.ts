@@ -319,29 +319,36 @@ export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unk
 }
 
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
-  const client = requireSupabaseBrowserClient();
-  const [snapshot, reconciliation] = await Promise.all([
-    client.rpc('rpc_analytics_finance_snapshot', {
+  const snapshotArgs = {
       ...rpcFilters(filters),
       p_status: filters.stageId || null,
       p_aging_bucket: filters.priority || null,
       p_client_query: clientQuery.trim() || null,
-    }),
-    client.rpc('rpc_analytics_finance_reconciliation_v2', {
+  };
+  const reconciliationArgs = {
       p_client_query: clientQuery.trim() || null,
       p_limit: 200,
-    }),
+  };
+  const [rawSnapshot, rawReconciliation] = await Promise.all([
+    readAnalyticsRpc<unknown>(
+      'rpc_analytics_finance_snapshot',
+      snapshotArgs,
+      'Falha ao carregar a analise financeira filtrada.',
+    ),
+    readAnalyticsRpc<unknown>(
+      'rpc_analytics_finance_reconciliation_v2',
+      reconciliationArgs,
+      'Falha ao carregar a conciliação financeira.',
+    ),
   ]);
-  if (snapshot.error) throw toAppError(snapshot.error, 'Falha ao carregar a analise financeira filtrada.');
-  if (reconciliation.error) throw toAppError(reconciliation.error, 'Falha ao carregar a conciliação financeira.');
-  const summary = reconciliation.data && typeof reconciliation.data === 'object'
-    ? reconciliation.data as Record<string, unknown>
+  const summary = rawReconciliation && typeof rawReconciliation === 'object'
+    ? rawReconciliation as Record<string, unknown>
     : {};
-  const rawSnapshot = snapshot.data && typeof snapshot.data === 'object'
-    ? snapshot.data as Record<string, unknown>
+  const snapshot = rawSnapshot && typeof rawSnapshot === 'object'
+    ? rawSnapshot as Record<string, unknown>
     : {};
   return mapFinanceSnapshot({
-    ...rawSnapshot,
+    ...snapshot,
     cs_reconciliation: {
       ...(summary.summary && typeof summary.summary === 'object' ? summary.summary : {}),
       by_client_status: Array.isArray(summary.by_client_status) ? summary.by_client_status : [],
@@ -514,6 +521,35 @@ export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnap
     'Falha ao carregar a visão executiva.',
   );
   return mapCeoSnapshot(data);
+}
+
+export async function getCeoDashboard(filters: AnalyticsFilters): Promise<{ snapshot: CeoSnapshot; history: CeoHistory | null }> {
+  try {
+    const data = await readAnalyticsRpc<unknown>(
+      'rpc_analytics_ceo_dashboard',
+      { ...rpcFilters(filters) },
+      'Falha ao carregar a visão executiva.',
+    );
+    const record = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+    if (!record.snapshot || !record.history) {
+      throw new Error('Contrato combinado da visão executiva incompleto.');
+    }
+    return {
+      snapshot: mapCeoSnapshot(record.snapshot),
+      history: mapCeoHistory(record.history),
+    };
+  } catch (combinedError) {
+    // Mantém compatibilidade durante a publicação ordenada do frontend e da
+    // migration, além de preservar a tolerância histórica do comparativo.
+    const snapshot = await getCeoSnapshot(filters);
+    let history: CeoHistory | null = null;
+    try {
+      history = await getCeoHistory(filters);
+    } catch {
+      history = null;
+    }
+    return { snapshot, history };
+  }
 }
 
 export async function getCeoHistory(filters: AnalyticsFilters): Promise<CeoHistory> {
@@ -818,7 +854,7 @@ export async function getSupportStageBreakdown(pipelineId: string | null = null,
  */
 export async function getSupportQueueHealth(groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_queue_health_by_operation', { p_group_company: groupCompany });
+  const { data, error } = await client.rpc('rpc_analytics_support_queue_health_read_model', { p_group_company: groupCompany });
   if (error) throw toAppError(error, 'Falha ao carregar a saúde da fila.');
   return data;
 }
@@ -843,7 +879,7 @@ export async function updatePipelineQueueRole(pipelineId: string, role: QueueRol
  */
 export async function getSupportCustomerDebt(): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_customer_debt');
+  const { data, error } = await client.rpc('rpc_analytics_support_customer_debt_read_model');
   if (error) throw toAppError(error, 'Falha ao carregar os atendimentos sem resposta.');
   return data;
 }

@@ -434,7 +434,7 @@ function OverviewPanel({
       icon: 'spark',
       accent: 'text-[#F83D90] bg-[#FFF0F7]',
       body:
-        'O Genius Support OS nasceu da dor real de um suporte descentralizado, sem histórico confiável e com conhecimento espalhado.',
+        'O ConfiOne nasceu da dor real de um suporte descentralizado, sem histórico confiável e com conhecimento espalhado.',
       detail:
         'Nosso objetivo é construir uma plataforma interna que centraliza suporte, conhecimento, comunicação, engenharia e operação com segurança, rastreabilidade e escala.',
     },
@@ -499,7 +499,7 @@ function OverviewPanel({
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[2rem] font-black leading-10 tracking-[-0.01em] text-[#071641]">Diário de Construção</h1>
-          <p className="mt-1 text-base font-semibold text-[#20375F]">A história por trás do Genius Support OS</p>
+          <p className="mt-1 text-base font-semibold text-[#20375F]">A história por trás do ConfiOne</p>
         </div>
         <span className="inline-flex min-h-10 items-center gap-3 rounded-[10px] border border-[#D9E6F7] bg-[#F7FAFF] px-5 text-sm font-black text-[#1458E8]">
           <Icon className="h-4 w-4" name="shield" />
@@ -700,7 +700,7 @@ function OverviewPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black text-[#071641]">Documentos oficiais</h2>
-            <p className="mt-1 text-sm font-semibold text-[#31476C]">Acesse os documentos que guiam o Genius Support OS</p>
+            <p className="mt-1 text-sm font-semibold text-[#31476C]">Acesse os documentos que guiam o ConfiOne</p>
           </div>
           <Link className="rounded-[10px] bg-[#F2F7FF] px-5 py-3 text-sm font-black text-[#1458E8]" to="/admin/product-docs">
             Ver todos em Documentos do Produto →
@@ -728,7 +728,7 @@ function OverviewPanel({
 
       <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">Próximos passos</h2>
-        <p className="mt-1 text-sm font-semibold text-[#31476C]">O que vem pela frente no Genius Support OS</p>
+        <p className="mt-1 text-sm font-semibold text-[#31476C]">O que vem pela frente no ConfiOne</p>
         <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
           {nextSteps.map(([title, text]) => (
             <article className="rounded-[13px] border border-[#D9E6F7] bg-[#FBFDFF] p-4" key={title}>
@@ -845,7 +845,7 @@ export function BuildJournalPage() {
                   {isTimelineTab
                     ? 'Linha do tempo da construção'
                     : isArchitectureTab
-                      ? 'Arquitetura do Genius Support OS'
+                      ? 'Arquitetura do ConfiOne'
                       : isAITab
                         ? 'IA na Construção'
                         : isDocsTab
@@ -860,7 +860,7 @@ export function BuildJournalPage() {
                       : isAITab
                         ? 'Usamos IA para acelerar raciocínio, execução e documentação sem abrir mão de governança, acordos reais e decisão humana.'
                         : isDocsTab
-                          ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do Genius Support OS.'
+                          ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do ConfiOne.'
                           : 'Conteúdo documental interno conectado à evolução do produto'}
                 </p>
               </div>

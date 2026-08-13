@@ -1,5 +1,11 @@
 # INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md
 
+Atualização de 2026-08-13: o ConfiOne passou a ter uma superfície operacional
+separada para acompanhamento de desenvolvimento em `/engineering/control`.
+Essa superfície não cria uma terceira biblioteca documental: cards apontam
+para documentos oficiais, enquanto o Diário permanece narrativo e o Product
+Docs permanece leitor controlado.
+
 ## Objetivo
 Consolidar o checkpoint documental final das duas áreas internas de documentação já implementadas no Admin Console:
 
@@ -27,7 +33,7 @@ Atualização de 2026-05-18: `/admin/product-docs` e a aba `Documentos oficiais`
 ## Diferença entre as duas áreas
 
 ### Diário de Construção
-`/admin/build-journal` existe para explicar o processo de criação do Genius Support OS:
+`/admin/build-journal` existe para explicar o processo de criação do ConfiOne:
 
 - visão do produto;
 - narrativa de construção por fases;

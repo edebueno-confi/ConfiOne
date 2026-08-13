@@ -436,6 +436,8 @@ export interface CeoSnapshot {
   development: { status: AnalyticsDataStatus; source: string; reason: string };
   financialAlerts: FinancialAlert[];
   dataQuality: { financeTitles: number; matchedFinanceTitles: number; unmatchedFinanceTitles: number; ambiguousFinanceTitles: number; resolvedGroupTitles: number; supportUnassigned: number; supportWithoutSource: number; financeSourceAt: string | null; hubspotSourceAt: string | null };
+  executivePipelines: Array<{ pipelineId: string; label: string; ticketCount: number }>;
+  executiveExceptions: Array<{ key: string; domain: string; severity: 1 | 2 | 3; count: number; amount: number }>;
   state?: AnalyticsBlockState;
 }
 
@@ -776,6 +778,8 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
   const financialAlerts = Array.isArray(data.financial_alerts) ? data.financial_alerts : [];
   const quality = section('data_quality');
   const received = toNumber(c.total_deals) + toNumber(s.total_tickets) + toNumber(f.titles);
+  const executivePipelines = Array.isArray(data.executive_pipelines) ? data.executive_pipelines.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { pipelineId: toText(item.pipeline_id), label: toText(item.label) || 'Pipeline sem nome', ticketCount: toNumber(item.ticket_count) }; }) : [];
+  const executiveExceptions = Array.isArray(data.executive_exceptions) ? data.executive_exceptions.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { key: toText(item.key), domain: toText(item.domain), severity: Math.min(3, Math.max(1, toNumber(item.severity))) as 1 | 2 | 3, count: toNumber(item.count), amount: toNumber(item.amount) }; }) : [];
   return {
     commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: toNumber(c.conversion_rate), avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
     customerSuccess: {
@@ -793,6 +797,8 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
     development: { status: (toText(development.status) || 'not_configured') as AnalyticsDataStatus, source: toText(development.source) || 'Fonte ainda não conectada', reason: toText(development.reason) || 'Ainda não existe uma fonte confiável conectada para Desenvolvimento.' },
     financialAlerts: financialAlerts.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { alertKey: toText(item.alert_key), companyId: item.company_id ? toText(item.company_id) : null, companyName: toText(item.company_name) || 'Cliente não reconciliado', sourceClientName: toText(item.source_client_name), csOwnerId: item.cs_owner_id ? toText(item.cs_owner_id) : null, csOwnerName: toText(item.cs_owner_name), mrr: toNumber(item.mrr), clientStatus: toText(item.client_status), contractStatus: toText(item.contract_status), overdueBalance: toNumber(item.overdue_balance), overdueTitles: toNumber(item.overdue_titles), maxDaysOverdue: toNumber(item.max_days_overdue), oldestDueDate: item.oldest_due_date ? toText(item.oldest_due_date) : null, matchConfidence: toNumber(item.match_confidence), matchMethod: toText(item.match_method), candidateCount: toNumber(item.candidate_count) }; }),
     dataQuality: { financeTitles: toNumber(quality.finance_titles), matchedFinanceTitles: toNumber(quality.matched_finance_titles), unmatchedFinanceTitles: toNumber(quality.unmatched_finance_titles), ambiguousFinanceTitles: toNumber(quality.ambiguous_finance_titles), resolvedGroupTitles: toNumber(quality.resolved_group_titles), supportUnassigned: toNumber(quality.support_unassigned), supportWithoutSource: toNumber(quality.support_without_source), financeSourceAt: quality.finance_source_at ? toText(quality.finance_source_at) : null, hubspotSourceAt: quality.hubspot_source_at ? toText(quality.hubspot_source_at) : null },
+    executivePipelines,
+    executiveExceptions,
     state: createSnapshotState(data, 'HubSpot + OMIE', received),
   };
 }

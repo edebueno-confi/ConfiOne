@@ -163,6 +163,22 @@ function buildReleaseNavigation({
     }
   }
 
+  if (allows('product')) {
+    sections.push({
+      id: 'operations',
+      label: 'Produto',
+      items: [
+        {
+          id: 'development-control',
+          label: 'Painel de desenvolvimento',
+          to: '/engineering/control',
+          icon: 'workflow',
+          matches: (path) => matchesBase(path, '/engineering/control'),
+        },
+      ],
+    });
+  }
+
   if (administration.length > 0) {
     sections.push({
       id: 'administration',
@@ -203,6 +219,35 @@ export function buildMinimalNavigation({
 
   const hasScreen = (screenKey: InternalScreenKey) => isPlatformAdmin || screenKeys.includes(screenKey);
   const sections: MinimalNavigationSection[] = [];
+
+  const hasEngineeringAccess =
+    isPlatformAdmin ||
+    roles.includes('engineering_member') ||
+    roles.includes('engineering_manager') ||
+    hasScreen('product');
+
+  if (hasEngineeringAccess) {
+    sections.push({
+      id: 'operations',
+      label: 'Produto',
+      items: [
+        {
+          id: 'engineering-workspace',
+          label: 'Demandas técnicas',
+          to: '/engineering',
+          icon: 'engineering',
+          matches: (path) => matchesBase(path, '/engineering') && !matchesBase(path, '/engineering/control'),
+        },
+        {
+          id: 'development-control',
+          label: 'Painel de desenvolvimento',
+          to: '/engineering/control',
+          icon: 'workflow',
+          matches: (path) => matchesBase(path, '/engineering/control'),
+        },
+      ],
+    });
+  }
 
   if (isDashboardViewer || hasScreen('analytics')) {
     sections.push({
@@ -252,6 +297,7 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/support/customers', 'Clientes B2B'],
     ['/cs/portfolio', 'Carteira CS'],
     ['/internal-actions', 'Acionamentos'],
+    ['/engineering/control', 'Painel de desenvolvimento'],
     ['/engineering', 'Produto'],
     ['/admin/visao-geral', 'Visão geral'],
     ['/admin/tenants', 'Contas B2B'],

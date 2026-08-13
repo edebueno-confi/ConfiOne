@@ -461,7 +461,7 @@ export function ProductDocsPage() {
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
                 Fonte oficial controlada dos documentos que sustentam visão, arquitetura,
-                segurança, operação, design e construção do Genius Support OS.
+                segurança, operação, design e construção do ConfiOne.
               </p>
             </div>
           </div>

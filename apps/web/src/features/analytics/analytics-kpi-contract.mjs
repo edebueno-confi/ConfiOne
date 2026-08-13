@@ -88,6 +88,8 @@ const REASON_MESSAGES = {
     'Candidato encontrado por identidade exata; a decisão permanece registrada para revisão humana.',
   identidade_similar:
     'Candidato encontrado por identidade semelhante; não há aplicação automática do vínculo.',
+  probable:
+    'Candidato com forte semelhança de identidade; confirme o vínculo antes de aplicá-lo.',
   confirmada:
     'Vínculo confirmado por decisão humana e preservado no histórico de auditoria.',
 };
