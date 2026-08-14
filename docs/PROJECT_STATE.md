@@ -1,5 +1,21 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — retomada e continuidade do Codex — 2026-08-14
+
+- O ponto de entrada documental após formatação ou handoff é
+  `docs/CODEX_RESTART_CONTEXT.md`. Ele resume produto, cockpit, decisões de
+  design, GitHub, Figma, validações, riscos e arquivos que permanecem somente
+  locais.
+- O checkout de referência está na branch
+  `codex/final-consolidation-20260812`, no commit `8c71a6a`, publicado no
+  GitHub e associado à PR `#40`.
+- O documento de retomada não substitui contratos reais, migrations, testes,
+  policies, views, RPCs ou este `PROJECT_STATE.md`; ele orienta a ordem de
+  leitura e reduz dependência de memória de conversa.
+- O pacote `recovery/codex-context-2026-08-12/` e
+  `apps/web/.env.local` permanecem arquivos locais sensíveis e devem ser
+  preservados fora do GitHub.
+
 ## Atualização corrente — Painel de Desenvolvimento V1 — 2026-08-13
 
 - O ConfiOne agora possui uma superfície interna simples em `/engineering/control`

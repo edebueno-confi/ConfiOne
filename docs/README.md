@@ -1,5 +1,7 @@
 # Docs
 
+- [Contexto de retomada do Codex](./CODEX_RESTART_CONTEXT.md) — ponto de entrada
+  para retomar o projeto após formatação ou handoff entre agentes.
 - [Handoff Recharts 3 e reconciliação da suíte](./reports/2026-08-11_recharts-suite-reconciliation-handoff.md) — migração concluída e falhas amplas classificadas para a próxima publicação.
 
 ## Decisão visual vigente — Administração e Configurações

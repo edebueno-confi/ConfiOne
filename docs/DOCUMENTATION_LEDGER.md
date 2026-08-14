@@ -1,5 +1,26 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — documento de retomada do Codex — 2026-08-14
+
+- **Fase:** continuidade e recuperação após formatação.
+- **Resumo:** criado `docs/CODEX_RESTART_CONTEXT.md` como ponto único de leitura
+  para o próximo agente, consolidando estado do produto, cockpit, decisões de
+  design, GitHub, Figma, validações, riscos e separação entre arquivos
+  versionados e arquivos locais sensíveis.
+- **Docs alterados:** `docs/CODEX_RESTART_CONTEXT.md`, `docs/README.md`,
+  `docs/PROJECT_STATE.md` e este ledger.
+- **Telas afetadas:** nenhuma alteração de runtime nesta etapa; o documento
+  referencia `/engineering/control`, Diário e Documentos do cockpit.
+- **Views/RPCs/migrations:** nenhuma alteração nesta etapa.
+- **Validação:** links e conteúdo revisados localmente; validação documental
+  deve ser executada antes do próximo fechamento técnico.
+- **Riscos restantes:** o Context Pack de julho é histórico e aponta para outro
+  checkout; o `.env.local` e o pacote `recovery` não estão no Git e precisam de
+  backup privado.
+- **Impacto futuro:** qualquer novo macro-lote deve atualizar este ponto de
+  retomada quando alterar branch, estado do produto, cockpit, riscos ou rotina
+  de recuperação.
+
 ## Atualização corrente — narrativa e superfície documental do cockpit — 2026-08-13
 
 - O Diário de Construção foi reconciliado com o estado atual do produto: a
