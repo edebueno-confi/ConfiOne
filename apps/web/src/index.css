@@ -1202,6 +1202,356 @@
   }
 }
 
+/* O contexto de desenvolvimento não herda o tema white/dark do ConfiOne.
+   O modal de entrada, o shell bloqueado e as fontes abertas precisam começar
+   do mesmo conjunto de tokens, inclusive antes do reconhecimento visual. */
+.gso-development-context-shell,
+.gso-development-context-main {
+  --minimal-canvas: #080d16 !important;
+  --minimal-sidebar: #0b111d !important;
+  --minimal-surface: #0e1521 !important;
+  --minimal-surface-muted: #141e2e !important;
+  --minimal-border: rgba(148, 166, 194, 0.2) !important;
+  --minimal-border-strong: rgba(255, 111, 121, 0.42) !important;
+  --minimal-text: #e8eef8 !important;
+  --minimal-text-secondary: #a7b4c8 !important;
+  --minimal-text-tertiary: #77869c !important;
+  --minimal-action: #ff6f79 !important;
+  --minimal-action-ink: #1d080c !important;
+  --minimal-focus: #75e4d3 !important;
+  --one-shell-bg: #080d16 !important;
+  --one-panel-bg: #0e1521 !important;
+  --one-panel-elevated-bg: #141e2e !important;
+  --one-surface-hover: #1a273b !important;
+  --one-text-primary: #e8eef8 !important;
+  --one-text-secondary: #a7b4c8 !important;
+  --one-text-tertiary: #77869c !important;
+  --one-border-default: rgba(148, 166, 194, 0.2) !important;
+  --one-border-strong: rgba(255, 111, 121, 0.42) !important;
+  --gso-topbar-bg: #0e1521 !important;
+  --gso-border: rgba(148, 166, 194, 0.2) !important;
+  background-color: #080d16 !important;
+  color: #e8eef8 !important;
+  color-scheme: dark !important;
+}
+
+.gso-development-context-main {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 111, 121, 0.11) 1px, transparent 0) 0 0 / 18px 18px,
+    radial-gradient(circle at 86% 8%, rgba(255, 111, 121, 0.12), transparent 25rem),
+    linear-gradient(135deg, rgba(117, 228, 211, 0.035), transparent 42%),
+    #080d16 !important;
+}
+
+.gso-development-context-shell .gso-sidebar,
+.gso-development-context-shell .gso-sidebar-drawer,
+.gso-development-context-shell .gso-topbar {
+  background-color: #0b111d !important;
+  border-color: rgba(255, 111, 121, 0.22) !important;
+  color: #e8eef8 !important;
+}
+
+.gso-development-context-shell .gso-sidebar-header {
+  background-color: #0e1521 !important;
+  border-color: rgba(255, 111, 121, 0.22) !important;
+}
+
+.gso-development-context-shell .gso-sidebar :is(button, a),
+.gso-development-context-shell .gso-topbar :is(button, a) {
+  color: #a7b4c8 !important;
+}
+
+.gso-development-context-shell .gso-sidebar :is(button, a):hover,
+.gso-development-context-shell .gso-sidebar :is(button, a)[aria-current="page"],
+.gso-development-context-shell .gso-topbar :is(button, a):hover {
+  background-color: #1a273b !important;
+  color: #ffffff !important;
+}
+
+/* Telas reconstruídas do subsistema: estrutura própria, sem reaproveitar a
+   composição editorial do Admin Console. */
+.gso-development-journal-v2,
+.gso-development-documents-v2 {
+  --v2-bg: #080d16;
+  --v2-panel: #0d1522;
+  --v2-panel-raised: #121d2e;
+  --v2-panel-active: #18263a;
+  --v2-line: rgba(145, 166, 198, 0.2);
+  --v2-line-strong: rgba(255, 111, 121, 0.52);
+  --v2-text: #eef3fa;
+  --v2-muted: #a8b6ca;
+  --v2-faint: #71839c;
+  --v2-red: #ff6f79;
+  --v2-cyan: #78e4d4;
+  --v2-green: #71d7ae;
+  box-sizing: border-box;
+  min-height: 100%;
+  background: var(--v2-bg);
+  color: var(--v2-text);
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.gso-development-journal-v2 *,
+.gso-development-documents-v2 * {
+  box-sizing: border-box;
+}
+
+.gso-journal-v2-command,
+.gso-docs-v2-command {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--v2-line);
+  padding: 1.25rem 1.4rem 1.1rem;
+}
+
+.gso-journal-v2-command h1,
+.gso-docs-v2-command h1 {
+  margin: 0.3rem 0 0;
+  color: var(--v2-text);
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.gso-journal-v2-command p,
+.gso-docs-v2-command p {
+  max-width: 62ch;
+  margin: 0.38rem 0 0;
+  color: var(--v2-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.gso-journal-v2-label,
+.gso-docs-v2-label {
+  display: block;
+  color: var(--v2-cyan);
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.gso-journal-v2-command-meta,
+.gso-docs-v2-command-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  color: var(--v2-faint);
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.gso-journal-v2-command-meta span,
+.gso-docs-v2-command-actions span,
+.gso-docs-v2-command-actions button {
+  border: 1px solid var(--v2-line);
+  background: var(--v2-panel);
+  padding: 0.55rem 0.7rem;
+}
+
+.gso-journal-v2-command-meta i {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.3rem;
+  border-radius: 50%;
+  background: var(--v2-red);
+  box-shadow: 0 0 10px var(--v2-red);
+}
+
+.gso-journal-v2-command-meta a,
+.gso-docs-v2-command-actions button,
+.gso-docs-v2-command-actions a {
+  color: var(--v2-cyan);
+  text-decoration: none;
+}
+
+.gso-journal-v2-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--v2-line);
+  padding: 0 1.4rem;
+}
+
+.gso-journal-v2-tabs button {
+  flex: 0 0 auto;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--v2-faint);
+  cursor: pointer;
+  padding: 0.78rem 0.85rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+.gso-journal-v2-tabs button:hover,
+.gso-journal-v2-tabs button.is-active {
+  border-bottom-color: var(--v2-red);
+  color: var(--v2-text);
+}
+
+.gso-journal-v2-layout,
+.gso-docs-v2-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 270px;
+  min-height: calc(100vh - 12rem);
+}
+
+.gso-journal-v2-rail,
+.gso-docs-v2-index,
+.gso-journal-v2-context,
+.gso-docs-v2-context {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.gso-journal-v2-rail,
+.gso-docs-v2-index {
+  border-right: 1px solid var(--v2-line);
+}
+
+.gso-journal-v2-context,
+.gso-docs-v2-context {
+  border-left: 1px solid var(--v2-line);
+}
+
+.gso-journal-v2-rail-heading,
+.gso-docs-v2-index-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--v2-line);
+  padding: 0.2rem 0 0.8rem;
+  color: var(--v2-muted);
+  font-size: 0.7rem;
+}
+
+.gso-journal-v2-rail-heading strong,
+.gso-docs-v2-index-head strong {
+  color: var(--v2-text);
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.gso-journal-v2-phase-list,
+.gso-docs-v2-groups {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.7rem;
+}
+
+.gso-journal-v2-phase {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.65rem;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--v2-muted);
+  cursor: pointer;
+  padding: 0.62rem;
+  text-align: left;
+}
+
+.gso-journal-v2-phase:hover,
+.gso-journal-v2-phase.is-active {
+  border-color: var(--v2-line);
+  background: var(--v2-panel-active);
+  color: var(--v2-text);
+}
+
+.gso-journal-v2-phase-index {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--v2-line);
+  color: var(--v2-faint);
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.64rem;
+}
+
+.gso-journal-v2-phase-index.is-done { border-color: rgba(113, 215, 174, 0.4); color: var(--v2-green); }
+.gso-journal-v2-phase-index.is-progress { border-color: rgba(255, 111, 121, 0.5); color: var(--v2-red); }
+.gso-journal-v2-phase-index.is-planned { border-color: rgba(168, 182, 202, 0.3); color: var(--v2-muted); }
+
+.gso-journal-v2-phase-copy { min-width: 0; }
+.gso-journal-v2-phase-copy strong { display: block; color: inherit; font-size: 0.72rem; font-weight: 650; line-height: 1.25; }
+.gso-journal-v2-phase-copy small { display: block; margin-top: 0.25rem; color: var(--v2-faint); font-size: 0.6rem; }
+
+.gso-journal-v2-main,
+.gso-docs-v2-reader { min-width: 0; padding: 1.25rem 1.4rem; }
+
+.gso-journal-v2-stage { max-width: 880px; margin: 0 auto; }
+.gso-journal-v2-stage-kicker { display: flex; flex-wrap: wrap; gap: 0.45rem; color: var(--v2-faint); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.62rem; text-transform: uppercase; }
+.gso-journal-v2-stage-kicker > span { border-right: 1px solid var(--v2-line); padding-right: 0.45rem; }
+.gso-journal-v2-stage-kicker > span:last-child { border-right: 0; }
+.gso-journal-v2-status { color: var(--v2-muted); }
+.gso-journal-v2-status.is-done { color: var(--v2-green); }
+.gso-journal-v2-status.is-progress { color: var(--v2-red); }
+.gso-journal-v2-stage-title { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.6rem; }
+.gso-journal-v2-stage-title h2 { margin: 0; color: var(--v2-text); font-size: clamp(1.8rem, 3.2vw, 3.2rem); font-weight: 700; letter-spacing: -0.06em; line-height: 0.98; }
+.gso-journal-v2-stage-title p { max-width: 62ch; margin: 0.9rem 0 0; color: var(--v2-muted); font-size: 0.9rem; line-height: 1.65; }
+.gso-journal-v2-stage-number { color: rgba(255, 111, 121, 0.22); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: clamp(3rem, 7vw, 7rem); font-weight: 700; line-height: 0.75; }
+.gso-journal-v2-decision { margin-top: 2rem; border-left: 2px solid var(--v2-red); background: linear-gradient(90deg, rgba(255, 111, 121, 0.11), transparent); padding: 1rem 1.1rem; }
+.gso-journal-v2-decision p { max-width: 70ch; margin: 0.5rem 0 0; color: var(--v2-text); font-size: 1rem; font-weight: 600; line-height: 1.55; }
+.gso-journal-v2-stage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+.gso-journal-v2-stage-grid article,
+.gso-journal-v2-system-grid article,
+.gso-journal-v2-decision-list article { display: grid; gap: 0.55rem; border: 1px solid var(--v2-line); background: var(--v2-panel); padding: 1rem; }
+.gso-journal-v2-stage-grid strong { color: var(--v2-text); font-size: 0.82rem; line-height: 1.45; }
+.gso-journal-v2-stage-grid a,
+.gso-journal-v2-context a { color: var(--v2-cyan); font-size: 0.7rem; text-decoration: none; }
+.gso-journal-v2-muted { color: var(--v2-faint); font-size: 0.7rem; line-height: 1.5; }
+
+.gso-journal-v2-context { display: grid; align-content: start; gap: 0.7rem; }
+.gso-journal-v2-context section,
+.gso-docs-v2-context section { border-top: 1px solid var(--v2-line); padding-top: 0.85rem; }
+.gso-journal-v2-context section:first-child,
+.gso-docs-v2-context section:first-child { border-top: 0; padding-top: 0.1rem; }
+.gso-journal-v2-context section > strong { display: block; margin-top: 0.55rem; color: var(--v2-text); font-size: 0.9rem; line-height: 1.3; }
+.gso-journal-v2-context section > p,
+.gso-docs-v2-context section > p { margin: 0.5rem 0 0; color: var(--v2-muted); font-size: 0.7rem; line-height: 1.55; }
+.gso-journal-v2-delivery { display: grid; gap: 0.15rem; border-bottom: 1px solid var(--v2-line); padding: 0.65rem 0; }
+.gso-journal-v2-delivery strong { color: var(--v2-text); font-size: 0.68rem; line-height: 1.35; }
+.gso-journal-v2-delivery small { color: var(--v2-faint); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.58rem; }
+.gso-journal-v2-context section > a { display: grid; gap: 0.2rem; border-bottom: 1px solid var(--v2-line); padding: 0.65rem 0; }
+.gso-journal-v2-context section > a strong { color: var(--v2-text); font-size: 0.68rem; }
+.gso-journal-v2-context section > a span { color: var(--v2-faint); font-size: 0.6rem; }
+
+.gso-journal-v2-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--v2-line); padding-bottom: 1rem; }
+.gso-journal-v2-section-head h2 { margin: 0.45rem 0 0; color: var(--v2-text); font-size: 1.45rem; letter-spacing: -0.04em; }
+.gso-journal-v2-timeline-list,
+.gso-journal-v2-decision-list { display: grid; margin-top: 1rem; }
+.gso-journal-v2-timeline-row { display: grid; grid-template-columns: 0.6rem 7rem minmax(0, 1fr) 8rem 1rem; align-items: center; gap: 0.75rem; border: 0; border-bottom: 1px solid var(--v2-line); background: transparent; color: var(--v2-muted); cursor: pointer; padding: 0.85rem 0; text-align: left; }
+.gso-journal-v2-timeline-row:hover { background: var(--v2-panel); color: var(--v2-text); }
+.gso-journal-v2-timeline-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--v2-faint); }
+.gso-journal-v2-timeline-dot.is-done { background: var(--v2-green); }.gso-journal-v2-timeline-dot.is-progress { background: var(--v2-red); }
+.gso-journal-v2-timeline-date,.gso-journal-v2-timeline-area { color: var(--v2-faint); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.62rem; }
+.gso-journal-v2-timeline-title { color: inherit; font-size: 0.8rem; font-weight: 650; }.gso-journal-v2-timeline-arrow { color: var(--v2-cyan); }
+.gso-journal-v2-decision-list article { grid-template-columns: 2rem minmax(0, 1fr); margin-top: 0.55rem; }.gso-journal-v2-decision-list article > span { color: var(--v2-red); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.68rem; }.gso-journal-v2-decision-list strong { color: var(--v2-text); font-size: 0.82rem; }.gso-journal-v2-decision-list p { margin: 0.35rem 0 0; color: var(--v2-muted); font-size: 0.75rem; line-height: 1.5; }
+.gso-journal-v2-system-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin-top: 1rem; }.gso-journal-v2-system-grid article > span { color: var(--v2-cyan); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.62rem; text-transform: uppercase; }.gso-journal-v2-system-grid strong { color: var(--v2-text); }.gso-journal-v2-system-grid p { margin: 0; color: var(--v2-muted); font-size: 0.73rem; line-height: 1.5; }
+
+.gso-docs-v2-index-head { align-items: center; }.gso-docs-v2-index-head > div { display: grid; gap: 0.35rem; }.gso-docs-v2-index-signal { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--v2-cyan); box-shadow: 0 0 10px var(--v2-cyan); }
+.gso-docs-v2-search { display: grid; gap: 0.4rem; margin-top: 1rem; color: var(--v2-faint); font-size: 0.62rem; }.gso-docs-v2-search input { width: 100%; border: 1px solid var(--v2-line); outline: 0; background: var(--v2-panel); color: var(--v2-text); padding: 0.7rem; font-size: 0.7rem; }.gso-docs-v2-search input:focus { border-color: var(--v2-cyan); }
+.gso-docs-v2-groups section { display: grid; gap: 0.25rem; }.gso-docs-v2-group-title { margin-top: 0.7rem; color: var(--v2-faint); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.58rem; text-transform: uppercase; }.gso-docs-v2-index-item { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; width: 100%; border: 1px solid transparent; background: transparent; color: var(--v2-muted); cursor: pointer; padding: 0.55rem; text-align: left; }.gso-docs-v2-index-item:hover,.gso-docs-v2-index-item.is-active { border-color: var(--v2-line); background: var(--v2-panel-active); }.gso-docs-v2-index-item span { display: grid; gap: 0.2rem; min-width: 0; }.gso-docs-v2-index-item strong { overflow: hidden; color: inherit; font-size: 0.68rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }.gso-docs-v2-index-item small { color: var(--v2-faint); font-size: 0.58rem; }.gso-docs-v2-index-item i { color: var(--v2-cyan); font-style: normal; }.gso-docs-v2-index-empty { display: grid; gap: 0.4rem; margin-top: 1rem; border: 1px dashed var(--v2-line); padding: 0.8rem; }.gso-docs-v2-index-empty strong { color: var(--v2-text); font-size: 0.7rem; }.gso-docs-v2-index-empty span { color: var(--v2-faint); font-size: 0.65rem; line-height: 1.5; }
+.gso-docs-v2-reader { background: rgba(8, 13, 22, 0.42); }.gso-docs-v2-reader-panel { max-width: 900px; margin: 0 auto; border-radius: 0 !important; background: var(--v2-panel) !important; }.gso-docs-v2-empty-stage { display: grid; align-content: center; justify-items: start; min-height: 56vh; max-width: 600px; margin: 0 auto; }.gso-docs-v2-empty-mark { color: var(--v2-red); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 4rem; font-weight: 300; line-height: 1; }.gso-docs-v2-empty-stage h2 { margin: 0.6rem 0 0; color: var(--v2-text); font-size: clamp(1.55rem, 3vw, 2.6rem); letter-spacing: -0.055em; line-height: 1.05; }.gso-docs-v2-empty-stage p { max-width: 55ch; margin: 0.8rem 0 0; color: var(--v2-muted); font-size: 0.82rem; line-height: 1.65; }.gso-docs-v2-empty-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 1.2rem; }.gso-docs-v2-empty-actions button,.gso-docs-v2-empty-actions a { border: 1px solid var(--v2-line); background: var(--v2-panel-raised); color: var(--v2-cyan); cursor: pointer; padding: 0.7rem 0.85rem; font-size: 0.7rem; text-decoration: none; }.gso-docs-v2-empty-actions button:hover,.gso-docs-v2-empty-actions a:hover { border-color: var(--v2-red); color: var(--v2-text); }
+.gso-docs-v2-context { display: grid; align-content: start; gap: 1rem; }.gso-docs-v2-stat { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--v2-line); padding: 0.7rem 0; }.gso-docs-v2-stat strong { color: var(--v2-text); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 1.1rem; }.gso-docs-v2-stat span { color: var(--v2-muted); font-size: 0.68rem; }.gso-docs-v2-context ol { display: grid; gap: 0.7rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }.gso-docs-v2-context li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.5rem; color: var(--v2-muted); font-size: 0.7rem; line-height: 1.4; }.gso-docs-v2-context li b { color: var(--v2-red); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 0.6rem; }.gso-docs-v2-context a { display: block; margin-top: 0.65rem; color: var(--v2-cyan); font-size: 0.7rem; text-decoration: none; }
+
+@media (max-width: 1050px) { .gso-journal-v2-layout,.gso-docs-v2-layout { grid-template-columns: 210px minmax(0, 1fr); }.gso-journal-v2-context,.gso-docs-v2-context { display: none; } }
+@media (max-width: 720px) { .gso-journal-v2-command,.gso-docs-v2-command { align-items: flex-start; flex-direction: column; padding: 1rem; }.gso-journal-v2-command-meta,.gso-docs-v2-command-actions { justify-content: flex-start; }.gso-journal-v2-layout,.gso-docs-v2-layout { display: block; }.gso-journal-v2-rail,.gso-docs-v2-index { border-right: 0; border-bottom: 1px solid var(--v2-line); padding: 0.75rem 1rem; }.gso-journal-v2-phase-list { display: flex; overflow-x: auto; }.gso-journal-v2-phase { min-width: 180px; }.gso-journal-v2-main,.gso-docs-v2-reader { padding: 1rem; }.gso-journal-v2-stage-grid,.gso-journal-v2-system-grid { grid-template-columns: 1fr; }.gso-journal-v2-stage-number { display: none; }.gso-journal-v2-timeline-row { grid-template-columns: 0.6rem minmax(0, 1fr) 1rem; }.gso-journal-v2-timeline-date,.gso-journal-v2-timeline-area { display: none; } }
+
 @media (max-width: 560px) {
   .gso-knowledge-category-form > .mt-3 {
     grid-template-columns: 1fr;
@@ -1280,7 +1630,7 @@
   line-height: 1.35;
 }
 
-/* O resumo curto Ã© um campo editorial de leitura, nÃ£o um input de uma linha. */
+/* O resumo curto é um campo editorial de leitura, não um input de uma linha. */
 .knowledge-editor-page .knowledge-editor-summary-input {
   box-sizing: border-box;
   min-height: 72px !important;
@@ -2161,7 +2511,7 @@
   color: var(--minimal-text) !important;
 }
 
-/* AÃ§Ãµes de conta aparecem no menu do usuÃ¡rio, nÃ£o em uma segunda faixa. */
+/* Ações de conta aparecem no menu do usuário, não em uma segunda faixa. */
 .gso-sidebar .gso-sidebar-quick-actions { display: none !important; }
 
 @media (max-width: 1023px) {
@@ -6217,6 +6567,795 @@ table {
 
 .gso-input:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--genius-site-cyan) 16%, transparent);
+}
+
+/* Cockpit de desenvolvimento: subsistema restrito, compacto e visualmente
+   distinto do shell operacional do ConfiOne. A cor vermelha sinaliza modo e
+   risco de alteração; não representa autorização nem substitui o gate. */
+.gso-development-cockpit-shell {
+  --cockpit-red: #ff5b67;
+  --cockpit-red-soft: rgba(255, 91, 103, 0.14);
+  --cockpit-canvas: #090d16;
+  --cockpit-surface: rgba(16, 22, 34, 0.86);
+  background:
+    radial-gradient(circle at 78% 8%, rgba(255, 91, 103, 0.12), transparent 28rem),
+    radial-gradient(circle at 12% 90%, rgba(255, 91, 103, 0.07), transparent 24rem),
+    var(--cockpit-canvas) !important;
+}
+
+.gso-development-cockpit-shell .gso-development-cockpit-sidebar {
+  background: rgba(10, 13, 22, 0.96);
+  border-color: rgba(255, 91, 103, 0.22);
+  box-shadow: 8px 0 36px rgba(0, 0, 0, 0.22);
+}
+
+.gso-development-cockpit-shell .gso-development-cockpit-topbar {
+  background: rgba(16, 13, 23, 0.88);
+  border-color: rgba(255, 91, 103, 0.26);
+}
+
+.gso-development-cockpit-shell .gso-development-cockpit-main {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 91, 103, 0.13) 1px, transparent 0) 0 0 / 18px 18px,
+    linear-gradient(135deg, rgba(255, 91, 103, 0.035), transparent 40%),
+    var(--cockpit-canvas);
+}
+
+.gso-development-cockpit-shell .gso-development-cockpit-main .gso-development-cockpit {
+  --minimal-canvas: transparent;
+  --minimal-surface: var(--cockpit-surface);
+  --minimal-surface-muted: rgba(20, 28, 43, 0.72);
+  --minimal-border: rgba(157, 171, 197, 0.18);
+  --minimal-border-strong: rgba(255, 91, 103, 0.42);
+  --minimal-text: #e9edf5;
+  --minimal-text-secondary: #a8b1c2;
+  --minimal-text-tertiary: #758095;
+  --minimal-selection: rgba(255, 91, 103, 0.14);
+  --minimal-selection-text: #ffd8dc;
+  --minimal-action: var(--cockpit-red);
+  --minimal-action-ink: #190a0e;
+  --color-ink: #e9edf5;
+  --color-muted: #a8b1c2;
+  --color-border: rgba(157, 171, 197, 0.18);
+  color: var(--minimal-text);
+  font-size: 0.91rem;
+}
+
+.gso-development-cockpit .gso-page-header {
+  gap: 0.75rem;
+}
+
+.gso-development-cockpit .gso-page-header h1 {
+  font-size: 1.55rem;
+  letter-spacing: -0.035em;
+}
+
+.gso-development-cockpit .gso-page-header p {
+  line-height: 1.45;
+}
+
+.gso-development-cockpit .gso-panel {
+  border-radius: 0.72rem;
+  background: var(--minimal-surface);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+  padding: 1rem;
+}
+
+.gso-development-cockpit .gso-panel > header {
+  margin-bottom: 0.8rem;
+  gap: 0.6rem;
+}
+
+.gso-development-cockpit .gso-panel > header h2 {
+  font-size: 0.92rem;
+  letter-spacing: -0.015em;
+}
+
+.gso-development-cockpit .gso-panel > header p {
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.gso-development-cockpit .gso-action-button,
+.gso-development-cockpit .gso-ghost-button {
+  min-height: 2.2rem;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.76rem;
+}
+
+.gso-cockpit-toolbar {
+  position: sticky;
+  top: 0.55rem;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.35rem;
+  border: 1px solid color-mix(in srgb, var(--cockpit-red) 34%, var(--minimal-border));
+  background: color-mix(in srgb, var(--cockpit-canvas) 82%, transparent);
+  padding: 0.35rem 0.55rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+.gso-cockpit-toolbar__identity,
+.gso-cockpit-toolbar__menu {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.gso-cockpit-toolbar__signal {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--cockpit-red);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--cockpit-red) 82%, transparent);
+}
+
+.gso-cockpit-toolbar__eyebrow,
+.gso-cockpit-toolbar__lock {
+  color: color-mix(in srgb, var(--cockpit-red) 84%, white);
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gso-cockpit-toolbar__scope {
+  overflow: hidden;
+  color: var(--minimal-text-tertiary);
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.58rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gso-cockpit-toolbar__menu {
+  margin-inline: auto;
+}
+
+.gso-cockpit-toolbar__item {
+  border-bottom: 1px solid transparent;
+  padding: 0.32rem 0.45rem;
+  color: var(--minimal-text-secondary);
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.62rem;
+  text-decoration: none;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+.gso-cockpit-toolbar__item:hover,
+.gso-cockpit-toolbar__item:focus-visible,
+.gso-cockpit-toolbar__item.is-active {
+  border-color: var(--cockpit-red);
+  background: var(--cockpit-red-soft);
+  color: var(--minimal-text);
+  outline: none;
+}
+
+.gso-development-inspector-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(3, 6, 12, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.gso-development-inspector-scrim {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+  background: transparent;
+}
+
+.gso-development-inspector {
+  position: relative;
+  display: flex;
+  width: min(38rem, calc(100vw - 1rem));
+  height: 100%;
+  flex-direction: column;
+  border-left: 1px solid color-mix(in srgb, var(--cockpit-red) 42%, var(--minimal-border));
+  background:
+    linear-gradient(180deg, rgba(20, 17, 29, 0.98), rgba(9, 13, 22, 0.98)),
+    var(--cockpit-canvas);
+  box-shadow: -22px 0 64px rgba(0, 0, 0, 0.34);
+}
+
+.gso-development-inspector__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--minimal-border);
+  padding: 1rem 1.1rem 0.9rem;
+}
+
+.gso-development-inspector__eyebrow {
+  color: var(--cockpit-red);
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gso-development-inspector__header h2 {
+  margin-top: 0.35rem;
+  color: var(--minimal-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.gso-development-inspector__close {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--minimal-border);
+  color: var(--minimal-text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+.gso-development-inspector__close:hover,
+.gso-development-inspector__close:focus-visible {
+  border-color: var(--cockpit-red);
+  background: var(--cockpit-red-soft);
+  color: var(--minimal-text);
+  outline: none;
+}
+
+.gso-development-inspector__body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.1rem 2rem;
+}
+
+.gso-development-inspector__body > .space-y-5 {
+  gap: 0.85rem;
+}
+
+.gso-development-cockpit-main > .gso-cockpit-toolbar {
+  margin: 0 1rem 0;
+}
+
+@media (max-width: 680px) {
+  .gso-cockpit-toolbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .gso-cockpit-toolbar__menu {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+  }
+
+  .gso-cockpit-toolbar__lock {
+    margin-left: auto;
+  }
+
+  .gso-development-inspector {
+    width: 100vw;
+    border-left: 0;
+  }
+}
+
+/* Documentação no subsistema de desenvolvimento: superfície própria,
+   separada do Admin Console, com densidade de cockpit e leitura técnica. */
+.gso-development-document-surface,
+.gso-development-journal-surface {
+  --development-doc-canvas: #080d16;
+  --development-doc-surface: rgba(14, 21, 33, 0.94);
+  --development-doc-surface-raised: rgba(19, 29, 45, 0.96);
+  --development-doc-border: rgba(138, 157, 188, 0.2);
+  --development-doc-text: #e1e9f6;
+  --development-doc-muted: #91a1ba;
+  --development-doc-red: #ff6f79;
+  --development-doc-cyan: #6de0d0;
+  background:
+    radial-gradient(circle at 86% 6%, rgba(255, 91, 105, 0.13), transparent 28rem),
+    radial-gradient(circle at 8% 28%, rgba(109, 224, 208, 0.07), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    var(--development-doc-canvas) !important;
+  background-size: auto, auto, 22px 22px, 22px 22px, auto !important;
+  color: var(--development-doc-text) !important;
+  border-radius: 0 !important;
+}
+
+.gso-development-document-surface {
+  gap: 0.75rem !important;
+  padding: 0.75rem !important;
+}
+
+.gso-development-journal-surface > div {
+  max-width: 1640px !important;
+  gap: 1rem !important;
+  padding: 1rem 1.1rem 1.5rem !important;
+}
+
+.gso-development-document-surface > header,
+.gso-development-document-surface section,
+.gso-development-document-surface article,
+.gso-development-document-surface aside,
+.gso-development-document-surface main,
+.gso-development-journal-surface section,
+.gso-development-journal-surface article,
+.gso-development-journal-surface > div > header,
+.gso-development-journal-surface > div > div {
+  border-color: var(--development-doc-border) !important;
+  background-color: var(--development-doc-surface) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2) !important;
+}
+
+.gso-development-document-surface h1,
+.gso-development-document-surface h2,
+.gso-development-document-surface h3,
+.gso-development-document-surface p,
+.gso-development-document-surface li,
+.gso-development-document-surface dt,
+.gso-development-document-surface dd,
+.gso-development-document-surface strong,
+.gso-development-journal-surface h1,
+.gso-development-journal-surface h2,
+.gso-development-journal-surface h3,
+.gso-development-journal-surface p,
+.gso-development-journal-surface li,
+.gso-development-journal-surface dt,
+.gso-development-journal-surface dd,
+.gso-development-journal-surface strong {
+  color: var(--development-doc-text) !important;
+}
+
+.gso-development-document-surface p,
+.gso-development-document-surface li,
+.gso-development-document-surface dt,
+.gso-development-document-surface dd,
+.gso-development-journal-surface p,
+.gso-development-journal-surface li,
+.gso-development-journal-surface dt,
+.gso-development-journal-surface dd {
+  color: var(--development-doc-muted) !important;
+}
+
+.gso-development-document-surface a,
+.gso-development-journal-surface a {
+  color: var(--development-doc-cyan) !important;
+}
+
+.gso-development-document-surface button,
+.gso-development-journal-surface button {
+  border-color: var(--development-doc-border) !important;
+}
+
+.gso-development-document-surface button:hover,
+.gso-development-document-surface button:focus-visible,
+.gso-development-journal-surface button:hover,
+.gso-development-journal-surface button:focus-visible {
+  border-color: color-mix(in srgb, var(--development-doc-red) 65%, transparent) !important;
+  outline-color: var(--development-doc-red) !important;
+}
+
+.gso-development-document-surface input,
+.gso-development-document-surface select,
+.gso-development-journal-surface input,
+.gso-development-journal-surface select {
+  border-color: var(--development-doc-border) !important;
+  background-color: rgba(5, 10, 18, 0.72) !important;
+  color: var(--development-doc-text) !important;
+}
+
+@media (max-width: 680px) {
+  .gso-development-document-surface,
+  .gso-development-journal-surface > div {
+    padding: 0.65rem !important;
+  }
+}
+
+/* O cockpit privilegia densidade informativa: menos molduras, tipografia curta
+   e mais área útil para comparar estados e fontes na mesma resolução. */
+.gso-development-metrics {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  border-top: 1px solid var(--minimal-border);
+  border-bottom: 1px solid var(--minimal-border);
+  padding: 0.45rem 0;
+  color: var(--minimal-text-tertiary);
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gso-development-metrics__lead {
+  color: var(--cockpit-red);
+  font-weight: 700;
+}
+
+/* V2 do cockpit documental: os componentes antigos ainda carregam classes
+   claras por compatibilidade com o Admin Console. Aqui elas são remapeadas
+   somente dentro do subsistema, preservando a identidade normal do produto. */
+.gso-development-document-surface,
+.gso-development-journal-surface {
+  color-scheme: dark;
+  --development-doc-canvas: #080d16;
+  --development-doc-surface: rgba(13, 20, 32, 0.96);
+  --development-doc-surface-raised: rgba(20, 30, 46, 0.98);
+  --development-doc-border: rgba(148, 166, 194, 0.22);
+  --development-doc-text: #e8eef8;
+  --development-doc-muted: #9eacc1;
+  --development-doc-faint: #718198;
+  --development-doc-red: #ff6f79;
+  --development-doc-cyan: #75e4d3;
+  --development-doc-positive: #70d6aa;
+  font-size: 0.875rem;
+}
+
+.gso-development-journal-surface > div {
+  max-width: 1680px !important;
+  gap: 0.8rem !important;
+  padding: 0.8rem 0.95rem 1.1rem !important;
+}
+
+.gso-development-document-surface > header,
+.gso-development-document-surface section,
+.gso-development-document-surface article,
+.gso-development-document-surface aside,
+.gso-development-document-surface main,
+.gso-development-journal-surface section,
+.gso-development-journal-surface article,
+.gso-development-journal-surface > div > header,
+.gso-development-journal-surface > div > div {
+  border-radius: 10px !important;
+  border-color: var(--development-doc-border) !important;
+  background-color: var(--development-doc-surface) !important;
+  box-shadow: none !important;
+}
+
+.gso-development-journal-surface .gso-development-journal-hero {
+  min-height: 250px !important;
+  background: linear-gradient(110deg, rgba(16, 24, 38, 0.98), rgba(14, 24, 39, 0.92)) !important;
+}
+
+.gso-development-journal-surface .gso-development-journal-hero > img {
+  opacity: 0.42;
+  mix-blend-mode: screen;
+}
+
+.gso-development-journal-surface .gso-development-journal-hero > div:nth-of-type(1) {
+  background: linear-gradient(90deg, #0e1827 0%, rgba(14, 24, 39, 0.94) 38%, rgba(14, 24, 39, 0.24) 100%) !important;
+}
+
+.gso-development-journal-surface :is(h1, h2, h3, h4, strong, dt, dd, label, span),
+.gso-development-document-surface :is(h1, h2, h3, h4, strong, dt, dd, label, span) {
+  color: var(--development-doc-text) !important;
+}
+
+.gso-development-journal-surface :is(p, li, small),
+.gso-development-document-surface :is(p, li, small) {
+  color: var(--development-doc-muted) !important;
+}
+
+.gso-development-journal-surface :is(a, button),
+.gso-development-document-surface :is(a, button) {
+  color: var(--development-doc-cyan) !important;
+}
+
+.gso-development-journal-surface :is(button, a):hover,
+.gso-development-document-surface :is(button, a):hover {
+  color: #ffffff !important;
+}
+
+.gso-development-journal-surface [class*="bg-[#F"],
+.gso-development-journal-surface [class*="bg-[#E"],
+.gso-development-journal-surface [class*="bg-[#D"],
+.gso-development-document-surface [class*="bg-[#F"],
+.gso-development-document-surface [class*="bg-[#E"],
+.gso-development-document-surface [class*="bg-[#D"] {
+  background-color: var(--development-doc-surface-raised) !important;
+}
+
+.gso-development-journal-surface [class*="text-[#0"],
+.gso-development-journal-surface [class*="text-[#1"],
+.gso-development-journal-surface [class*="text-[#2"],
+.gso-development-journal-surface [class*="text-[#3"],
+.gso-development-journal-surface [class*="text-[#4"],
+.gso-development-journal-surface [class*="text-[#5"],
+.gso-development-journal-surface [class*="text-[#6"],
+.gso-development-document-surface [class*="text-[#0"],
+.gso-development-document-surface [class*="text-[#1"],
+.gso-development-document-surface [class*="text-[#2"],
+.gso-development-document-surface [class*="text-[#3"],
+.gso-development-document-surface [class*="text-[#4"],
+.gso-development-document-surface [class*="text-[#5"],
+.gso-development-document-surface [class*="text-[#6"] {
+  color: var(--development-doc-text) !important;
+}
+
+.gso-development-journal-surface [class*="border-[#"],
+.gso-development-document-surface [class*="border-[#"] {
+  border-color: var(--development-doc-border) !important;
+}
+
+.gso-development-journal-surface [class*="bg-[#1458E8"],
+.gso-development-journal-surface [class*="bg-[#236EFF"],
+.gso-development-journal-surface [class*="bg-[#1D6BFF"],
+.gso-development-document-surface [class*="bg-[#1458E8"],
+.gso-development-document-surface [class*="bg-[#236EFF"],
+.gso-development-document-surface [class*="bg-[#1D6BFF"] {
+  background-color: var(--development-doc-red) !important;
+  color: #ffffff !important;
+}
+
+.gso-development-document-surface {
+  padding: 0.65rem !important;
+}
+
+.gso-development-document-surface > header {
+  padding: 0.8rem 1rem !important;
+}
+
+.gso-development-document-surface > div {
+  gap: 0.65rem !important;
+}
+
+.gso-development-document-surface > div > aside,
+.gso-development-document-surface > div > main {
+  min-width: 0;
+}
+
+.gso-development-document-surface .gso-development-doc-reader {
+  border-radius: 10px !important;
+  padding: 1rem !important;
+}
+
+.gso-development-document-surface .gso-product-doc-markdown {
+  color: var(--development-doc-muted);
+}
+
+.gso-development-document-surface .gso-product-doc-markdown :is(h2, h3) {
+  color: var(--development-doc-text) !important;
+  letter-spacing: -0.02em;
+}
+
+.gso-development-document-surface .gso-product-doc-markdown code {
+  background: rgba(117, 228, 211, 0.1) !important;
+  color: var(--development-doc-cyan) !important;
+}
+
+.gso-development-document-surface input::placeholder {
+  color: var(--development-doc-faint) !important;
+}
+
+@media (min-width: 1280px) {
+  .gso-development-document-surface > div {
+    grid-template-columns: 250px minmax(0, 1fr) 330px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .gso-development-document-surface > div {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .gso-development-document-surface > div > aside,
+  .gso-development-document-surface > div > main {
+    overflow: visible !important;
+  }
+}
+
+.gso-development-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.gso-development-metric strong {
+  color: var(--minimal-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.gso-development-metrics__hint {
+  margin-left: auto;
+  color: var(--minimal-text-tertiary);
+}
+
+.gso-development-cockpit .gso-development-board-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  min-width: 100%;
+}
+
+.gso-development-cockpit .gso-development-board-grid--six {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.gso-development-workspace {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.gso-development-board-rail {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: color-mix(in srgb, var(--cockpit-red) 55%, var(--minimal-border)) transparent;
+}
+
+.gso-development-board-rail:focus-visible {
+  outline: 1px solid var(--cockpit-red);
+  outline-offset: 0.25rem;
+}
+
+.gso-development-board-stage .gso-panel {
+  min-width: 0;
+}
+
+.gso-development-execution-stage .gso-panel {
+  border-top: 2px solid color-mix(in srgb, var(--cockpit-red) 68%, transparent);
+}
+
+.gso-development-execution-stage {
+  scroll-margin-top: 4rem;
+}
+
+.gso-development-cockpit .gso-development-board-column {
+  min-height: 8.8rem;
+  min-width: 0;
+  max-height: min(42rem, calc(100vh - 21rem));
+  overflow-y: auto;
+  border-radius: 0.55rem;
+  padding: 0.65rem;
+}
+
+.gso-development-cockpit .gso-development-board-column > div:first-child {
+  margin-bottom: 0.55rem;
+}
+
+.gso-development-cockpit .gso-development-board-column h3 {
+  font-size: 0.72rem;
+}
+
+.gso-development-cockpit .gso-development-task-card {
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+}
+
+.gso-development-cockpit .gso-development-task-card > div:first-child {
+  gap: 0.45rem;
+}
+
+.gso-development-cockpit .gso-development-task-card > div:first-child > span:first-child {
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.gso-development-cockpit .gso-development-task-card > p {
+  margin-top: 0.4rem;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.gso-development-cockpit .gso-development-task-card > div:last-child {
+  margin-top: 0.55rem;
+  gap: 0.35rem;
+  font-size: 0.6rem;
+}
+
+.gso-development-cockpit .gso-development-task-documents {
+  scroll-margin-top: 4rem;
+}
+
+.gso-development-cockpit .gso-development-document-summary {
+  border-radius: 0.45rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader {
+  max-height: 34rem;
+  overflow-y: auto;
+  border-radius: 0.55rem !important;
+  padding: 0.75rem !important;
+  box-shadow: none !important;
+}
+
+.gso-development-cockpit .gso-development-document-reader header {
+  padding-bottom: 0.65rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader header h2 {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.gso-development-cockpit .gso-development-document-reader header p,
+.gso-development-cockpit .gso-development-document-reader header dd,
+.gso-development-cockpit .gso-development-document-reader header dt {
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.gso-development-cockpit .gso-development-document-reader header dl {
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader header dl > div {
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader header > div:last-child {
+  margin-top: 0.65rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader nav {
+  margin-top: 0.65rem;
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.gso-development-cockpit .gso-development-document-reader > div:last-child {
+  margin-top: 0.75rem;
+  max-width: none;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 1100px) {
+  .gso-development-cockpit .gso-development-board-grid {
+    grid-template-columns: repeat(5, minmax(12.5rem, 1fr));
+    min-width: 65rem;
+  }
+
+  .gso-development-cockpit .gso-development-board-grid--six {
+    grid-template-columns: repeat(6, minmax(12.5rem, 1fr));
+    min-width: 78rem;
+  }
+
+  .gso-development-cockpit .gso-development-board-grid {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .gso-development-metrics__hint {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .gso-development-cockpit .gso-development-board-grid {
+    grid-template-columns: repeat(5, minmax(15rem, 1fr));
+    min-width: 77rem;
+  }
+
+  .gso-development-cockpit .gso-development-board-grid--six {
+    grid-template-columns: repeat(6, minmax(15rem, 1fr));
+    min-width: 92rem;
+  }
+
+  .gso-development-cockpit .gso-development-board-column {
+    max-height: none;
+  }
 }
 
 .gso-workspace-header {

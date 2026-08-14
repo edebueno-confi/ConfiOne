@@ -233,16 +233,16 @@ export function InternalControlPlanePage() {
    */
   async function resetPassword(user: AdminInternalAccessUserRow) {
     setPendingConfirmation({
-      title: `Redefinir a senha de ${user.full_name || user.email || 'este usuÃ¡rio'}?`,
-      impact: 'A senha atual serÃ¡ substituÃ­da. O novo valor serÃ¡ exibido uma Ãºnica vez e a pessoa deverÃ¡ trocÃ¡-lo no prÃ³ximo acesso.',
+      title: `Redefinir a senha de ${user.full_name || user.email || 'este usuário'}?`,
+      impact: 'A senha atual será substituída. O novo valor será exibido uma única vez e a pessoa deverá trocá-lo no próximo acesso.',
       action: async () => {
         setBusy(true); setMessage(null); setIssuedCredential(null);
         try {
           const result = await resetAdminInternalUserPassword(user.user_id);
           if (result?.temporaryPassword) setIssuedCredential({ label: user.email || user.full_name || user.user_id || 'usuário', password: result.temporaryPassword });
-          setMessage({ text: 'Senha redefinida. O valor aparece uma Ãºnica vez abaixo e a troca serÃ¡ exigida no prÃ³ximo acesso.', tone: 'positive' });
+          setMessage({ text: 'Senha redefinida. O valor aparece uma única vez abaixo e a troca será exigida no próximo acesso.', tone: 'positive' });
         } catch (error) {
-          const classified = classifyAdminError(error, 'NÃ£o foi possÃ­vel redefinir a senha.');
+          const classified = classifyAdminError(error, 'Não foi possível redefinir a senha.');
           setMessage({ text: classified.message, tone: 'critical' });
         } finally { setBusy(false); }
       },
@@ -523,7 +523,7 @@ export function InternalControlPlanePage() {
           if (!pending) return;
           setPendingConfirmation(null);
           try { await pending.action(); }
-          catch (error) { const classified = classifyAdminError(error, 'NÃ£o foi possÃ­vel concluir a aÃ§Ã£o.'); setMessage({ text: classified.message, tone: 'critical' }); }
+          catch (error) { const classified = classifyAdminError(error, 'Não foi possível concluir a ação.'); setMessage({ text: classified.message, tone: 'critical' }); }
         }}
       />
     </div>
@@ -533,16 +533,16 @@ export function InternalControlPlanePage() {
 function ConfirmActionModal({ confirmation, busy, onCancel, onConfirm }: { confirmation: PendingConfirmation | null; busy: boolean; onCancel: () => void; onConfirm: () => Promise<void> }) {
   return (
     <AccessEditorModal
-      description="Revise o impacto antes de continuar. Esta aÃ§Ã£o serÃ¡ registrada no histÃ³rico de auditoria."
+      description="Revise o impacto antes de continuar. Esta ação será registrada no histórico de auditoria."
       initialFocus="#access-confirm-cancel"
       onClose={onCancel}
       open={Boolean(confirmation)}
-      title={confirmation?.title ?? 'Confirmar aÃ§Ã£o'}
+      title={confirmation?.title ?? 'Confirmar ação'}
     >
       <p className="gso-access-confirm-impact">{confirmation?.impact}</p>
       <div className="gso-ui-actions gso-access-confirm-actions">
         <UiButton id="access-confirm-cancel" onClick={onCancel} variant="ghost" disabled={busy}>Cancelar</UiButton>
-        <UiButton onClick={() => void onConfirm()} variant="primary" disabled={busy}>{busy ? 'Processandoâ€¦' : 'Confirmar aÃ§Ã£o'}</UiButton>
+        <UiButton onClick={() => void onConfirm()} variant="primary" disabled={busy}>{busy ? 'Processando…' : 'Confirmar ação'}</UiButton>
       </div>
     </AccessEditorModal>
   );

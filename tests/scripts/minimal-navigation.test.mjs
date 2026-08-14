@@ -55,7 +55,7 @@ test('shows only the MVP surfaces to platform admins', () => {
 
   const ids = itemIds(navigation);
 
-  assert.deepEqual(ids, ['engineering-workspace', 'development-control', 'admin-analytics', 'admin-knowledge', 'admin-cockpit', 'admin-settings', 'admin-access']);
+    assert.deepEqual(ids, ['engineering-workspace', 'development-control', 'admin-analytics', 'admin-knowledge', 'admin-cockpit', 'admin-settings', 'admin-product-docs', 'admin-access']);
   assert.equal(ids.includes('admin-access'), true);
   assert.equal(ids.includes('admin-tenants'), false);
   assert.equal(ids.includes('support-queue'), false);
@@ -72,12 +72,12 @@ test('builds navigation from contextual screen grants for a non-admin user', () 
   });
 
   const ids = itemIds(navigation);
-  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge']);
+  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge', 'admin-product-docs']);
 });
 
 test('resolves a short operational label for the current route', () => {
   assert.equal(resolveMinimalRouteLabel('/support/queue'), 'Fila operacional');
-  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Acessos e áreas');
+  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Usuários e acessos');
   assert.equal(resolveMinimalRouteLabel('/support/tickets/ticket-1'), 'Ticket');
 });
 

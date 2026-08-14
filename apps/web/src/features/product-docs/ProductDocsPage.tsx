@@ -15,6 +15,7 @@ import type {
 } from '../../contracts/admin-contracts';
 import { classifyAdminError } from '../admin/admin-errors';
 import { ProductDocReaderPanel } from './ProductDocReaderPanel';
+import { DevelopmentDocumentsSurface } from './DevelopmentDocumentsSurface';
 import { getProductDocDetailBySlug, listProductDocsCatalog } from './product-docs-api';
 import {
   productDocsCategories,
@@ -246,7 +247,7 @@ function sortCatalog(
   });
 }
 
-export function ProductDocsPage() {
+function ProductDocsConsolePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState('');
@@ -257,6 +258,7 @@ export function ProductDocsPage() {
   const [detailMessage, setDetailMessage] = useState('');
 
   const requestedSlug = normalizeSlug(searchParams.get('doc'));
+  const isDevelopmentSurface = searchParams.get('surface') === 'development';
   const normalizedQuery = normalizeSearch(query);
 
   useEffect(() => {
@@ -448,7 +450,7 @@ export function ProductDocsPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-x-hidden xl:overflow-hidden">
+    <div className={cx('flex h-full min-h-0 flex-col gap-4 overflow-x-hidden xl:overflow-hidden', isDevelopmentSurface && 'gso-development-document-surface')}>
       <header className="shrink-0 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_18px_38px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-4xl space-y-2">
@@ -457,11 +459,12 @@ export function ProductDocsPage() {
             </p>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
-                Documentos do Produto
+                {isDevelopmentSurface ? 'Biblioteca técnica do cockpit' : 'Documentos do Produto'}
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
-                Fonte oficial controlada dos documentos que sustentam visão, arquitetura,
-                segurança, operação, design e construção do ConfiOne.
+                {isDevelopmentSurface
+                  ? 'Leitura compacta das fontes que explicam o estado atual, a stack, as decisões e os próximos caminhos do ConfiOne.'
+                  : 'Fonte oficial controlada dos documentos que sustentam visão, arquitetura, segurança, operação, design e construção do ConfiOne.'}
               </p>
             </div>
           </div>
@@ -629,4 +632,11 @@ export function ProductDocsPage() {
       </div>
     </div>
   );
+}
+
+export function ProductDocsPage() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('surface') === 'development'
+    ? <DevelopmentDocumentsSurface />
+    : <ProductDocsConsolePage />;
 }

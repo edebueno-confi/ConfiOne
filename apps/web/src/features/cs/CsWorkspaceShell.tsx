@@ -8,7 +8,7 @@ export function CsWorkspaceShell() {
 
   return (
     <MinimalAppShell
-      permissions={{ isPlatformAdmin, roles: gate.actor?.roles ?? [], hasCsPortfolioAccess: true }}
+      permissions={{ isPlatformAdmin, fullName: gate.actor?.profile.full_name ?? null, roles: gate.actor?.roles ?? [], hasCsPortfolioAccess: true }}
       userSubtitle={isPlatformAdmin ? 'Administrador da plataforma' : 'Customer Success'}
     >
       <Outlet />

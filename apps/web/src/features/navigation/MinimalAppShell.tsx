@@ -22,6 +22,32 @@ import {
 
 type NavigationSection = ReturnType<typeof buildMinimalNavigation>[number];
 
+function DevelopmentSubsystemNav({ pathname }: { pathname: string }) {
+  const items = [
+    { label: 'Quadro', to: '/engineering/control', active: pathname.startsWith('/engineering/control') },
+    { label: 'Diário', to: '/admin/build-journal?surface=development', active: pathname.startsWith('/admin/build-journal') },
+    { label: 'Documentos', to: '/admin/product-docs?surface=development', active: pathname.startsWith('/admin/product-docs') },
+  ];
+
+  return (
+    <nav aria-label="Navegação do subsistema de desenvolvimento" className="gso-cockpit-toolbar">
+      <div className="gso-cockpit-toolbar__identity">
+        <span className="gso-cockpit-toolbar__signal" aria-hidden="true" />
+        <span className="gso-cockpit-toolbar__eyebrow">DEV / SUBSYSTEM</span>
+        <span className="gso-cockpit-toolbar__scope">confi_one_development</span>
+      </div>
+      <div className="gso-cockpit-toolbar__menu">
+        {items.map((item) => (
+          <Link aria-current={item.active ? 'page' : undefined} className={cx('gso-cockpit-toolbar__item', item.active && 'is-active')} key={item.to} to={item.to}>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+      <span className="gso-cockpit-toolbar__lock">SHELL LOCKED</span>
+    </nav>
+  );
+}
+
 function NavigationGlyph({ icon }: { icon: MinimalNavigationIcon }) {
   const paths: Record<MinimalNavigationIcon, ReactNode> = {
     inbox: <path d="M4.5 6.5h15v11h-15zM4.5 13h4l1.5 2h4l1.5-2h4" />,
@@ -470,8 +496,10 @@ function SidebarAccount({
 
 function GeniusSidebar({
   collapsed,
+  cockpitLocked,
   email,
   fullName,
+  onExitCockpit,
   onCollapse,
   onNavigate,
   onOpenPreferences,
@@ -482,11 +510,13 @@ function GeniusSidebar({
   userTitle,
 }: {
   collapsed: boolean;
+  cockpitLocked: boolean;
   email: string | null;
   fullName: string | null;
   onCollapse: () => void;
   onNavigate?: () => void;
   onOpenPreferences: () => void;
+  onExitCockpit: () => void;
   pathname: string;
   permissions: MinimalNavigationPermissions;
   signOut: () => Promise<void>;
@@ -496,11 +526,24 @@ function GeniusSidebar({
   return (
     <aside
       aria-label="Navegação principal"
-      className={cx('gso-ui gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open')}
+      className={cx('gso-ui gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open', cockpitLocked && 'gso-development-cockpit-sidebar')}
       data-collapsed={collapsed}
     >
       <div className="gso-sidebar-header flex h-[52px] items-center justify-between px-3.5 border-b border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-shell-bg,#0F1A2E)]">
-        {collapsed ? (
+        {cockpitLocked ? (
+          <div className="flex w-full items-center justify-between gap-2 px-1">
+            <span className="font-mono text-[0.58rem] font-bold uppercase tracking-[0.18em] text-[color:#ff6b6b]">DEV</span>
+            <button
+              aria-label="Sair do cockpit de desenvolvimento"
+              className="flex h-8 w-8 items-center justify-center rounded-[7px] border border-[color:rgba(255,107,107,0.38)] bg-transparent text-[color:#ff9a9a] transition-colors hover:bg-[color:rgba(255,107,107,0.14)] hover:text-white"
+              onClick={onExitCockpit}
+              title="Sair do cockpit"
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 5H5v14h4M14 8l4 4-4 4M18 12H9" /></svg>
+            </button>
+          </div>
+        ) : collapsed ? (
           <button
             aria-label="Expandir menu lateral"
             className="flex h-8 w-8 items-center justify-center rounded-[7px] border border-[color:var(--one-border-default,#22324D)] bg-transparent text-[color:var(--one-text-secondary,#A6B2C7)] hover:border-[color:var(--one-border-strong,#2F4869)] hover:bg-[color:var(--one-surface-2,#18263F)] hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors"
@@ -534,13 +577,22 @@ function GeniusSidebar({
       </div>
 
       <div className="gso-sidebar-nav">
-        <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
+        {cockpitLocked ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-2 text-center text-[color:#ff9a9a]">
+            <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24"><rect height="10" rx="2" width="14" x="5" y="10" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+            <span className="font-mono text-[0.56rem] uppercase tracking-[0.16em] [writing-mode:vertical-rl]">ConfiOne bloqueado</span>
+          </div>
+        ) : (
+          <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
+        )}
       </div>
 
       {/* Rodape semantico: identidade do usuario. O divisor decorativo que
           existia aqui separava nada — o rodape estava vazio. */}
       <div className={cx('gso-sidebar-footer', collapsed ? 'px-1 pb-2 pt-1' : 'px-2 pb-2 pt-1')}>
-        <SidebarAccount
+        {cockpitLocked ? (
+          <button className="flex w-full items-center justify-center rounded-[7px] border border-[color:rgba(255,107,107,0.28)] px-2 py-2 font-mono text-[0.56rem] uppercase tracking-[0.12em] text-[color:#ff9a9a] transition-colors hover:bg-[color:rgba(255,107,107,0.14)]" onClick={onExitCockpit} type="button">Sair</button>
+        ) : <SidebarAccount
           collapsed={collapsed}
           email={email}
           fullName={fullName}
@@ -548,7 +600,7 @@ function GeniusSidebar({
           signOut={signOut}
           userSubtitle={userSubtitle}
           userTitle={userTitle}
-        />
+        />}
       </div>
     </aside>
   );
@@ -645,6 +697,8 @@ function PreferencesModal({
 function ShellTopbar({
   breadcrumb,
   canGoBack,
+  cockpitLocked,
+  onExitCockpit,
   mobileMenuButtonRef,
   mobileNavigationOpen,
   onToggleMobileNavigation,
@@ -652,6 +706,8 @@ function ShellTopbar({
 }: {
   breadcrumb: MinimalBreadcrumbSegment[];
   canGoBack: boolean;
+  cockpitLocked: boolean;
+  onExitCockpit: () => void;
   mobileMenuButtonRef: React.RefObject<HTMLButtonElement | null>;
   mobileNavigationOpen: boolean;
   onToggleMobileNavigation: () => void;
@@ -668,9 +724,9 @@ function ShellTopbar({
   );
 
   return (
-    <header className="gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--gso-topbar-bg)] border-b border-[color:var(--gso-border)]">
+    <header className={cx('gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--gso-topbar-bg)] border-b border-[color:var(--gso-border)]', cockpitLocked && 'gso-development-cockpit-topbar')}>
       <div className="flex items-center gap-3 min-w-0">
-        <button
+        {!cockpitLocked ? <button
           ref={mobileMenuButtonRef}
           aria-expanded={mobileNavigationOpen}
           aria-controls="gso-mobile-navigation"
@@ -682,7 +738,7 @@ function ShellTopbar({
           <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
             <path d="M5 7h14M5 12h14M5 17h14" />
           </svg>
-        </button>
+        </button> : <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[color:#ff7b7b]">DEV / RESTRICTED MODE</span>}
         <span aria-hidden="true" className="gso-topbar-mobile-genius lg:hidden">
           <GeniusLamp animated={false} size="sm" />
         </span>
@@ -720,9 +776,11 @@ function ShellTopbar({
       </div>
 
       {/* Busca global do Gênio */}
-      <div className="gso-topbar-search min-w-0 max-w-[420px] w-full flex justify-center mx-3">
-        <GeniusGlobalSearch permissions={searchPermissions} />
+      <div className={cx('gso-topbar-search min-w-0 max-w-[420px] w-full flex justify-center mx-3', cockpitLocked && 'opacity-60')}>
+        {cockpitLocked ? <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-[color:#ff9a9a]">ConfiOne navigation locked</span> : <GeniusGlobalSearch permissions={searchPermissions} />}
       </div>
+
+      {cockpitLocked ? <button aria-label="Sair do cockpit de desenvolvimento" className="inline-flex h-8 shrink-0 items-center gap-2 border border-[rgba(255,107,107,0.38)] px-2.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[color:#ff9a9a] transition hover:bg-[rgba(255,107,107,0.14)] hover:text-white" onClick={onExitCockpit} type="button">Sair</button> : null}
 
       {/* A identidade do usuario vive no rodape da barra lateral
           (<SidebarAccount>). O Global Header concentra apenas contexto, busca e
@@ -745,8 +803,11 @@ export function MinimalAppShell({
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuthContext();
+  const isDevelopmentSourceRoute = location.pathname.startsWith('/admin/build-journal') || location.pathname.startsWith('/admin/product-docs');
+  const isDevelopmentCockpit = location.pathname.startsWith('/engineering/control') || (isDevelopmentSourceRoute && new URLSearchParams(location.search).get('surface') === 'development');
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [cockpitAcknowledged, setCockpitAcknowledged] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       const stored = window.localStorage.getItem('gso-shell-sidebar-collapsed');
@@ -758,10 +819,45 @@ export function MinimalAppShell({
   });
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
+  const fullName = permissions.fullName?.trim() || String(user?.user_metadata?.full_name ?? '').trim() || null;
   const email = user?.email ?? null;
   const userTitle = fullName ?? email ?? 'Operador interno';
   const breadcrumb = useMemo(() => resolveMinimalBreadcrumb(location.pathname), [location.pathname]);
+  const cockpitLocked = isDevelopmentCockpit && cockpitAcknowledged;
+
+  useEffect(() => {
+    if (!isDevelopmentCockpit) {
+      setCockpitAcknowledged(false);
+      return;
+    }
+
+    try {
+      setCockpitAcknowledged(window.sessionStorage.getItem('gso-development-cockpit-ack-v1') === 'accepted');
+    } catch {
+      setCockpitAcknowledged(false);
+    }
+  }, [isDevelopmentCockpit]);
+
+  function enterDevelopmentCockpit() {
+    try {
+      window.sessionStorage.setItem('gso-development-cockpit-ack-v1', 'accepted');
+    } catch {
+      // A confirmação visual não bloqueia a abertura se o storage estiver indisponível.
+    }
+    setCockpitAcknowledged(true);
+    setSidebarCollapsed(true);
+  }
+
+  function exitDevelopmentCockpit() {
+    try {
+      window.sessionStorage.removeItem('gso-development-cockpit-ack-v1');
+    } catch {
+      // A navegação continua sendo a saída efetiva do subsistema.
+    }
+    setCockpitAcknowledged(false);
+    setSidebarCollapsed(false);
+    navigate('/admin/analytics');
+  }
 
   useEffect(() => {
     setMobileNavigationOpen(false);
@@ -789,6 +885,10 @@ export function MinimalAppShell({
 
   useEffect(() => {
     const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if (cockpitLocked) {
+        return;
+      }
+
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'b') {
         return;
       }
@@ -804,10 +904,10 @@ export function MinimalAppShell({
 
     document.addEventListener('keydown', handleKeyboardShortcut);
     return () => document.removeEventListener('keydown', handleKeyboardShortcut);
-  }, []);
+  }, [cockpitLocked]);
 
   return (
-    <div className="gso-app-shell h-[var(--app-viewport-height)] min-h-0 overflow-hidden bg-[color:var(--minimal-canvas)] text-[color:var(--minimal-text)]">
+    <div className={cx('gso-app-shell h-[var(--app-viewport-height)] min-h-0 overflow-hidden bg-[color:var(--minimal-canvas)] text-[color:var(--minimal-text)]', isDevelopmentCockpit && 'gso-development-context-shell', cockpitLocked && 'gso-development-cockpit-shell')}>
       <a
         className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[color:var(--minimal-action)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[color:var(--minimal-action-ink)]"
         href="#conteudo-principal"
@@ -817,10 +917,12 @@ export function MinimalAppShell({
       <div className="flex h-full min-h-0 gap-0 lg:p-0">
         <GeniusSidebar
           collapsed={sidebarCollapsed}
+          cockpitLocked={cockpitLocked}
           email={email}
           fullName={fullName}
           onCollapse={() => setSidebarCollapsed((current) => !current)}
           onOpenPreferences={() => setPreferencesOpen(true)}
+          onExitCockpit={exitDevelopmentCockpit}
           pathname={location.pathname}
           permissions={permissions}
           signOut={signOut}
@@ -831,14 +933,16 @@ export function MinimalAppShell({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ShellTopbar
             breadcrumb={breadcrumb}
-            canGoBack={breadcrumb.length > 1}
+            canGoBack={breadcrumb.length > 1 && !cockpitLocked}
+            cockpitLocked={cockpitLocked}
+            onExitCockpit={exitDevelopmentCockpit}
             mobileMenuButtonRef={mobileMenuButtonRef}
             mobileNavigationOpen={mobileNavigationOpen}
             onToggleMobileNavigation={() => setMobileNavigationOpen((current) => !current)}
             permissions={permissions}
           />
 
-          {mobileNavigationOpen ? (
+          {mobileNavigationOpen && !cockpitLocked ? (
             <div className="fixed inset-0 z-40 lg:hidden" id="gso-mobile-navigation">
               <button aria-label="Fechar navegação" className="absolute inset-0 bg-[color:var(--minimal-overlay)]" onClick={() => setMobileNavigationOpen(false)} type="button" />
               <aside aria-label="Menu principal mobile" aria-modal="true" className="gso-ui gso-sidebar-drawer relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
@@ -897,11 +1001,33 @@ export function MinimalAppShell({
             </div>
           ) : null}
 
-          <main className="gso-main-canvas min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto" id="conteudo-principal">{children}</main>
+          <main className={cx('gso-main-canvas min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto', isDevelopmentCockpit && 'gso-development-context-main', cockpitLocked && 'gso-development-cockpit-main')} id="conteudo-principal">
+            {cockpitLocked ? <DevelopmentSubsystemNav pathname={location.pathname} /> : null}
+            {children}
+          </main>
         </div>
       </div>
 
       <PreferencesModal isOpen={preferencesOpen} onClose={() => setPreferencesOpen(false)} />
+      {isDevelopmentCockpit && !cockpitAcknowledged ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(4,7,13,0.84)] p-5 backdrop-blur-[8px]">
+          <section aria-describedby="development-cockpit-warning" aria-modal="true" className="w-full max-w-lg border border-[rgba(255,107,107,0.45)] bg-[linear-gradient(135deg,rgba(24,14,22,0.98),rgba(9,13,22,0.98))] p-6 text-[color:#f3f6fb] shadow-[0_24px_90px_rgba(0,0,0,0.48)]" role="dialog">
+            <div className="flex items-start justify-between gap-4 border-b border-[rgba(255,107,107,0.2)] pb-4">
+              <div>
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[color:#ff7777]">Restricted subsystem / DEV</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Entrar no cockpit de desenvolvimento?</h2>
+              </div>
+              <span aria-hidden="true" className="mt-1 h-2.5 w-2.5 rounded-full bg-[#ff4f5e] shadow-[0_0_18px_rgba(255,79,94,0.9)]" />
+            </div>
+            <p className="mt-5 text-sm leading-6 text-[color:#b5bdcd]" id="development-cockpit-warning">Você está entrando em uma área restrita. Alterações aqui impactam diretamente o código, as migrations, os documentos e o processo de desenvolvimento do ConfiOne.</p>
+            <p className="mt-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-[color:#ff9a9a]">A navegação principal ficará recolhida enquanto este modo estiver ativo.</p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button className="inline-flex min-h-10 items-center justify-center border border-[rgba(255,255,255,0.16)] px-4 py-2 text-sm text-[color:#b5bdcd] transition hover:bg-white/5 hover:text-white" onClick={() => navigate('/admin/analytics')} type="button">Voltar</button>
+              <button className="inline-flex min-h-10 items-center justify-center border border-[#ff5c67] bg-[rgba(255,79,94,0.16)] px-4 py-2 text-sm font-semibold text-[#ffd9dc] transition hover:bg-[rgba(255,79,94,0.28)]" onClick={enterDevelopmentCockpit} type="button">Entrar no cockpit</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

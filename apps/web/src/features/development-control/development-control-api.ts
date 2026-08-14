@@ -105,6 +105,27 @@ export async function claimInternalBuildTask(taskId: string) {
   return data as Record<string, unknown>;
 }
 
+export async function editInternalBuildTask(payload: {
+  taskId: string;
+  title: string;
+  description: string;
+  priority: InternalBuildTaskPriority;
+  area: string | null;
+  relatedDocumentSlugs: string[];
+}) {
+  const { data, error } = await requireClient().rpc('rpc_internal_build_task_edit', {
+    p_task_id: payload.taskId,
+    p_title: payload.title,
+    p_description: payload.description,
+    p_priority: payload.priority,
+    p_area: payload.area,
+    p_related_document_slugs: payload.relatedDocumentSlugs,
+  });
+
+  if (error) throw toAppError(error, 'Falha ao editar a tarefa.');
+  return data as Record<string, unknown>;
+}
+
 export async function updateInternalBuildTask(payload: {
   taskId: string;
   status: InternalBuildTaskStatus;

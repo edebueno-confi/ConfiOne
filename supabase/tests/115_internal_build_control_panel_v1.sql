@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(18);
+select plan(21);
 
 select ok(
   exists (
@@ -57,11 +57,32 @@ select ok(
 select ok(
   exists (
     select 1
+    from pg_enum
+    where enumtypid = 'public.internal_build_task_status'::regtype
+      and enumlabel = 'awaiting_agent'
+  ),
+  'status aguardando agente existe'
+);
+
+select ok(
+  exists (
+    select 1
     from pg_type
     where typnamespace = 'public'::regnamespace
       and typname = 'internal_build_task_priority'
   ),
   'prioridade do painel existe'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'app_private.can_access_internal_build_control()', 'EXECUTE')
+  and not has_function_privilege('anon', 'app_private.can_access_internal_build_control()', 'EXECUTE'),
+  'helper de acesso fica disponivel apenas para authenticated e service_role'
+);
+
+select ok(
+  has_function_privilege('service_role', 'app_private.can_access_internal_build_control()', 'EXECUTE'),
+  'service_role executa o helper de acesso'
 );
 
 select ok(

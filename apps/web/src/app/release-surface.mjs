@@ -37,7 +37,7 @@ const INTERNAL_ROUTE_FAMILIES = [
 ];
 
 /** Screens published in the first release. */
-const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access', 'product'];
+const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access', 'product', 'product_docs'];
 
 /**
  * Internal routes published in the first release.
@@ -81,6 +81,18 @@ const FIRST_RELEASE_ROUTES = [
     screenKey: 'access',
     rationale:
       'Administracao de usuarios, convites, areas e permissoes para perfis autorizados.',
+  },
+  {
+    path: '/admin/product-docs',
+    screenKey: 'product_docs',
+    rationale:
+      'Leitura dos documentos internos oficiais vinculados ao desenvolvimento e à operação do ConfiOne.',
+  },
+  {
+    path: '/admin/build-journal',
+    screenKey: 'product_docs',
+    rationale:
+      'Diário de construção do subsistema documental, protegido pela mesma permissão dos documentos internos.',
   },
 ];
 

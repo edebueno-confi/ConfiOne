@@ -8,6 +8,7 @@ import {
 
 export interface MinimalNavigationPermissions {
   isPlatformAdmin: boolean;
+  fullName?: string | null;
   roles?: PlatformRole[];
   screenKeys?: InternalScreenKey[];
   hasDashboardViewerAccess?: boolean;
@@ -163,6 +164,16 @@ function buildReleaseNavigation({
     }
   }
 
+  if (allows('product_docs')) {
+    administration.push({
+      id: 'admin-product-docs',
+      label: 'Documentos',
+      to: '/admin/product-docs',
+      icon: 'document',
+      matches: (path) => matchesBase(path, '/admin/product-docs'),
+    });
+  }
+
   if (allows('product')) {
     sections.push({
       id: 'operations',
@@ -269,6 +280,9 @@ export function buildMinimalNavigation({
   if (isPlatformAdmin || hasScreen('settings')) {
     administration.push({ id: 'admin-cockpit', label: 'Cockpit gerencial', to: '/admin/cockpit', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/cockpit') });
     administration.push({ id: 'admin-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') });
+  }
+  if (isPlatformAdmin || hasScreen('product_docs')) {
+    administration.push({ id: 'admin-product-docs', label: 'Documentos', to: '/admin/product-docs', icon: 'document', matches: (path) => matchesBase(path, '/admin/product-docs') });
   }
   // A permissão de acesso é independente das configurações. Escondê-la para
   // quem também pode abrir Configurações criava um beco sem saída na sidebar:

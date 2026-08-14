@@ -1,11 +1,38 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — narrativa e superfície documental do cockpit — 2026-08-13
+
+- O Diário de Construção foi reconciliado com o estado atual do produto: a
+  primeira versão publicada combina Central de Ajuda externa e Dashboard
+  gerencial interno; a plataforma SaaS interna completa fica como direção
+  futura.
+- A linha do tempo agora registra origem, fundação, mudança de foco,
+  publicação, cockpit, memória documental e próximos gates de qualidade, sem
+  apresentar planos históricos como entregas atuais.
+- Diário e biblioteca de Documentos receberam uma camada visual densa e
+  própria do cockpit em `surface=development`, com correção de superfícies
+  claras herdadas, contraste de texto e preservação do contexto ao navegar
+  entre fontes.
+- O shell do cockpit passou a declarar tokens visuais próprios, isolando canvas,
+  superfícies, bordas e contraste da preferência white/dark do ConfiOne.
+- O Diário e a Biblioteca documental foram reconstruídos como telas nativas do
+  subsistema: o primeiro prioriza fase, decisão, evidência e próximo movimento;
+  a segunda prioriza índice, leitura e contexto do catálogo. A mudança é de
+  composição e fluxo, não apenas de tema ou CSS.
+- O catálogo continua sendo a fonte autorizada de leitura. A atualização de
+  arquivos locais não executa sincronização privilegiada no banco; essa etapa
+  permanece separada e depende de aprovação explícita.
+- O mínimo de memória por passagem segue operacional: mudança, motivo,
+  resultado e validação. Handoffs, stack, decisões e aprendizados entram como
+  contexto curto, não como formulário burocrático.
+
 ## Painel de Desenvolvimento V1 — 2026-08-13
 
 - **Escopo:** superfície interna simples para backlog geral, execução, resultado,
   validação e links documentais do ConfiOne; sem substituir o Engineering
   Workspace de tickets.
-- **Entrega:** rota `/engineering/control`, cards com cinco estados, prioridade,
+- **Entrega:** rota `/engineering/control`, cards com seis estados (incluindo a
+  etapa explícita `awaiting_agent` para entrega ao executor), prioridade,
   área, executor, resultado, validação, bloqueio, atualização curta e links para
   documentos oficiais por slug.
 - **Contratos:** tabelas `internal_build_tasks` e
@@ -20,6 +47,20 @@
   `docs/ENGINEERING_WORKSPACE_OPERATIONAL_CORE_V3.md` e `docs/README.md`.
 - **Limites:** sem sprint, dependências complexas, anexos, sync GitHub ou
   automações que movam cards sozinhas.
+- **Cockpit restrito:** a entrada agora confirma o modo de desenvolvimento,
+  recolhe e bloqueia visualmente o shell do ConfiOne e exibe toolbar própria
+  para quadro, execução e fontes, sem transformar o aviso em autenticação.
+- **UTF-8:** a migration forward-only `20260813195500_utf8_runtime_copy_repair_v1.sql`
+  corrigiu mensagens corrompidas em funções ativas do Analytics; os registros
+atuais do painel foram auditados sem encontrar interrogações de substituição.
+- **Superfície documental do cockpit:** Diário de Construção e Product Docs
+  passaram a receber uma camada visual própria quando chamados com
+  `surface=development`, com canvas escuro, grade técnica, contraste
+  vermelho/ciano e margens compactas. A rota administrativa comum permanece
+  inalterada.
+- **Acesso:** o perfil `platform_admin` do administrador da plataforma já possui
+  acesso efetivo ao cockpit interno; a futura biblioteca documental deverá
+  reutilizar esse contrato sem abrir dados de clientes ou tenants.
 
 ## ACCESS CONTROL V2 — ciclo de vida e evidência de permissões — 2026-08-11
 

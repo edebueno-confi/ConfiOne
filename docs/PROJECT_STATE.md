@@ -8,7 +8,9 @@
 - O painel usa os contratos `internal_build_tasks`,
   `internal_build_task_updates`, `vw_internal_build_tasks_board` e
   `vw_internal_build_task_updates`, com estados `backlog`, `in_progress`,
-  `blocked`, `done` e `cancelled`.
+  `awaiting_agent`, `blocked`, `done` e `cancelled`. O estado
+  `awaiting_agent` representa a entrega explícita de um card para execução;
+  backlog continua significando apenas demanda registrada.
 - Cards registram título, descrição, prioridade, área, executor, resultado,
   validação, bloqueio e slugs de documentos oficiais relacionados. O frontend
   lê views e chama RPCs reais; não há DML direto nem automação autônoma.
@@ -18,6 +20,35 @@
   para evitar execução concorrente.
 - O Diário de Construção permanece narrativo e o Product Docs permanece leitor
   documental controlado. O painel apenas relaciona cards a essas fontes.
+- A entrada no painel abre um subsistema restrito: confirmação visual, shell
+  principal recolhido/bloqueado, toolbar própria de quadro/execução/fontes e
+  identidade escura avermelhada com superfície pontilhada. O backend continua
+sendo a autoridade de autenticação e autorização.
+- Diário de Construção e Product Docs agora recebem uma superfície tecnológica
+  própria quando abertos pelo subsistema com `surface=development`, preservando
+  margens compactas, leitura densa e a identidade escura do cockpit. O acesso
+  normal pelo Admin Console não é alterado.
+- O shell do cockpit redefine seus próprios tokens visuais e não herda o tema
+  white/dark do ConfiOne. A troca de tema na aplicação principal não deve
+  alterar canvas, contraste ou identidade do subsistema.
+- O usuário administrador da plataforma está coberto pelo papel
+  `platform_admin` e pelo acesso efetivo ao cockpit interno. A garantia para as
+  futuras telas documentais permanece vinculada ao mesmo contrato de acesso,
+  sem ampliar escopo para dados de clientes ou tenants.
+- A migration forward-only `20260813195500_utf8_runtime_copy_repair_v1.sql`
+  corrigiu mensagens mojibake em funções ativas do Analytics, preservando as
+  migrations históricas. A auditoria dos registros persistidos do painel não
+  encontrou interrogações de substituição.
+- A narrativa vigente do produto foi reconciliada: a primeira versão publicada
+  prioriza a Central de Ajuda externa e o Dashboard gerencial interno; o SaaS
+  interno completo permanece como rota futura. O cockpit de desenvolvimento
+  passa a ser a memória operacional dessa evolução, com Diário e biblioteca
+  documental em superfície escura própria quando usados com
+  `surface=development`.
+- A revisão do Diário substituiu fases e entregas antigas por marcos atuais,
+  decisões de rota, stack, handoffs e gates de qualidade. O leitor documental
+  continua dependente do catálogo governado; editar a documentação do
+  repositório não equivale a sincronizá-la no banco.
 
 ## Atualizacao corrente — desempenho do Analytics Financeiro e espelhamento remoto — 2026-08-13
 

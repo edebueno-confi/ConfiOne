@@ -1,5 +1,6 @@
 export const INTERNAL_BUILD_TASK_STATUSES = [
   'backlog',
+  'awaiting_agent',
   'in_progress',
   'blocked',
   'done',

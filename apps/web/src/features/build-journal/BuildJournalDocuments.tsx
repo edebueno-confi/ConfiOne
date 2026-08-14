@@ -454,7 +454,7 @@ export function BuildJournalDocuments() {
             Comece pela categoria ligada à dúvida do momento. Se precisar da versão detalhada, abra o documento no Product Docs. Se o item estiver pendente, ele não foi exposto nesta whitelist e não deve ser tratado como link disponível.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link className="inline-flex min-h-11 items-center justify-center rounded-[10px] bg-[#1458E8] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(20,88,232,0.18)]" to="/admin/product-docs">
+            <Link className="inline-flex min-h-11 items-center justify-center rounded-[10px] bg-[#1458E8] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(20,88,232,0.18)]" to="/admin/product-docs?surface=development">
               Abrir Documentos do Produto
               <span aria-hidden="true" className="ml-2">→</span>
             </Link>

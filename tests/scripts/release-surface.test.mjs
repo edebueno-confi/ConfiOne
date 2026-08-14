@@ -37,6 +37,8 @@ const PUBLISHED_ROUTES = [
   '/admin/cockpit',
   // `/admin/access` passou a ser publicada no manifesto (tela `access`).
   '/admin/access',
+  '/admin/product-docs',
+  '/admin/build-journal',
 ];
 
 const HIDDEN_ROUTES = [
@@ -63,8 +65,6 @@ const HIDDEN_ROUTES = [
   '/admin/internal-areas',
   '/admin/system',
   '/admin/customer-portal',
-  '/admin/build-journal',
-  '/admin/product-docs',
   '/admin/visao-geral',
 ];
 
@@ -120,12 +120,12 @@ test('manifest has no internal inconsistency', () => {
 // O painel de desenvolvimento passou a integrar o release reduzido para
 // permitir o acompanhamento operacional do produto.
 test('publishes exactly the approved screens', () => {
-  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access', 'product']);
-  for (const key of ['analytics', 'knowledge', 'settings', 'access', 'product']) {
+  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access', 'product', 'product_docs']);
+  for (const key of ['analytics', 'knowledge', 'settings', 'access', 'product', 'product_docs']) {
     assert.equal(isScreenPublishedInRelease(key), true, key);
   }
   // `access` saiu desta lista de negados junto com a publicacao da tela.
-  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio', 'product_docs']) {
+  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio']) {
     assert.equal(isScreenPublishedInRelease(key), false, key);
   }
 });
@@ -134,7 +134,7 @@ test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
     // `/admin/access` acompanha a publicacao da tela `access`.
-    ['/engineering/control', '/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
+    ['/engineering/control', '/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access', '/admin/product-docs', '/admin/build-journal'],
   );
 });
 
@@ -146,6 +146,8 @@ test('every published route resolves to its screen key', () => {
   assert.equal(resolveReleaseRouteScreenKey('/admin/cockpit'), 'settings');
   // Rota publicada nova: precisa resolver para a propria tela `access`.
   assert.equal(resolveReleaseRouteScreenKey('/admin/access'), 'access');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/product-docs'), 'product_docs');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/build-journal'), 'product_docs');
   assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), null);
 });
 
@@ -232,6 +234,13 @@ test('platform_admin reaches every published route', () => {
   }
 });
 
+test('platform_admin does not depend on duplicated screen grants', () => {
+  assert.equal(canOpenInternalRoute('/admin/build-journal', {
+    ...platformAdminContext(),
+    screenKeys: [],
+  }), true);
+});
+
 test('platform_admin is blocked on every hidden route despite full permissions', () => {
   const context = platformAdminContext();
   for (const route of HIDDEN_ROUTES) {
@@ -309,6 +318,7 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-settings-sync-history',
     'admin-settings-brands',
     'admin-settings-help-center',
+    'admin-product-docs',
   ]);
 });
 
