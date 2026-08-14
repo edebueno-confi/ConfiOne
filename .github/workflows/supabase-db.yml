@@ -34,7 +34,27 @@ jobs:
         run: npm run web:build
 
       - name: Start Supabase
-        run: npm run supabase:start
+        shell: bash
+        run: |
+          set -o pipefail
+
+          max_attempts=4
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "Starting Supabase (attempt $attempt/$max_attempts)..."
+            if npm run supabase:start; then
+              echo "Supabase startup completed on attempt $attempt."
+              exit 0
+            fi
+
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "Supabase startup failed after $max_attempts attempts."
+              exit 1
+            fi
+
+            delay=$((15 * 2 ** (attempt - 1)))
+            echo "Supabase startup failed, likely while pulling an image. Retrying in ${delay}s..."
+            sleep "$delay"
+          done
 
       - name: Wait for Supabase readiness
         run: npm run supabase:wait:ready

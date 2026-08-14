@@ -139,7 +139,7 @@ export function ProductDocReaderPanel({
   return (
     <article
       className={cx(
-        'rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_18px_38px_rgba(16,30,74,0.08)]',
+        'gso-development-doc-reader rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_18px_38px_rgba(16,30,74,0.08)]',
         className,
       )}
     >
@@ -234,7 +234,7 @@ export function ProductDocReaderPanel({
           <div className="mt-4">
             <Link
               className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[#CFE0FF] bg-[color:var(--color-surface-strong)] px-4 text-sm font-black text-[#1458E8] transition hover:border-[#1458E8]/40 hover:bg-[#F5F8FF]"
-              to={`/admin/product-docs?doc=${document.slug}`}
+              to={`/admin/product-docs?surface=development&doc=${document.slug}`}
             >
               {officialLinkLabel}
               <span aria-hidden="true" className="ml-2">
@@ -270,7 +270,7 @@ export function ProductDocReaderPanel({
         </nav>
       ) : null}
 
-      <div className="mt-6 max-w-[78ch] scroll-smooth">
+      <div className="gso-product-doc-reader-body mt-6 max-w-[78ch] scroll-smooth">
         <ProductDocMarkdownPreview
           headingIds={headingIds}
           source={document.body_md_sanitized}

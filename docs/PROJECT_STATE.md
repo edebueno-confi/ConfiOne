@@ -1,5 +1,162 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — retomada e continuidade do Codex — 2026-08-14
+
+- O ponto de entrada documental após formatação ou handoff é
+  `docs/CODEX_RESTART_CONTEXT.md`. Ele resume produto, cockpit, decisões de
+  design, GitHub, Figma, validações, riscos e arquivos que permanecem somente
+  locais.
+- O checkout de referência está na branch
+  `codex/final-consolidation-20260812`, no commit `8c71a6a`, publicado no
+  GitHub e associado à PR `#40`.
+- O documento de retomada não substitui contratos reais, migrations, testes,
+  policies, views, RPCs ou este `PROJECT_STATE.md`; ele orienta a ordem de
+  leitura e reduz dependência de memória de conversa.
+- O pacote `recovery/codex-context-2026-08-12/` e
+  `apps/web/.env.local` permanecem arquivos locais sensíveis e devem ser
+  preservados fora do GitHub.
+
+## Atualização corrente — Painel de Desenvolvimento V1 — 2026-08-13
+
+- O ConfiOne agora possui uma superfície interna simples em `/engineering/control`
+  para backlog geral de desenvolvimento, separada do Engineering Workspace
+  originado de tickets.
+- O painel usa os contratos `internal_build_tasks`,
+  `internal_build_task_updates`, `vw_internal_build_tasks_board` e
+  `vw_internal_build_task_updates`, com estados `backlog`, `in_progress`,
+  `awaiting_agent`, `blocked`, `done` e `cancelled`. O estado
+  `awaiting_agent` representa a entrega explícita de um card para execução;
+  backlog continua significando apenas demanda registrada.
+- Cards registram título, descrição, prioridade, área, executor, resultado,
+  validação, bloqueio e slugs de documentos oficiais relacionados. O frontend
+  lê views e chama RPCs reais; não há DML direto nem automação autônoma.
+- O escopo operacional explícito é `confi_one_development`, restrito a perfis
+  internos ativos com papel `platform_admin`, `engineering_member` ou
+  `engineering_manager`. A ação de assumir card funciona como lock simples
+  para evitar execução concorrente.
+- O Diário de Construção permanece narrativo e o Product Docs permanece leitor
+  documental controlado. O painel apenas relaciona cards a essas fontes.
+- A entrada no painel abre um subsistema restrito: confirmação visual, shell
+  principal recolhido/bloqueado, toolbar própria de quadro/execução/fontes e
+  identidade escura avermelhada com superfície pontilhada. O backend continua
+sendo a autoridade de autenticação e autorização.
+- Diário de Construção e Product Docs agora recebem uma superfície tecnológica
+  própria quando abertos pelo subsistema com `surface=development`, preservando
+  margens compactas, leitura densa e a identidade escura do cockpit. O acesso
+  normal pelo Admin Console não é alterado.
+- O shell do cockpit redefine seus próprios tokens visuais e não herda o tema
+  white/dark do ConfiOne. A troca de tema na aplicação principal não deve
+  alterar canvas, contraste ou identidade do subsistema.
+- O usuário administrador da plataforma está coberto pelo papel
+  `platform_admin` e pelo acesso efetivo ao cockpit interno. A garantia para as
+  futuras telas documentais permanece vinculada ao mesmo contrato de acesso,
+  sem ampliar escopo para dados de clientes ou tenants.
+- A migration forward-only `20260813195500_utf8_runtime_copy_repair_v1.sql`
+  corrigiu mensagens mojibake em funções ativas do Analytics, preservando as
+  migrations históricas. A auditoria dos registros persistidos do painel não
+  encontrou interrogações de substituição.
+- A narrativa vigente do produto foi reconciliada: a primeira versão publicada
+  prioriza a Central de Ajuda externa e o Dashboard gerencial interno; o SaaS
+  interno completo permanece como rota futura. O cockpit de desenvolvimento
+  passa a ser a memória operacional dessa evolução, com Diário e biblioteca
+  documental em superfície escura própria quando usados com
+  `surface=development`.
+- A revisão do Diário substituiu fases e entregas antigas por marcos atuais,
+  decisões de rota, stack, handoffs e gates de qualidade. O leitor documental
+  continua dependente do catálogo governado; editar a documentação do
+  repositório não equivale a sincronizá-la no banco.
+
+## Atualizacao corrente — desempenho do Analytics Financeiro e espelhamento remoto — 2026-08-13
+
+- O RPC `public.rpc_analytics_finance_reconciliation_v2(text, integer)` foi
+  otimizado na migration local `20260813141618_analytics_finance_reconciliation_perf_v3.sql`.
+  O Supabase aplicou a migration com a versao remota `20260813141618` e o nome
+  `analytics_finance_reconciliation_perf_v3`.
+- A conciliacao passou a calcular candidatos exatos em conjunto, materializar
+  os read models usados no ciclo e usar o indice trigram existente para as
+  sugestoes por nome. Nome parecido continua sendo apenas sugestao; nenhum
+  vinculo automatico foi criado.
+- Validacao de producao: o RPC deixou de estourar o timeout observado e concluiu
+  em aproximadamente 402 ms no `EXPLAIN ANALYZE`, preservando os totais
+  `matched_balance = 815535.94`, `unmatched_balance = 55805.74` e 35 titulos
+  sem empresa no HubSpot. A funcao continua disponivel somente para
+  `authenticated`, `service_role` e `postgres`; `public`/`anon` permanecem sem
+  EXECUTE.
+- Foram adicionados indices para `company_id` e `decided_by_user_id` na fila de
+  decisoes. Os avisos gerais do advisor sobre FKs, politicas e indices nao
+  relacionados permanecem como backlog: nao foram aplicadas alteracoes em
+  massa sem contrato de consumo.
+- A camada de apresentacao agora traduz tambem o motivo `probable`, publicado
+  pelo read model de reconciliacao. Testes focados, typecheck, build web,
+  auditoria de dependencias e secret-scan passaram; o quality gate foi aprovado
+  com uma observacao informativa em um script de recuperacao preexistente.
+- HubSpot e OMIE permanecem com paginacao, lotes, retry/backoff, checkpoint,
+  leases e staging privado. A telemetria atual registra rate limit no HubSpot e
+  erros transitorios no OMIE; esses eventos ficam para uma frente propria de
+  capacidade, sem paralelizar chamadas OMIE nem alterar contratos de provider
+  neste lote.
+
+## Atualizacao corrente — series temporais e deduplicacao de leituras — 2026-08-13
+
+- A migration `20260813144227_analytics_timeseries_join_perf_v1.sql` removeu o
+  cruzamento de todos os registros com todos os periodos em
+  `rpc_analytics_timeseries`. Cada dominio agora junta somente registros que
+  podem contribuir para o bucket de abertura, fechamento, recebimento ou
+  vencimento.
+- A migration foi aplicada ao Supabase remoto e registrada com a versao
+  `20260813144456`. O contrato JSON, os labels das series, a granularidade e a
+  regra de acesso foram preservados.
+- Medicao remota para uma janela de 365 dias e 13 pontos: suporte caiu de
+  aproximadamente 6,7 s para 3,8 s; comercial de 260 ms para 70 ms; financeiro
+  de 1,45 s para 584 ms. No banco local, os mesmos cenarios ficaram abaixo de
+  430 ms.
+- `getFinanceSnapshot` passou a usar o deduplicador de RPCs em voo existente,
+  evitando requisicoes identicas concorrentes quando Financeiro e Exportacao
+  sao montados juntos. Nenhum dado ou regra de negocio foi calculado no
+  frontend.
+- A auditoria continua apontando como proxima frente os read models executivos
+  mais pesados: `rpc_analytics_ceo_snapshot`, `rpc_analytics_ceo_history`,
+  `rpc_analytics_executive_kpis_v2` e a fila de reconciliacao. Eles devem ser
+  otimizados separadamente, com comparacao de payload antes/depois.
+
+## Atualizacao corrente — paginação da fila de reconciliacao — 2026-08-13
+
+- A migration `20260813145204_analytics_company_reconciliation_queue_page_perf_v2.sql`
+  passou a calcular candidatos somente para a página solicitada. O resumo
+  global e a ordenação pública foram preservados; sugestões continuam sem
+  vínculo automático.
+- A migration foi aplicada ao Supabase remoto e registrada como
+  `20260813145259` / `analytics_company_reconciliation_queue_page_perf_v2`.
+- Em produção, a primeira página de 25 itens mediu aproximadamente 531 ms e
+  a segunda 2,12 s, com `total=245` e 25 itens em ambas. O ganho é mais direto
+  na abertura da fila, quando antes todo o conjunto de candidatos era montado
+  antes do `limit/offset`.
+- Grants verificados: `anon` sem execução, `authenticated` e `service_role`
+  com execução; o comentário remoto identifica o comportamento paginado.
+- O próximo gargalo permanece nos read models executivos: o snapshot CEO, o
+  histórico CEO e os KPIs executivos. Qualquer alteração nesses contratos deve
+  comparar o payload completo antes/depois.
+
+## Atualização corrente — deduplicação do dashboard CEO — 2026-08-13
+
+- A migration local `20260813150911_analytics_ceo_dashboard_snapshot_dedupe_v1.sql`
+  adiciona `rpc_analytics_ceo_dashboard(date,date)`, que calcula o snapshot
+  corrente uma vez e reutiliza o mesmo payload no histórico. Os RPCs antigos
+  permanecem intactos para compatibilidade.
+- A tela CEO passou a consumir o RPC combinado, com fallback para os RPCs
+  antigos durante a publicação ordenada. Nenhuma regra ou cálculo foi movido
+  para o frontend.
+- No banco local, snapshot e histórico combinados ficaram byte a byte iguais
+  aos contratos anteriores. O fluxo completo caiu de aproximadamente 457 ms
+  para 312 ms na janela de 365 dias, removendo uma das três execuções do
+  snapshot.
+- Grants locais verificados: `anon` sem execução; `authenticated` e
+  `service_role` com execução. O teste pgTAP específico passou com 6/6.
+- A migration foi aplicada ao Supabase remoto e registrada como
+  `20260813152552` / `analytics_ceo_dashboard_snapshot_dedupe_v1`. Em produção,
+  o RPC combinado mediu aproximadamente 393 ms na janela de 365 dias; os
+  payloads corrente e histórico ficaram iguais aos RPCs anteriores.
+
 ## Atualização corrente — Recharts 3 e reconciliação de suíte — 2026-08-11
 
 - `apps/web` usa `recharts` `3.10.1`; a migração a partir de `2.15.4` foi

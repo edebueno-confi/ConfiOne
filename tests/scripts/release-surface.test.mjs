@@ -28,6 +28,7 @@ const postLoginSource = await readFile(
 );
 
 const PUBLISHED_ROUTES = [
+  '/engineering/control',
   '/admin/analytics',
   '/admin/knowledge',
   '/admin/knowledge/new',
@@ -36,6 +37,8 @@ const PUBLISHED_ROUTES = [
   '/admin/cockpit',
   // `/admin/access` passou a ser publicada no manifesto (tela `access`).
   '/admin/access',
+  '/admin/product-docs',
+  '/admin/build-journal',
 ];
 
 const HIDDEN_ROUTES = [
@@ -62,8 +65,6 @@ const HIDDEN_ROUTES = [
   '/admin/internal-areas',
   '/admin/system',
   '/admin/customer-portal',
-  '/admin/build-journal',
-  '/admin/product-docs',
   '/admin/visao-geral',
 ];
 
@@ -116,15 +117,15 @@ test('manifest has no internal inconsistency', () => {
   assert.deepEqual(findReleaseSurfaceInconsistencies(), []);
 });
 
-// A tela `access` passou a integrar o release: usuarios, convites e permissoes
-// sao necessarios para operar as demais telas publicadas.
-test('publishes exactly the four approved screens', () => {
-  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access']);
-  for (const key of ['analytics', 'knowledge', 'settings', 'access']) {
+// O painel de desenvolvimento passou a integrar o release reduzido para
+// permitir o acompanhamento operacional do produto.
+test('publishes exactly the approved screens', () => {
+  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access', 'product', 'product_docs']);
+  for (const key of ['analytics', 'knowledge', 'settings', 'access', 'product', 'product_docs']) {
     assert.equal(isScreenPublishedInRelease(key), true, key);
   }
   // `access` saiu desta lista de negados junto com a publicacao da tela.
-  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio', 'product_docs']) {
+  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio']) {
     assert.equal(isScreenPublishedInRelease(key), false, key);
   }
 });
@@ -133,7 +134,7 @@ test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
     // `/admin/access` acompanha a publicacao da tela `access`.
-    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
+    ['/engineering/control', '/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access', '/admin/product-docs', '/admin/build-journal'],
   );
 });
 
@@ -145,6 +146,8 @@ test('every published route resolves to its screen key', () => {
   assert.equal(resolveReleaseRouteScreenKey('/admin/cockpit'), 'settings');
   // Rota publicada nova: precisa resolver para a propria tela `access`.
   assert.equal(resolveReleaseRouteScreenKey('/admin/access'), 'access');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/product-docs'), 'product_docs');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/build-journal'), 'product_docs');
   assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), null);
 });
 
@@ -231,6 +234,13 @@ test('platform_admin reaches every published route', () => {
   }
 });
 
+test('platform_admin does not depend on duplicated screen grants', () => {
+  assert.equal(canOpenInternalRoute('/admin/build-journal', {
+    ...platformAdminContext(),
+    screenKeys: [],
+  }), true);
+});
+
 test('platform_admin is blocked on every hidden route despite full permissions', () => {
   const context = platformAdminContext();
   for (const route of HIDDEN_ROUTES) {
@@ -293,7 +303,7 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     screenKeys: platformAdminContext().screenKeys,
   });
 
-  assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'administration']);
+  assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'operations', 'administration']);
   // O item generico `admin-settings` deu lugar ao submenu real de Configuracoes
   // na sidebar global; a segunda coluna de navegacao dentro da tela foi removida.
   assert.deepEqual(itemIds(navigation), [
@@ -301,13 +311,14 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-knowledge',
     'admin-knowledge-new',
     'public-help-center',
+    'development-control',
     'admin-access',
-    'admin-cockpit',
     'admin-settings-integrations',
     'admin-settings-dashboard-sources',
     'admin-settings-sync-history',
     'admin-settings-brands',
     'admin-settings-help-center',
+    'admin-product-docs',
   ]);
 });
 

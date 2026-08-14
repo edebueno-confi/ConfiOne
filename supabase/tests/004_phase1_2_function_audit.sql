@@ -114,6 +114,7 @@ select is(
         'has_active_internal_area_membership',
         'can_access_support_internal_actions',
         'can_access_internal_action_area',
+        'can_access_internal_build_control',
         'can_manage_internal_action_area_assignment',
         'can_support_access_internal_action_ticket',
         'internal_action_status_transition_allowed',

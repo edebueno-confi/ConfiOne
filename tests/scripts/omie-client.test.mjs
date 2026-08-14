@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, fetchOmieClientsIndexWithMetadata, enrichReceivablesWithClients, deriveOmieSourceRecordId, classifyOmieError, OmieProviderError } from '../../supabase/functions/_shared/omie.ts';
-import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
+import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE, publishOmieClientIndexCache, OMIE_CLIENT_INDEX_RPC_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
   const request = buildOmieReceivablesRequest({ appKey: 'key', appSecret: 'secret' }, 2, 500);
@@ -209,6 +209,26 @@ test('falha em lote intermediário ou final não envia lotes seguintes', async (
     await assert.rejects(stageOmieRowsInBatches(client, rows), new RegExp(`falha lote ${failingBatch}`));
     assert.equal(calls, failingBatch);
   }
+});
+test('publica indice OMIE em lotes e troca o ponteiro somente no commit', async () => {
+  const calls = [];
+  const client = {
+    rpc: async (name, args) => {
+      calls.push({ name, args });
+      if (name === 'rpc_service_begin_omie_client_index') return { data: 'snapshot-1', error: null };
+      if (name === 'rpc_service_commit_omie_client_index') return { data: { row_count: OMIE_CLIENT_INDEX_RPC_BATCH_SIZE + 1 }, error: null };
+      return { data: OMIE_CLIENT_INDEX_RPC_BATCH_SIZE, error: null };
+    },
+  };
+  const index = new Map(Array.from({ length: OMIE_CLIENT_INDEX_RPC_BATCH_SIZE + 1 }, (_, value) => [String(value + 1), { name: `Cliente ${value + 1}`, taxId: null, tradeName: null }]));
+  const count = await publishOmieClientIndexCache(client, 'run-1', index, '2026-08-12T00:00:00.000Z');
+  assert.equal(count, OMIE_CLIENT_INDEX_RPC_BATCH_SIZE + 1);
+  assert.equal(calls[0].name, 'rpc_service_begin_omie_client_index');
+  assert.deepEqual(calls.slice(1).map(({ name, args }) => [name, args.p_rows?.length ?? null]), [
+    ['rpc_service_append_omie_client_index', OMIE_CLIENT_INDEX_RPC_BATCH_SIZE],
+    ['rpc_service_append_omie_client_index', 1],
+    ['rpc_service_commit_omie_client_index', null],
+  ]);
 });
 test('indice OMIE parcial nunca e classificado como snapshot completo', async () => {
   const result = await fetchOmieClientsIndexWithMetadata({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {

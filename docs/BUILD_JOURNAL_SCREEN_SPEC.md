@@ -1,7 +1,7 @@
 # BUILD_JOURNAL_SCREEN_SPEC.md
 
 ## Objetivo
-Especificar a tela interna `Diário de Construção` do Genius Support OS.
+Especificar a tela interna `Diário de Construção` do ConfiOne.
 
 Atualização de 2026-05-13: a primeira versão runtime foi implementada em `/admin/build-journal` como conteúdo estático versionado no frontend, dentro do Admin Console e protegida pelo gate administrativo existente. Esta versão não criou backend próprio, migration, tabela, RPC, RLS, fixture, storage, parser dinâmico de markdown, IA ou contrato novo.
 
@@ -9,7 +9,7 @@ Atualização de 2026-05-16: a fase `Build Journal Experience Upgrade V1` refato
 
 Atualização de 2026-05-16: a fase `Build Journal Immersive Blueprint Fidelity V1` recriou a rota a partir de uma blueprint dark aprovada. O Diário agora opera como uma superfície editorial imersiva, compacta e desktop-first dentro do Admin Console, com hero horizontal dark, paisagem abstrata, faixa `A jornada em uma visão`, grid principal em três colunas, arquitetura explicada, papel da IA, estado atual e rodapé editorial, tudo visível em uma única dobra desktop sem scroll horizontal. A fase permaneceu estática e segura: sem backend novo, migration, RPC, tabela, policy, RLS nova, parser dinâmico, busca backend, storage, file explorer ou permissão granular nova.
 
-Atualização de 2026-05-17: o Diário passou a usar abas internas estáticas para aprofundamento por blueprint. A aba `Arquitetura` foi implementada como a tela `Arquitetura do Genius Support OS`, conectada dentro de `/admin/build-journal`, com conteúdo versionado e sanitizado sobre camadas, contratos, boundaries, segurança e tecnologias principais. A tela reforça backend como fonte da verdade, leitura por views/read models, escrita por RPCs, RLS/Auth, auditoria e IA apenas como assistente. Esta atualização não criou backend, migration, RPC, view, RLS, Supabase contract, parser dinâmico ou permissão nova.
+Atualização de 2026-05-17: o Diário passou a usar abas internas estáticas para aprofundamento por blueprint. A aba `Arquitetura` foi implementada como a tela `Arquitetura do ConfiOne`, conectada dentro de `/admin/build-journal`, com conteúdo versionado e sanitizado sobre camadas, contratos, boundaries, segurança e tecnologias principais. A tela reforça backend como fonte da verdade, leitura por views/read models, escrita por RPCs, RLS/Auth, auditoria e IA apenas como assistente. Esta atualização não criou backend, migration, RPC, view, RLS, Supabase contract, parser dinâmico ou permissão nova.
 
 Atualização de 2026-05-17: a aba `IA na Construção` foi implementada como superfície estática do Diário de Construção, explicando o fluxo Humano + GPT + Codex, capacidades atuais, capacidades futuras condicionadas, limites explícitos, governança, estado atual e pré-condições para uso de IA sobre a Knowledge Base. A tela não ativa IA no produto, não cria automação, não cria busca, não indexa conteúdo e não altera backend; ela documenta limites e governança de forma sanitizada.
 
@@ -58,7 +58,7 @@ Diário de Construção
 Subtítulo sugerido, se necessário:
 
 ```text
-A história por trás do Genius Support OS: do problema real à construção de uma plataforma CX B2B técnica, segura, escalável e feita para operação.
+A história por trás do ConfiOne: do problema real à construção de uma plataforma CX B2B técnica, segura, escalável e feita para operação.
 ```
 
 O header deve deixar claro que a tela é documental e interna. A versão atual usa badge estática de atualização segura, hero dark e ilustração abstrata, sem parecer landing page promocional nem dashboard decorativo.

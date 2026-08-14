@@ -1,7 +1,12 @@
 # BUILD_JOURNAL_STRATEGY.md
 
 ## Objetivo
-Definir a estratégia documental da área interna `Diário de Construção`, superfície de leitura para registrar como o Genius Support OS foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex.
+Definir a estratégia documental da área interna `Diário de Construção`, superfície de leitura para registrar como o ConfiOne foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex.
+
+Atualização de 2026-08-13: o Diário continua narrativo e passa a se relacionar
+com o Painel de Desenvolvimento em `/engineering/control`. O painel registra
+cards operacionais simples; o Diário explica contexto, decisões e evolução.
+Nenhuma das áreas substitui o Git ou a documentação versionada.
 
 Atualização de 2026-05-13: a primeira versão runtime foi criada em `/admin/build-journal` como conteúdo estático versionado no frontend. Ela não criou backend, migration, RPC, tabela, policy, RLS nova ou contrato novo.
 
@@ -27,12 +32,12 @@ Guardrails aprovados para essa futura expansão:
 - apenas markdowns explicitamente aprovados e curados.
 
 ## O que é o Build Journal
-O Build Journal é o registro narrativo e técnico da construção do Genius Support OS. Ele deve explicar, de forma segura e compreensível, como a plataforma evoluiu de visão de produto para arquitetura, contratos, banco, segurança, fluxos operacionais e experiência interna.
+O Build Journal é o registro narrativo e técnico da construção do ConfiOne. Ele deve explicar, de forma segura e compreensível, como a plataforma evoluiu de visão de produto para arquitetura, contratos, banco, segurança, fluxos operacionais e experiência interna.
 
 Ele não é changelog de commits, log bruto de execução, dump de prompts, auditoria de segurança completa, documentação de secrets ou vitrine decorativa. Seu papel é traduzir decisões relevantes em uma trilha interna clara para quem precisa entender o produto, a arquitetura e o método de construção.
 
 ## Por que ele existe
-O Genius Support OS nasceu como uma plataforma interna CX B2B técnica, não como SAC B2C, CRM genérico ou dashboard de cards. A construção do produto depende de decisões que precisam continuar rastreáveis:
+O ConfiOne nasceu como uma plataforma interna CX B2B técnica, não como SAC B2C, CRM genérico ou dashboard de cards. A construção do produto depende de decisões que precisam continuar rastreáveis:
 
 - o problema operacional que motivou a plataforma;
 - a separação entre suporte, CS, Knowledge, engenharia, clientes B2B, auditoria e portal;
@@ -88,7 +93,7 @@ O Build Journal não pode expor:
 Qualquer print futuro deve ser sanitizado. Dados identificáveis devem ser substituídos por exemplos neutros e aprovados.
 
 ## Como o projeto foi conduzido
-O Genius Support OS foi conduzido com uma divisão explícita de responsabilidades:
+O ConfiOne foi conduzido com uma divisão explícita de responsabilidades:
 
 - Humano: owner de produto, contexto operacional, prioridade, restrições de negócio, aceitação de direção e decisões sensíveis.
 - ChatGPT: arquiteto de produto, PM técnico, analista de processos, tradutor de operação em specs e gerador de prompts para orientar execução.

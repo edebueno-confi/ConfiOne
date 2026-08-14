@@ -149,20 +149,6 @@ function detectImageDimensions(buffer) {
   return { mime: 'application/octet-stream', width: null, height: null };
 }
 
-function repairMojibake(value) {
-  const source = String(value ?? '');
-  const markerCount = (source.match(/[ÃÂâð]/g) ?? []).length;
-  if (markerCount === 0) return source;
-
-  try {
-    const repaired = Buffer.from(source, 'latin1').toString('utf8');
-    const repairedMarkerCount = (repaired.match(/[ÃÂâð]/g) ?? []).length;
-    return repairedMarkerCount < markerCount ? repaired : source;
-  } catch {
-    return source;
-  }
-}
-
 function stripEmbeddedSupportContacts(value) {
   return String(value ?? '')
     .replace(/(^|\n)[ \t]*em caso de d(?:ú|u)vidas[^\n]*(?:\n[ \t]*(?:whatsapp|e-?mail)\s*:\s*[^\n]*){0,2}/gim, '$1')
@@ -348,7 +334,7 @@ async function main() {
     }
     if (processedRuntimeArticleIds.has(runtimeArticle.id)) {
       results.push({
-        title: repairMojibake(article.title),
+        title: safeRepairMojibake(article.title),
         status: runtimeArticle.status,
         visibility: runtimeArticle.visibility,
         assets: article.assets?.length ?? 0,
@@ -369,8 +355,8 @@ async function main() {
     const assetReviewStatus = isPublished && isPublic ? 'approved' : 'pending';
     const assetVisibility = isPublished ? runtimeArticle.visibility : 'internal';
     const storageBucket = isPublished && isPublic ? 'knowledge-public-assets' : 'knowledge-assets';
-    const articleTitle = repairMojibake(editorial?.title ?? runtimeArticle.title);
-    const articleSummary = repairMojibake(editorial?.summary ?? runtimeArticle.summary ?? '');
+    const articleTitle = safeRepairMojibake(editorial?.title ?? runtimeArticle.title);
+    const articleSummary = safeRepairMojibake(editorial?.summary ?? runtimeArticle.summary ?? '');
 
     for (const asset of article.assets ?? []) {
       const relativeAssetPath = String(asset.localPath ?? '').replace(/\\/g, '/');

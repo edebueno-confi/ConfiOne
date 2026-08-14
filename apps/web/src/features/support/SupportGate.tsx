@@ -115,7 +115,13 @@ export function SupportGate({ children }: { children: ReactNode }) {
         ['support_inbox', 'support_queue', 'support_tickets'].includes(key),
       ) === true;
 
-    if (!isSupportOperator) {
+    const isEngineeringOperator =
+      location.pathname.startsWith('/engineering') &&
+      (gate.actor?.is_platform_admin === true ||
+        gate.actor?.roles.some((role) => role === 'engineering_manager' || role === 'engineering_member') === true ||
+        gate.actor?.screen_keys?.includes('product') === true);
+
+    if (!isSupportOperator && !isEngineeringOperator) {
       return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
     }
   }

@@ -2211,3 +2211,81 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Corrigido: o cabeçalho Financeiro consulta e mostra a última execução do OMIE junto da origem financeira.
 - Não alterado: contratos de dados, RPCs, regras de frescor, RLS ou credenciais.
 - Pendências técnicas: telemetria por request, atomicidade do bloco compartilhado HubSpot, tombstones/arquivamentos e smoke visual autenticado em todos os viewports.
+
+## Registro histórico — auditoria inicial de governança da Central pública — 12/08/2026
+
+### Escopo e estado de execução
+
+- checkout: `C:\Projetos\GSO-old`
+- branch: `codex/release-consolidated-20260811`
+- HEAD auditado: `3aed2f4`
+- fonte de verdade: Supabase vinculado, consultado por SQL somente leitura
+- escrita remota nesta etapa: não executada
+- relatório detalhado: `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`
+
+### Snapshot local anterior — não usar como evidência de produção
+
+| Medida | Resultado |
+| --- | ---: |
+| Artigos `published/public` em `genius` | 69 |
+| Categorias públicas | 12 |
+| Linhas de asset editorial | 128 (snapshot local anterior) |
+| Referências `knowledge-asset:<id>` no corpo público | 128 (snapshot local anterior) |
+| Referências sem asset correspondente | 0 |
+| Artigos com `chr(65533)` | 0 |
+| Artigos com mojibake confirmado | 0 |
+| Artigos com placeholder de FAQ | 0 |
+| `support_contacts` público | `{ "websiteUrl": "https://www.geniusreturns.com.br/contato/" }` |
+
+Conclusão histórica: naquele snapshot local, os 128 assets correspondiam aos 128 markers do corpo. Essa evidência foi substituída pela reconciliação final de produção ao fim deste documento, que confirmou zero markers, zero referências quebradas, zero placeholder de FAQ, zero caractere de substituição, zero mojibake confirmado e o canal oficial de contato.
+
+### Registro de decisão para artigos sensíveis publicados
+
+A consulta histórica por tema confirmou 15 artigos legados publicados com `PIX`, `estorno`, `Correios` ou `sellers`. A lista nominal atual, com IDs/slugs do espaço de produção e a decisão por artigo, está na reconciliação final do relatório de auditoria. A decisão operacional permanece `EXCEÇÃO_LEGADA_DELEGADA` para o lote atual: continuam públicos para preservar cobertura, com correções objetivas permitidas, enquanto qualquer novo canônico permanece bloqueado até revisão formal.
+
+Os documentos canônicos existentes permanecem respeitados:
+
+- Pix, cálculo/limites, vale-compra, integrações e gateway continuam bloqueados ou pendentes;
+- os rewrites de formas de estorno, motivos de troca/devolução, prazo de postagem, pendência de logística reversa e CEP/endereço são candidatos, não publicações aprovadas;
+- nenhuma aprovação foi simulada e nenhum canônico foi publicado nesta etapa.
+
+Além dos 15 artigos de alta confiança do snapshot histórico, havia uma watchlist de 15 artigos com termo sensível apenas no corpo. Ela exige classificação semântica antes de ser tratada como violação; o runbook foi ajustado para não confundir ocorrência lexical incidental com decisão editorial. A evidência atual é a reconciliação final do relatório.
+
+### Matriz nominal dos sete tópicos da migração
+
+Cada linha abaixo foi confirmada como `published/public` no banco. `EXCEÇÃO_LEGADA_DELEGADA` é o estado operacional deste lote; não substitui a futura revisão formal para um canônico novo. As células `PENDENTE_PRODUCT_CS` abaixo permanecem como status do gate formal, não como indicação de retirada imediata do legado.
+
+| Tópico | Artigo / ID / slug | Recomendação técnica | Estado |
+| --- | --- | --- | --- |
+| BlockList | `19826c33-03f4-4d8b-8f21-29f184f39125` / `como-configurar-o-blocklist` | manter somente como exceção legada corrigida ou arquivar; não há canônico aprovado | `PENDENTE_PRODUCT_CS` |
+| Estorno automático PIX | `33a45a4a-5862-4022-85b6-27b949f5358d` / `como-configurar-o-estorno-automatico-via-pix` | saneamento conservador; rewrite depende de Produto + Engenharia + CS | `PENDENTE_PRODUCT_CS` |
+| Cálculo de estorno | `a1ab38c7-010a-40ba-b35c-53b696ef9ad2` / `como-configurar-o-calculo-do-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Limite de estorno | `68668759-0b69-438c-93a0-6be50b3ebf8b` / `limitando-o-valor-maximo-de-um-estorno` | saneamento conservador por risco financeiro | `PENDENTE_PRODUCT_CS` |
+| Política de frete | `978e536d-c789-4a74-8f6b-5c89185a0e1c` / `politica-para-estorno-do-frete` | saneamento conservador; requer governança financeira/operacional | `PENDENTE_PRODUCT_CS` |
+| Vale-compra | `8ece5891-4613-44cf-9f61-9d2bda71258e` / `como-automatizar-o-pagamento-de-estorno-e-vale-compra`; `470da711-46b1-4b56-b18d-059fd829f409` / `como-configurar-o-vale-compras-retencao`; `0c76840c-9a49-4e76-94c8-78aec2e36bdc` / `como-realizar-alteracoes-em-um-vale-compra-pendente`; `0766342f-e8eb-4927-a4ba-c5f3284a5982` / `pedidos-pagos-com-vale-compras`; `e15c47b4-ddf5-4747-8f2d-64c37c88bd31` / `sellers-permitidos-para-criar-vale-compras` | manter apenas por exceção nominal ou retirar; não há rewrite aprovado | `PENDENTE_PRODUCT_CS` |
+| Motivos de troca/devolução | `38e67946-8956-43d3-98f4-b1bcb31bbf79` / `como-cadastrar-motivos-para-troca-ou-devolucao`; `40270318-8a7e-4114-bc49-3486c52cb96c` / `como-iniciar-uma-troca-ou-devolucao-pelo-e-commerce` | substituir por recorte canônico após aprovação de Produto + CS | `PENDENTE_PRODUCT_CS` |
+| Logística reversa | `b84c1f9e-528f-4d93-b577-db1fac69de31` / `como-o-consumidor-solicita-uma-reversa`; `d72b9732-b58b-47e6-96bc-6c7b82862442` / `habilitar-a-api-de-logistica-reversa-do-correios`; `d860e673-1912-4d34-9c47-6dc5f3420947` / `pendencia-de-logistica-reversa`; `7b3f7c81-1e17-4829-8bb3-a1fab5ef4228` / `posso-filtrar-as-solicitacoes-de-reversas`; `336f8f01-0c9d-4ba8-8612-2436e3731c77` / `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` | substituir por rewrites de logística/postagem aprovados; integração Correios continua bloqueada | `PENDENTE_PRODUCT_CS` |
+| Prazo de postagem | `8b00aec4-e373-4f94-a8cd-35ef7c825707` / `como-configurar-o-prazo-logistico-por-estado` | substituir por `KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` após aprovação | `PENDENTE_PRODUCT_CS` |
+
+### Regra operacional resultante
+
+1. Artigos já públicos permanecem públicos neste lote para evitar regressão.
+2. Correções textuais objetivas e reversíveis podem ser aplicadas pela origem local, por slug, preservando `published/public`.
+3. Novos canônicos sensíveis, alterações de regra financeira, integração ou permissão ficam bloqueados até revisão formal.
+4. A lista nominal e a watchlist devem ser reavaliadas antes de qualquer expansão de conteúdo.
+
+### Ações restantes após a decisão
+
+- manter o normalizador Windows-1252 coberto por teste antes de qualquer novo reprocessamento editorial;
+- a consulta pública atual já confirmou a correção do artigo com `chr(65533)` e a remoção do placeholder de FAQ;
+- validação local concluída para o reparo por slug: `published/public`, sem `chr(65533)`, placeholder ou quebra de passo colapsada;
+- canal público real configurado em `brand_settings` via RPC administrativo: `websiteUrl = https://www.geniusreturns.com.br/contato/`;
+- executar a escrita remota somente pelo fluxo administrativo autenticado e repetir a consulta read-only após a publicação.
+
+## Reconciliação final da Central pública em produção — 2026-08-12
+
+O espaço de produção efetivamente resolvido para `genius` é `526f7658-8e15-4e74-a1a0-631fbf0e7285`. A consulta read-only final confirmou 69 artigos `published/public`, zero marcadores `knowledge-asset:<id>`, zero referências quebradas, zero placeholder de FAQ, zero caractere de substituição, zero mojibake confirmado pelo detector específico e zero resumo genérico deixado pelo saneamento. O canal público é exclusivamente `websiteUrl = https://www.geniusreturns.com.br/contato/`.
+
+Foram corrigidos pelo editor autenticado 36 artigos que continham 89 referências legadas sem asset público. A ação foi limitada à remoção dos blocos de imagem sem correspondência, seguida de salvamento e republicação pelo gate editorial existente. Os 22 resumos preenchidos transitoriamente para satisfazer o pré-voo foram restaurados para resumos específicos e republicados.
+
+A decisão de produto deste lote permanece: artigos legados sensíveis já publicados ficam em `EXCEÇÃO_LEGADA_DELEGADA`, com saneamento objetivo permitido; nenhum novo canônico sensível é aprovado ou publicado sem revisão formal nominal de Produto, Engenharia, Suporte/CS. A matriz nominal atualizada por IDs/slugs reais está em `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`.

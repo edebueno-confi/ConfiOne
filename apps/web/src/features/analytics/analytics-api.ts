@@ -53,6 +53,32 @@ import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
 
 type Row = Record<string, unknown>;
 
+const analyticsRpcInFlight = new Map<string, Promise<unknown>>();
+
+async function readAnalyticsRpc<T>(
+  rpcName: string,
+  args: Record<string, unknown> | undefined,
+  errorMessage: string,
+): Promise<T> {
+  const key = `${rpcName}:${JSON.stringify(args ?? {})}`;
+  const inFlight = analyticsRpcInFlight.get(key);
+  if (inFlight) return inFlight as Promise<T>;
+
+  const request = (async () => {
+    const client = requireSupabaseBrowserClient();
+    const { data, error } = await client.rpc(rpcName, args);
+    if (error) throw toAppError(error, errorMessage);
+    return data as T;
+  })();
+
+  analyticsRpcInFlight.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (analyticsRpcInFlight.get(key) === request) analyticsRpcInFlight.delete(key);
+  }
+}
+
 export async function getCommercialKpis(): Promise<CommercialKpis> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
@@ -285,36 +311,44 @@ export async function getCustomerSuccessKpisV2(): Promise<unknown> {
 }
 
 export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unknown> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(filters));
-  if (error) throw toAppError(error, 'Falha ao carregar o resumo executivo.');
-  return data;
+  return readAnalyticsRpc(
+    'rpc_analytics_executive_kpis_v2',
+    rpcFilters(filters),
+    'Falha ao carregar o resumo executivo.',
+  );
 }
 
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
-  const client = requireSupabaseBrowserClient();
-  const [snapshot, reconciliation] = await Promise.all([
-    client.rpc('rpc_analytics_finance_snapshot', {
+  const snapshotArgs = {
       ...rpcFilters(filters),
       p_status: filters.stageId || null,
       p_aging_bucket: filters.priority || null,
       p_client_query: clientQuery.trim() || null,
-    }),
-    client.rpc('rpc_analytics_finance_reconciliation_v1', {
+  };
+  const reconciliationArgs = {
       p_client_query: clientQuery.trim() || null,
       p_limit: 200,
-    }),
+  };
+  const [rawSnapshot, rawReconciliation] = await Promise.all([
+    readAnalyticsRpc<unknown>(
+      'rpc_analytics_finance_snapshot',
+      snapshotArgs,
+      'Falha ao carregar a analise financeira filtrada.',
+    ),
+    readAnalyticsRpc<unknown>(
+      'rpc_analytics_finance_reconciliation_v2',
+      reconciliationArgs,
+      'Falha ao carregar a conciliação financeira.',
+    ),
   ]);
-  if (snapshot.error) throw toAppError(snapshot.error, 'Falha ao carregar a analise financeira filtrada.');
-  if (reconciliation.error) throw toAppError(reconciliation.error, 'Falha ao carregar a conciliação financeira.');
-  const summary = reconciliation.data && typeof reconciliation.data === 'object'
-    ? reconciliation.data as Record<string, unknown>
+  const summary = rawReconciliation && typeof rawReconciliation === 'object'
+    ? rawReconciliation as Record<string, unknown>
     : {};
-  const rawSnapshot = snapshot.data && typeof snapshot.data === 'object'
-    ? snapshot.data as Record<string, unknown>
+  const snapshot = rawSnapshot && typeof rawSnapshot === 'object'
+    ? rawSnapshot as Record<string, unknown>
     : {};
   return mapFinanceSnapshot({
-    ...rawSnapshot,
+    ...snapshot,
     cs_reconciliation: {
       ...(summary.summary && typeof summary.summary === 'object' ? summary.summary : {}),
       by_client_status: Array.isArray(summary.by_client_status) ? summary.by_client_status : [],
@@ -409,6 +443,54 @@ export async function runIntegrationNow(): Promise<{ status: 'success' | 'partia
   return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
 }
 
+interface GovernedHubSpotFunctionResponse {
+  ok?: boolean;
+  dryRun?: boolean;
+  ledgerRunId?: string;
+  totalCompanies?: number;
+  wouldUpdate?: number;
+  updated?: number;
+  failed?: number;
+  summary?: { exists?: number; wouldCreate?: number; created?: number; failed?: number };
+  error?: string;
+}
+
+async function invokeGovernedHubSpotFunction(
+  functionName: 'hubspot-property-setup' | 'hubspot-omie-property-sync',
+  body: Record<string, unknown>,
+): Promise<GovernedHubSpotFunctionResponse> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('A atualização governada não está disponível neste ambiente.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para atualizar o HubSpot.');
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: config.config.supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => null) as GovernedHubSpotFunctionResponse | null;
+  if (!response.ok) {
+    const message = payload?.error ?? `Falha ao executar ${functionName}.`;
+    throw analyticsSyncError({ operation: functionName, status: response.status, payload: { error: message } });
+  }
+  return payload ?? {};
+}
+
+export function runHubSpotPropertySetup(dryRun = true): Promise<GovernedHubSpotFunctionResponse> {
+  return invokeGovernedHubSpotFunction('hubspot-property-setup', dryRun ? { dryRun: true } : { dryRun: false, confirmation: 'CRIAR' });
+}
+
+export function runHubSpotOmiePropertySync(dryRun = true, limit = 5000): Promise<GovernedHubSpotFunctionResponse> {
+  return invokeGovernedHubSpotFunction('hubspot-omie-property-sync', dryRun
+    ? { dryRun: true, limit }
+    : { dryRun: false, confirmation: 'ATUALIZAR', limit });
+}
+
 export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
   const config = readRuntimeConfig();
   if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
@@ -433,16 +515,49 @@ export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'succe
 }
 
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_ceo_snapshot', { ...rpcFilters(filters) });
-  if (error) throw toAppError(error, 'Falha ao carregar a visão executiva.');
+  const data = await readAnalyticsRpc<unknown>(
+    'rpc_analytics_ceo_snapshot',
+    { ...rpcFilters(filters) },
+    'Falha ao carregar a visão executiva.',
+  );
   return mapCeoSnapshot(data);
 }
 
+export async function getCeoDashboard(filters: AnalyticsFilters): Promise<{ snapshot: CeoSnapshot; history: CeoHistory | null }> {
+  try {
+    const data = await readAnalyticsRpc<unknown>(
+      'rpc_analytics_ceo_dashboard',
+      { ...rpcFilters(filters) },
+      'Falha ao carregar a visão executiva.',
+    );
+    const record = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+    if (!record.snapshot || !record.history) {
+      throw new Error('Contrato combinado da visão executiva incompleto.');
+    }
+    return {
+      snapshot: mapCeoSnapshot(record.snapshot),
+      history: mapCeoHistory(record.history),
+    };
+  } catch (combinedError) {
+    // Mantém compatibilidade durante a publicação ordenada do frontend e da
+    // migration, além de preservar a tolerância histórica do comparativo.
+    const snapshot = await getCeoSnapshot(filters);
+    let history: CeoHistory | null = null;
+    try {
+      history = await getCeoHistory(filters);
+    } catch {
+      history = null;
+    }
+    return { snapshot, history };
+  }
+}
+
 export async function getCeoHistory(filters: AnalyticsFilters): Promise<CeoHistory> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_ceo_history', { ...rpcFilters(filters) });
-  if (error) throw toAppError(error, 'Falha ao carregar a evolucao historica executiva.');
+  const data = await readAnalyticsRpc<unknown>(
+    'rpc_analytics_ceo_history',
+    { ...rpcFilters(filters) },
+    'Falha ao carregar a evolucao historica executiva.',
+  );
   return mapCeoHistory(data);
 }
 
@@ -739,7 +854,7 @@ export async function getSupportStageBreakdown(pipelineId: string | null = null,
  */
 export async function getSupportQueueHealth(groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_queue_health_by_operation', { p_group_company: groupCompany });
+  const { data, error } = await client.rpc('rpc_analytics_support_queue_health_read_model', { p_group_company: groupCompany });
   if (error) throw toAppError(error, 'Falha ao carregar a saúde da fila.');
   return data;
 }
@@ -764,7 +879,7 @@ export async function updatePipelineQueueRole(pipelineId: string, role: QueueRol
  */
 export async function getSupportCustomerDebt(): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_customer_debt');
+  const { data, error } = await client.rpc('rpc_analytics_support_customer_debt_read_model');
   if (error) throw toAppError(error, 'Falha ao carregar os atendimentos sem resposta.');
   return data;
 }

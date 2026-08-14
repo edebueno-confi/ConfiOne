@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import heroMountainUrl from '../../assets/build-journal/build-journal-hero-mountain-path.png';
 import { cx } from '../../components/ui';
 import { BuildJournalArchitecture } from './BuildJournalArchitecture';
@@ -17,6 +17,7 @@ import {
   type TimelineStatus,
 } from './buildJournalContent';
 import { BuildJournalQuoteFooter } from './BuildJournalQuoteFooter';
+import { DevelopmentJournalSurface } from './DevelopmentJournalSurface';
 
 const accentClasses: Record<TimelineAccent, { bg: string; soft: string; text: string; border: string }> = {
   blue: {
@@ -320,10 +321,10 @@ function TimelineCard({ phase }: { phase: TimelinePhase }) {
         <p className="text-sm font-black text-[#071641]">Documentos relacionados</p>
         <Link
           className="mt-3 flex min-h-10 items-center gap-3 rounded-[8px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] px-3 text-xs font-black text-[#33486B] transition hover:border-[#1458E8]/35 hover:bg-[#F7FAFF]"
-          to={`/admin/product-docs?doc=${encodeURIComponent(phase.document)}`}
+          to={`/admin/product-docs?surface=development&doc=${encodeURIComponent(phase.document)}`}
         >
           <Icon className="h-4 w-4 shrink-0 text-[#5F74A0]" name="doc" />
-          <span className="min-w-0 flex-1 break-all">{phase.document}</span>
+          <span className="min-w-0 flex-1 break-all">{phase.documentLabel}</span>
           <span aria-hidden="true" className="text-[#5F74A0]">›</span>
         </Link>
         <p className="mt-3 text-sm font-black text-[#31476C]">+ {phase.extraDocuments} documentos</p>
@@ -341,9 +342,9 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
           {[
             ['Total de fases', '8'],
             ['Concluídas', '4'],
-            ['Em andamento', '3'],
-            ['Planejadas', '1'],
-            ['Documentos relacionados', '26+'],
+            ['Em andamento', '2'],
+            ['Planejadas', '2'],
+            ['Fontes catalogadas', 'Em consolidação'],
           ].map(([label, value]) => (
             <div className="flex items-center justify-between gap-4 text-sm" key={label}>
               <dt className="font-semibold text-[#41567A]">{label}</dt>
@@ -371,7 +372,7 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
               <circle cx="60" cy="60" fill="none" r="46" stroke="#27C678" strokeDasharray="72 289" strokeDashoffset="-182" strokeLinecap="round" strokeWidth="14" />
               <circle cx="60" cy="60" fill="none" r="46" stroke="#FF8A16" strokeDasharray="35 289" strokeDashoffset="-254" strokeLinecap="round" strokeWidth="14" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-[#071641]">63%</span>
+            <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-[#071641]">50%</span>
           </div>
           <div className="self-center space-y-4 text-sm">
             <div className="flex items-center justify-between gap-4">
@@ -434,7 +435,7 @@ function OverviewPanel({
       icon: 'spark',
       accent: 'text-[#F83D90] bg-[#FFF0F7]',
       body:
-        'O Genius Support OS nasceu da dor real de um suporte descentralizado, sem histórico confiável e com conhecimento espalhado.',
+        'O ConfiOne nasceu da dor real de um suporte descentralizado, sem histórico confiável e com conhecimento espalhado.',
       detail:
         'Nosso objetivo é construir uma plataforma interna que centraliza suporte, conhecimento, comunicação, engenharia e operação com segurança, rastreabilidade e escala.',
     },
@@ -499,7 +500,7 @@ function OverviewPanel({
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[2rem] font-black leading-10 tracking-[-0.01em] text-[#071641]">Diário de Construção</h1>
-          <p className="mt-1 text-base font-semibold text-[#20375F]">A história por trás do Genius Support OS</p>
+          <p className="mt-1 text-base font-semibold text-[#20375F]">Memória operacional do produto e das decisões que o fizeram mudar de rota</p>
         </div>
         <span className="inline-flex min-h-10 items-center gap-3 rounded-[10px] border border-[#D9E6F7] bg-[#F7FAFF] px-5 text-sm font-black text-[#1458E8]">
           <Icon className="h-4 w-4" name="shield" />
@@ -507,7 +508,7 @@ function OverviewPanel({
         </span>
       </header>
 
-      <section className="relative min-h-[320px] overflow-hidden rounded-[18px] border border-[#CFE0F7] bg-[#F4F8FF] shadow-[0_18px_45px_rgba(31,67,125,0.08)]">
+      <section className="gso-development-journal-hero relative min-h-[320px] overflow-hidden rounded-[18px] border border-[#CFE0F7] bg-[#F4F8FF] shadow-[0_18px_45px_rgba(31,67,125,0.08)]">
         <img
           alt=""
           aria-hidden="true"
@@ -517,10 +518,10 @@ function OverviewPanel({
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#F8FBFF_0%,#F8FBFF_35%,rgba(248,251,255,0.78)_52%,rgba(248,251,255,0.12)_100%)]" />
         <div className="relative z-10 max-w-[560px] px-9 py-10">
           <h2 className="text-[2rem] font-black leading-[1.12] tracking-[-0.02em] text-[#071641]">
-            Da dor operacional à plataforma CX B2B técnica
+            Da plataforma ampla ao dashboard, à ajuda e à memória de construção
           </h2>
           <p className="mt-5 text-base font-semibold leading-8 text-[#20375F]">
-            Entenda como transformamos problemas reais de suporte em uma plataforma segura, escalável e centrada na operação.
+            A primeira versão publicada combina a Central de Ajuda externa com o Dashboard gerencial interno. O cockpit registra o caminho; a plataforma SaaS completa fica como próxima etapa.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <button
@@ -532,7 +533,7 @@ function OverviewPanel({
             </button>
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-3 rounded-[9px] border border-[#BFD4F3] bg-[color:var(--color-surface-strong)] px-6 text-sm font-black text-[#1458E8]"
-              to="/admin/product-docs"
+              to="/admin/product-docs?surface=development"
             >
               Abrir documentos do produto <Icon className="h-4 w-4" name="doc" />
             </Link>
@@ -700,9 +701,9 @@ function OverviewPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black text-[#071641]">Documentos oficiais</h2>
-            <p className="mt-1 text-sm font-semibold text-[#31476C]">Acesse os documentos que guiam o Genius Support OS</p>
+            <p className="mt-1 text-sm font-semibold text-[#31476C]">Acesse os documentos que guiam o ConfiOne</p>
           </div>
-          <Link className="rounded-[10px] bg-[#F2F7FF] px-5 py-3 text-sm font-black text-[#1458E8]" to="/admin/product-docs">
+          <Link className="rounded-[10px] bg-[#F2F7FF] px-5 py-3 text-sm font-black text-[#1458E8]" to="/admin/product-docs?surface=development">
             Ver todos em Documentos do Produto →
           </Link>
         </div>
@@ -710,7 +711,7 @@ function OverviewPanel({
           {documentCards.map(([title, text, count, accent, icon]) => {
             const color = accentClasses[accent as TimelineAccent];
             return (
-              <Link className="grid grid-cols-[48px_1fr_32px] gap-4 rounded-[14px] border border-[#D9E6F7] bg-[#FBFDFF] p-4 hover:border-[#1458E8]/35" key={title} to="/admin/product-docs">
+              <Link className="grid grid-cols-[48px_1fr_32px] gap-4 rounded-[14px] border border-[#D9E6F7] bg-[#FBFDFF] p-4 hover:border-[#1458E8]/35" key={title} to="/admin/product-docs?surface=development">
                 <span className={cx('flex h-12 w-12 items-center justify-center rounded-full', color.soft, color.text)}>
                   <Icon className="h-7 w-7" name={icon} />
                 </span>
@@ -728,7 +729,7 @@ function OverviewPanel({
 
       <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">Próximos passos</h2>
-        <p className="mt-1 text-sm font-semibold text-[#31476C]">O que vem pela frente no Genius Support OS</p>
+        <p className="mt-1 text-sm font-semibold text-[#31476C]">O que vem pela frente no ConfiOne</p>
         <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
           {nextSteps.map(([title, text]) => (
             <article className="rounded-[13px] border border-[#D9E6F7] bg-[#FBFDFF] p-4" key={title}>
@@ -782,6 +783,7 @@ function SimpleDocumentPanel({
 }
 
 export function BuildJournalPage() {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<BuildJournalTab>('overview');
   const [phase, setPhase] = useState('all');
   const [status, setStatus] = useState('all');
@@ -791,8 +793,13 @@ export function BuildJournalPage() {
   const isArchitectureTab = activeTab === 'architecture';
   const isAITab = activeTab === 'ai';
   const isDocsTab = activeTab === 'docs';
+  const isDevelopmentSurface = searchParams.get('surface') === 'development';
   const activeTabLabel = buildJournalTabs.find((tab) => tab.key === activeTab)?.label ?? 'Visão geral';
   const showTimelineHeader = activeTab !== 'overview';
+
+  if (isDevelopmentSurface) {
+    return <DevelopmentJournalSurface />;
+  }
 
   const filteredPhases = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
@@ -813,7 +820,7 @@ export function BuildJournalPage() {
   }, [area, phase, query, status]);
 
   return (
-    <main className="h-full min-h-0 overflow-y-auto overflow-x-hidden rounded-[22px] bg-[#F8FBFF] text-[#071641]">
+    <main className={cx('h-full min-h-0 overflow-y-auto overflow-x-hidden rounded-[22px] bg-[#F8FBFF] text-[#071641]', isDevelopmentSurface && 'gso-development-journal-surface')}>
       <div className="mx-auto w-full max-w-[1460px] space-y-6 p-6 pb-8">
         {showTimelineHeader ? (
           <header className="space-y-5">
@@ -845,7 +852,7 @@ export function BuildJournalPage() {
                   {isTimelineTab
                     ? 'Linha do tempo da construção'
                     : isArchitectureTab
-                      ? 'Arquitetura do Genius Support OS'
+                      ? 'Arquitetura do ConfiOne'
                       : isAITab
                         ? 'IA na Construção'
                         : isDocsTab
@@ -860,8 +867,8 @@ export function BuildJournalPage() {
                       : isAITab
                         ? 'Usamos IA para acelerar raciocínio, execução e documentação sem abrir mão de governança, acordos reais e decisão humana.'
                         : isDocsTab
-                          ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do Genius Support OS.'
-                          : 'Conteúdo documental interno conectado à evolução do produto'}
+                          ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do ConfiOne.'
+                          : 'O estado atual, as decisões e o próximo caminho ficam visíveis em um só lugar.'}
                 </p>
               </div>
               <div className="rounded-[14px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-1 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">

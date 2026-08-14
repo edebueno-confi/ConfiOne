@@ -40,6 +40,14 @@ export function canOpenInternalRoute(
     return false;
   }
 
+  // `platform_admin` is the root administrative role for the published
+  // internal surface. The release manifest remains the first guard above;
+  // once a route is published, the root administrator must not depend on a
+  // duplicated per-screen grant to open it.
+  if (context.roles.includes('platform_admin')) {
+    return true;
+  }
+
   if (matchesRoute(routePathname, '/inicio')) {
     return (
       context.roles.includes('platform_admin') ||
@@ -85,6 +93,7 @@ export function canOpenInternalRoute(
       ['/admin/access', 'access'],
       ['/admin/system', 'system'],
       ['/admin/product-docs', 'product_docs'],
+      ['/admin/build-journal', 'product_docs'],
     ];
     const adminScreen = adminScreenByRoute.find(([path]) => matchesRoute(routePathname, path));
     if (adminScreen) {

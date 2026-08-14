@@ -88,7 +88,7 @@ export function AccountSelfShell() {
 
   return (
     <MinimalAppShell
-      permissions={{ isPlatformAdmin, roles: gate.actor?.roles ?? [], screenKeys: gate.actor?.screen_keys ?? [] }}
+      permissions={{ isPlatformAdmin, fullName: gate.actor?.profile.full_name ?? null, roles: gate.actor?.roles ?? [], screenKeys: gate.actor?.screen_keys ?? [] }}
       userSubtitle={isPlatformAdmin ? 'Administrador da plataforma' : 'Operação interna'}
     >
       <Outlet />

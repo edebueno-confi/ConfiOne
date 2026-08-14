@@ -52,7 +52,7 @@ export function SupportWorkspaceShell() {
 
   return (
     <MinimalAppShell
-      permissions={{ isPlatformAdmin, roles: gate.actor?.roles ?? [], hasInternalActionAreaAccess }}
+      permissions={{ isPlatformAdmin, fullName: gate.actor?.profile.full_name ?? null, roles: gate.actor?.roles ?? [], hasInternalActionAreaAccess }}
       userSubtitle={isPlatformAdmin ? 'Administrador da plataforma' : 'Operação interna'}
     >
       <Outlet />

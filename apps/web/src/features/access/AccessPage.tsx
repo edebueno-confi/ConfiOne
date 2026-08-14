@@ -759,7 +759,7 @@ export function AccessPage() {
             </div>
             {globalRoleMessage ? <p role="status" className="text-xs text-[color:var(--minimal-text-secondary)]">{globalRoleMessage}</p> : null}
           </div>
-          <div className="mt-3 overflow-x-auto rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]">
+          <div className="gso-responsive-table-scroll mt-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]" data-responsive-table-scroll="true">
             <table className="w-full min-w-[680px] text-xs">
               <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
                 <tr>
@@ -800,7 +800,7 @@ export function AccessPage() {
         </section>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+      <div className="gso-access-main-grid grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <section className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="space-y-3">
             <div className="space-y-1">
@@ -932,7 +932,7 @@ export function AccessPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-hidden xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+              <div className="gso-responsive-table-scroll xl:min-h-0 xl:flex-1 xl:overflow-y-auto" data-responsive-table-scroll="true">
                 <table className="minimal-access-table w-full table-fixed border-collapse text-left">
                   {activeTab === 'users' ? (
                     <colgroup>

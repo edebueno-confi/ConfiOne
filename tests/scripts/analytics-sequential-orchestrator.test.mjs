@@ -3,10 +3,14 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const edge = await readFile(new URL('../../supabase/functions/analytics-sequential-sync/index.ts', import.meta.url), 'utf8');
+const continuation = await readFile(new URL('../../supabase/functions/analytics-sequential-continue/index.ts', import.meta.url), 'utf8');
+const continuationShared = await readFile(new URL('../../supabase/functions/_shared/analytics-sequential-continuation.ts', import.meta.url), 'utf8');
+const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-dispatcher/index.ts', import.meta.url), 'utf8');
 const compatibility = await readFile(new URL('../../supabase/functions/analytics-integration-run/index.ts', import.meta.url), 'utf8');
 const omieEntry = await readFile(new URL('../../supabase/functions/omie-sync/index.ts', import.meta.url), 'utf8');
 const omieService = await readFile(new URL('../../supabase/functions/_shared/omie-sync-service.ts', import.meta.url), 'utf8');
 const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260802180000_dashboard_hubspot_service_identity_v2.sql', import.meta.url), 'utf8');
+const reaperMigration = await readFile(new URL('../../supabase/migrations/20260812110000_analytics_sync_cycle_reaper_sequential_v2.sql', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../../supabase/functions/_shared/hubspot-cs-runner.ts', import.meta.url), 'utf8');
 const config = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const api = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
@@ -36,6 +40,22 @@ test('processamento pendente bloqueia OMIE, mas falha terminal preserva o ciclo 
   assert.match(edge, /const status = hubspotOk && omieOk \? 'success' : 'partial'/);
   assert.match(edge, /overall_result/);
   assert.match(edge, /sanitized_error/);
+});
+
+test('carga grande do HubSpot continua em segundo plano e não prende o ciclo ao limite da requisição', () => {
+  assert.doesNotMatch(edge, /for \(let attempt = 0; attempt < 30; attempt \+= 1\)/);
+  assert.match(edge, /afterDispatch/);
+  assert.match(dispatcher, /analytics-sequential-continue/);
+  assert.match(dispatcher, /scheduleAnalyticsContinuation/);
+  assert.match(continuation, /claimCycleOmieStep/);
+  assert.match(continuation, /finishCycleAfterOmie/);
+  assert.match(continuationShared, /\.eq\('status', 'queued'\)/);
+  assert.match(continuationShared, /current_step: 'omie'/);
+});
+
+test('reaper não abandona a sequência enquanto existe etapa pendente', () => {
+  assert.match(reaperMigration, /not exists \(\s*select 1\s*from public\.analytics_sync_cycle_steps s[\s\S]+s\.status in \('queued', 'running'\)/);
+  assert.match(reaperMigration, /Preserva etapas queued\/running/);
 });
 
 test('Configuracoes usa o orquestrador novo', () => {

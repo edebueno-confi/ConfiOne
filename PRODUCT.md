@@ -4,7 +4,7 @@
 product
 
 ## Produto
-Genius Support OS e um cockpit operacional CX B2B tecnico para centralizar suporte, CS, operacao administrativa, Knowledge Base, tickets, clientes B2B, auditoria e futura camada Omni Work.
+ConfiOne e um cockpit operacional CX B2B tecnico para centralizar suporte, CS, operacao administrativa, Knowledge Base, tickets, clientes B2B, auditoria e futura camada Omni Work.
 
 ## O que o produto e
 - Plataforma interna para operacao tecnica B2B, inicialmente usada por times internos.

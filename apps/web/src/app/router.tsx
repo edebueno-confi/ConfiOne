@@ -259,6 +259,11 @@ const EngineeringWorkspacePage = lazyRouteModule(
   'EngineeringWorkspacePage',
 );
 
+const DevelopmentControlPage = lazyRouteModule(
+  () => import('../features/development-control/DevelopmentControlPage'),
+  'DevelopmentControlPage',
+);
+
 const InternalActionsWorkspacePage = lazyRouteModule(
   () => import('../features/internal-actions/InternalActionsWorkspacePage'),
   'InternalActionsWorkspacePage',
@@ -589,6 +594,10 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: withSuspense(<EngineeringWorkspacePage />),
+          },
+          {
+            path: 'control',
+            element: withSuspense(<DevelopmentControlPage />),
           },
           {
             path: 'work-items/:workItemId',

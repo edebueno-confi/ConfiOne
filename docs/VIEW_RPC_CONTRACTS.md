@@ -481,6 +481,22 @@ Fase Internal Documents Foundation V3/V4:
 - Não foi criada RPC de sync/publicação neste lote; a escrita inicial é feita por script server-side controlado, usando whitelist versionada e sem aceitar path arbitrário por CLI.
 - Product Docs e Build Journal ainda não consomem essas views neste lote; a migração de frontend fica para V5.
 
+Fase Painel de Desenvolvimento V1 - 2026-08-13:
+- O painel interno geral de desenvolvimento usa uma superficie propria, separada do Engineering Workspace originado por tickets:
+  - `internal_build_tasks`
+  - `internal_build_task_updates`
+- A leitura do app passa apenas por:
+  - `vw_internal_build_tasks_board`
+  - `vw_internal_build_task_updates`
+- A escrita passa apenas por:
+  - `rpc_internal_build_task_create`
+  - `rpc_internal_build_task_claim`
+  - `rpc_internal_build_task_update`
+  - `rpc_internal_build_task_add_update`
+- O escopo e explicitamente `workspace_key = confi_one_development`; o backend valida ator ativo e acesso por `platform_admin`, papeis de engenharia ou capacidade `screen.product.view`.
+- Cards concluidos exigem resultado e validacao; cards bloqueados exigem motivo. As alteracoes relevantes geram auditoria por trigger.
+- O painel registra estado e evidencia curta. Codigo, migrations, testes e documentacao continuam sendo as fontes de verdade do produto.
+
 Fase 8.19:
 - A administracao operacional do portal cliente passou a ter uma superficie propria no Admin Console, sem criar shell novo e sem delegar seguranca ao frontend.
 - A nova rota `/admin/customer-portal` le apenas:

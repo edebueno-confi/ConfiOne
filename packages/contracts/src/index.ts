@@ -29,6 +29,22 @@ export {
   TICKET_TIMELINE_ENTRY_TYPES,
 } from './ticketing.js';
 
+export {
+  INTERNAL_BUILD_TASK_PRIORITIES,
+  INTERNAL_BUILD_TASK_STATUSES,
+} from './development-control.js';
+
+export type {
+  InternalBuildTask,
+  InternalBuildTaskPriority,
+  InternalBuildTaskStatus,
+  InternalBuildTaskUpdate,
+  RpcInternalBuildTaskAddUpdatePayload,
+  RpcInternalBuildTaskClaimPayload,
+  RpcInternalBuildTaskCreatePayload,
+  RpcInternalBuildTaskUpdatePayload,
+} from './development-control.js';
+
 export type {
   AnalyticsBlockState,
   AnalyticsCoverage,

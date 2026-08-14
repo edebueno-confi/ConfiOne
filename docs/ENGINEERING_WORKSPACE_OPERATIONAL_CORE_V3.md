@@ -1,5 +1,10 @@
 # Engineering Workspace Operational Core V3
 
+Atualização de 2026-08-13: o workspace continua dedicado a demandas técnicas
+originadas de tickets. O backlog geral de desenvolvimento do ConfiOne agora
+fica separado no Painel de Desenvolvimento em `/engineering/control`, conforme
+`docs/DEVELOPMENT_CONTROL_PANEL_V1.md`.
+
 ## Objetivo
 Materializar o núcleo operacional do Engineering Workspace para demandas técnicas originadas de tickets, mantendo `ticket` e `engineering_work_item` como domínios separados e conectados apenas por `engineering_ticket_links`.
 

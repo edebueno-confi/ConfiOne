@@ -76,12 +76,20 @@ const REASON_MESSAGES = {
     'A origem não registra reaberturas suficientes para medir essa taxa com segurança.',
   reopen_source_partial:
     'Parte das reaberturas ainda não foi carregada, então a taxa cobre apenas parte da base.',
+  nome_exato:
+    'Candidato encontrado por razão social exata; o vínculo ainda depende de confirmação humana.',
+  nome_contido:
+    'Candidato encontrado por nome contido; o vínculo ainda depende de confirmação humana.',
+  nome_fantasia_exato:
+    'Candidato encontrado por nome fantasia exato; o vínculo ainda depende de confirmação humana.',
   cnpj_exato:
     'Candidato encontrado por cadastro fiscal exato; o vínculo ainda depende de confirmação humana.',
   identidade_exata:
     'Candidato encontrado por identidade exata; a decisão permanece registrada para revisão humana.',
   identidade_similar:
     'Candidato encontrado por identidade semelhante; não há aplicação automática do vínculo.',
+  probable:
+    'Candidato com forte semelhança de identidade; confirme o vínculo antes de aplicá-lo.',
   confirmada:
     'Vínculo confirmado por decisão humana e preservado no histórico de auditoria.',
 };

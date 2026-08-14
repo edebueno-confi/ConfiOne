@@ -5,7 +5,7 @@ import type {
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
 } from '@genius-support-os/contracts';
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getCommercialKpisV2, getCsSnapshot, getExecutiveKpisV2, getSupportKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoDashboard, getCommercialKpisV2, getCsSnapshot, getExecutiveKpisV2, getSupportKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
@@ -159,19 +159,23 @@ export function AnalyticsCeoPage({
         });
     }
 
-    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
-      .then(([data, history, liveSourceStatus]) => {
-        if (!cancelled) {
-          setResult({ loading: false, data, history, sourceStatus: liveSourceStatus ?? sourceStatus });
-          setRefreshing(false);
-        }
-      })
-      .catch(() => {
+    void (async () => {
+      try {
+        const [dashboard, liveSourceStatus] = await Promise.all([
+          getCeoDashboard(filters),
+          sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe(),
+        ]);
+        if (cancelled) return;
+
+        setResult({ loading: false, data: dashboard.snapshot, history: dashboard.history ?? undefined, sourceStatus: liveSourceStatus ?? sourceStatus });
+        setRefreshing(false);
+      } catch {
         if (!cancelled) {
           setResult((current) => ({ ...current, loading: false, error: true }));
           setRefreshing(false);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -198,7 +202,7 @@ export function AnalyticsCeoPage({
   const currentSourceStatus = result.sourceStatus ?? sourceStatus;
   const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
   const exceptions = buildExecutiveExceptions(data);
-  const pipelines = rankExecutivePipelines(data.support.byPipeline);
+  const pipelines = rankExecutivePipelines(data.executivePipelines);
   const snapshotUnavailable = [
     "empty",
     "never_synced",

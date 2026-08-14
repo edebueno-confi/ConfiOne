@@ -197,5 +197,5 @@ export function ProductDocMarkdownPreview({
     );
   }
 
-  return <div className="space-y-4">{blocks}</div>;
+  return <div className="gso-product-doc-markdown space-y-4">{blocks}</div>;
 }

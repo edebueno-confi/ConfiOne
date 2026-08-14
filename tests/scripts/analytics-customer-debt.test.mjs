@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   PRIORITY_LABELS,
-  debtPriority,
   humanizeSilence,
   readCustomerDebt,
   toDebtCsv,
@@ -16,10 +15,12 @@ const producao = {
   threshold_days: 180,
   total_tickets: 146,
   total_companies: 63,
+  high_priority: 2,
+  in_worked_queue: 26,
   companies: [
     {
       company_id: '1', company_name: "L'OREAL BRASIL", tickets: 25,
-      oldest_days_silent: 715, avg_days_silent: 420, tickets_in_worked_queue: 25,
+      oldest_days_silent: 715, avg_days_silent: 420, tickets_in_worked_queue: 25, priority: 'alta',
       tickets_detail: [
         { ticket_id: '901', pipeline_label: 'Suporte', days_silent: 715, owner_name: 'Sem responsável' },
         { ticket_id: '902', pipeline_label: 'Suporte', days_silent: 300, owner_name: 'Ana' },
@@ -27,12 +28,12 @@ const producao = {
     },
     {
       company_id: '2', company_name: 'New Solutions', tickets: 3,
-      oldest_days_silent: 537, avg_days_silent: 400, tickets_in_worked_queue: 0,
+      oldest_days_silent: 537, avg_days_silent: 400, tickets_in_worked_queue: 0, priority: 'media',
       tickets_detail: [{ ticket_id: '903', pipeline_label: 'Fale conosco | Confi', days_silent: 537, owner_name: 'Ana' }],
     },
     {
       company_id: '3', company_name: 'Pequena', tickets: 1,
-      oldest_days_silent: 200, avg_days_silent: 200, tickets_in_worked_queue: 1,
+      oldest_days_silent: 200, avg_days_silent: 200, tickets_in_worked_queue: 1, priority: 'baixa',
       tickets_detail: [{ ticket_id: '904', pipeline_label: 'Suporte', days_silent: 200, owner_name: 'Ana' }],
     },
   ],
@@ -52,22 +53,10 @@ test('os totais vêm do backend, não de soma na tela', () => {
   assert.equal(leitura.companies.length, 3);
 });
 
-test('a prioridade cresce com tempo de espera ou com quantidade', () => {
-  assert.equal(debtPriority({ oldestDaysSilent: 715, tickets: 25 }), 'alta');
-  assert.equal(debtPriority({ oldestDaysSilent: 400, tickets: 1 }), 'alta', 'mais de um ano já é alta sozinho');
-  assert.equal(debtPriority({ oldestDaysSilent: 100, tickets: 12 }), 'alta', 'volume alto já é alta sozinho');
-  assert.equal(debtPriority({ oldestDaysSilent: 280, tickets: 1 }), 'media');
-  assert.equal(debtPriority({ oldestDaysSilent: 200, tickets: 1 }), 'baixa');
-  assert.equal(debtPriority(null), 'baixa');
-});
-
-test('a prioridade não olha porte nem receita da empresa', () => {
-  // Decidir quem atender primeiro pelo quanto o cliente paga é escolha da
-  // operação. Duas empresas com a mesma espera e o mesmo volume têm a mesma
-  // prioridade, independentemente do nome.
-  const grande = debtPriority({ oldestDaysSilent: 300, tickets: 3 });
-  const pequena = debtPriority({ oldestDaysSilent: 300, tickets: 3 });
-  assert.equal(grande, pequena);
+test('a prioridade e os agregados vêm prontos do backend', () => {
+  const leitura = readCustomerDebt(producao);
+  assert.deepEqual(leitura.companies.map((company) => company.priority), ['alta', 'media', 'baixa']);
+  assert.equal(leitura.highPriority, 2);
 });
 
 test('o que está dentro da fila trabalhada é contado à parte', () => {

@@ -11,6 +11,7 @@ export function AdminConsoleShell() {
     <MinimalAppShell
       permissions={{
         isPlatformAdmin,
+        fullName: gate.actor?.profile.full_name ?? null,
         roles: gate.actor?.roles ?? [],
         screenKeys: gate.actor?.screen_keys ?? [],
         hasDashboardViewerAccess: isDashboardViewer,

@@ -1,7 +1,7 @@
 # PRODUCT_VISION.md
 
 ## Visão
-Genius Support OS é a plataforma de operação CX B2B técnica do ecossistema Genius, desenhada para transformar suporte, conhecimento e tecnologia em um sistema único, rastreável e escalável para SaaS de logística reversa.
+ConfiOne é a plataforma de operação CX B2B técnica do ecossistema Genius, desenhada para transformar suporte, conhecimento e tecnologia em um sistema único, rastreável e escalável para SaaS de logística reversa.
 
 O produto deve ser AI-native, human-governed: a arquitetura prepara fontes, contexto, permissões, citações, auditoria e revisão humana para IA futura, mas IA não é source of truth e não executa ação operacional sem humano.
 

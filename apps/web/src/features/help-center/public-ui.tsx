@@ -601,7 +601,7 @@ export function PublicHelpFooter({
   supportContacts: PublicHelpSupportContacts;
 }) {
   const whatsapp = whatsappHref(supportContacts.whatsapp);
-  const hasContact = Boolean(supportContacts.email || whatsapp);
+  const hasContact = Boolean(supportContacts.email || whatsapp || supportContacts.websiteUrl);
 
   return (
     <footer className="mt-10 border-t border-[var(--help-border)] bg-[var(--help-surface-strong)]">
@@ -630,6 +630,16 @@ export function PublicHelpFooter({
                 target="_blank"
               >
                 WhatsApp: {supportContacts.whatsapp}
+              </a>
+            ) : null}
+            {supportContacts.websiteUrl ? (
+              <a
+                className="inline-flex min-h-10 items-center rounded-[12px] border border-[var(--help-border)] px-3.5 font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-link)]"
+                href={supportContacts.websiteUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Página oficial de contato
               </a>
             ) : null}
           </div>

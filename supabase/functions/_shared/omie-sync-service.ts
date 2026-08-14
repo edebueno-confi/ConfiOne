@@ -3,6 +3,7 @@ import { classifyOmieError, enrichReceivablesWithClients, fetchOmieClientsIndexW
 import { createSyncRequestTelemetryBuffer } from './sync-request-telemetry.ts';
 
 export const OMIE_STAGING_BATCH_SIZE = 500;
+export const OMIE_CLIENT_INDEX_RPC_BATCH_SIZE = 250;
 export const OMIE_CLIENT_INDEX_CACHE_TTL_MS = 15 * 60 * 1000;
 
 type OmieClientIndexCache = {
@@ -37,20 +38,41 @@ async function readOmieClientIndexCache(client: SupabaseClient, nowMs = Date.now
   return { index, cachedAt, ageMs, fresh: ageMs !== null && Number.isFinite(ageMs) && ageMs <= OMIE_CLIENT_INDEX_CACHE_TTL_MS };
 }
 
-async function publishOmieClientIndexCache(client: SupabaseClient, syncRunId: string, index: Map<string, OmieClientInfo>, fetchedAt: string) {
+export async function publishOmieClientIndexCache(client: SupabaseClient, syncRunId: string, index: Map<string, OmieClientInfo>, fetchedAt: string) {
   const rows = [...index.entries()].map(([clientCode, info]) => ({
     client_code: clientCode,
     client_name: info.name,
     client_tax_id: info.taxId,
     client_trade_name: info.tradeName,
   }));
-  const { error } = await client.rpc('rpc_service_publish_omie_client_index', {
+  const { data: snapshotId, error: beginError } = await client.rpc('rpc_service_begin_omie_client_index', {
     p_source_run_id: syncRunId,
-    p_rows: rows,
     p_fetched_at: fetchedAt,
   });
-  if (error) throw new Error(`Falha ao publicar cache de clientes OMIE: ${error.message}`);
-  return rows.length;
+  if (beginError) throw new Error(`Falha ao iniciar publicacao do cache de clientes OMIE: ${beginError.message}`);
+  if (typeof snapshotId !== 'string' || !snapshotId.trim()) throw new Error('Falha ao iniciar publicacao do cache de clientes OMIE: snapshot invalido.');
+
+  for (let index = 0; index < rows.length; index += OMIE_CLIENT_INDEX_RPC_BATCH_SIZE) {
+    const batch = rows.slice(index, index + OMIE_CLIENT_INDEX_RPC_BATCH_SIZE);
+    const { error } = await client.rpc('rpc_service_append_omie_client_index', {
+      p_snapshot_id: snapshotId,
+      p_source_run_id: syncRunId,
+      p_rows: batch,
+      p_fetched_at: fetchedAt,
+    });
+    if (error) throw new Error(`Falha ao publicar lote ${Math.floor(index / OMIE_CLIENT_INDEX_RPC_BATCH_SIZE) + 1} do cache de clientes OMIE: ${error.message}`);
+  }
+
+  const { data: publication, error: commitError } = await client.rpc('rpc_service_commit_omie_client_index', {
+    p_snapshot_id: snapshotId,
+    p_source_run_id: syncRunId,
+    p_fetched_at: fetchedAt,
+    p_expected_rows: rows.length,
+  });
+  if (commitError) throw new Error(`Falha ao concluir publicacao do cache de clientes OMIE: ${commitError.message}`);
+  const publishedRows = Number((publication as { row_count?: unknown } | null)?.row_count ?? NaN);
+  if (!Number.isInteger(publishedRows) || publishedRows !== rows.length) throw new Error('Falha ao concluir publicacao do cache de clientes OMIE: contagem publicada divergente.');
+  return publishedRows;
 }
 
 export async function stageOmieRowsInBatches(client: SupabaseClient, rows: Array<Record<string, unknown>>) {

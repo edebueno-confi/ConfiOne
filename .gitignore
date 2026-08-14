@@ -73,6 +73,8 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Local reports and runtime dumps
+# Pacotes locais de recuperação podem conter histórico e dados sensíveis.
+/recovery/
 # Pacotes de revisão gerados; preservar localmente, mas não versionar duplicatas binárias.
 /output/review-packages/
 /output/local-qa/
@@ -90,6 +92,7 @@ pnpm-debug.log*
 # Editor and OS
 .DS_Store
 Thumbs.db
+.codex/
 .idea/
 .vscode/
 !.vscode/extensions.json

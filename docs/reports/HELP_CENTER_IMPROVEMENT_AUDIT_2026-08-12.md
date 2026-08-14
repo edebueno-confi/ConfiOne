@@ -1,5 +1,7 @@
 # Relatório de melhorias — Central de Ajuda Genius Returns
 
+> **Status documental:** relatório histórico da primeira varredura. Para o estado atual do banco e a decisão de governança, consulte `docs/reports/PUBLIC_HELP_CENTER_GOVERNANCE_AUDIT_2026-08-12.md`. A consulta corrente confirmou 69 artigos, 12 categorias, 128 assets públicos reconciliados, um artigo com caractere de substituição UTF-8, um placeholder de FAQ e nenhum canal público configurado.
+
 **Data:** 12/08/2026
 **Escopo:** auditoria read-only da Central pública em produção, ambiente local e implementação frontend.
 **Ambientes verificados:**

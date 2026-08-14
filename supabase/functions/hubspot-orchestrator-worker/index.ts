@@ -62,7 +62,15 @@ Deno.serve(async (req) => {
         if (rows.length) { const { error } = await client.from('analytics_hubspot_deal_staging').upsert(rows, { onConflict: 'parent_run_id,deal_id' }); if (error) throw error; }
       } else if (item.object_type === 'shared_companies') {
         const page = await fetchCompaniesPage(
-          ['name','domain','cnpj','cnpj__chave_unica_','razao_social','nome_fantasia___aftersale','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale','notes_last_contacted'],
+          [
+            'name','domain','cnpj','cnpj__chave_unica_','razao_social','nome_fantasia___aftersale',
+            'aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale',
+            'notes_last_contacted',
+            // Mantemos no raw os campos de saída para auditar defasagem e limpar
+            // valores antigos na próxima sincronização governada.
+            'omie_saldo_aberto','omie_saldo_vencido','omie_titulos_abertos',
+            'omie_atraso_medio_dias','omie_situacao_financeira','omie_ultima_sincronizacao',
+          ],
           token,
           { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, observer: telemetry.observer },
         );

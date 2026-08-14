@@ -269,6 +269,8 @@
 .gso-access-modal-close { display: inline-grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--ui-border); border-radius: 0.45rem; background: transparent; color: var(--ui-text-secondary); font-size: 1.15rem; line-height: 1; cursor: pointer; }
 .gso-access-modal-close:hover { border-color: var(--ui-border-strong); color: var(--ui-text); }
 .gso-access-modal-body { padding: 1.25rem; }
+.gso-access-confirm-impact { margin: 0; color: var(--ui-text-secondary); font-size: 0.86rem; line-height: 1.6; }
+.gso-access-confirm-actions { justify-content: flex-end; margin-top: 1.25rem; }
 @media (max-width: 1180px) {
   .gso-po-v2-access .gso-ui-split--wide-detail {
     grid-template-columns: minmax(0, 1fr);
@@ -771,7 +773,7 @@
   .gso-ui-toolbar-actions { margin-left: 0; }
 }
 
-/* GovernanÃ§a mobile: filtros e aÃ§Ãµes ocupam a largura disponÃ­vel, evitando
+/* Governança mobile: filtros e ações ocupam a largura disponível, evitando
    controles comprimidos lado a lado em telas estreitas. */
 @media (max-width: 640px) {
   .gso-ui-toolbar {
@@ -796,8 +798,8 @@
   }
   .gso-ui-header-actions > * { width: 100%; }
 
-  /* As tabelas da GovernanÃ§a mantÃªm <table> para leitores de tela e viram
-     registros empilhados para leitura e ediÃ§Ã£o confortÃ¡veis no toque. */
+  /* As tabelas da Governança mantêm <table> para leitores de tela e viram
+     registros empilhados para leitura e edição confortáveis no toque. */
   .gso-ui-table--sources,
   .gso-ui-table--pending,
   .gso-ui-table--pipelines,
@@ -1527,8 +1529,8 @@
   .gso-ui-historysummary > .gso-ui-badge { grid-column: 2; justify-self: start; }
 }
 
-/* O catÃ¡logo de pipelines declara uma largura operacional no desktop. Esta
-   exceÃ§Ã£o precisa ficar depois da regra de GovernanÃ§a para vencer a cascata
+/* O catálogo de pipelines declara uma largura operacional no desktop. Esta
+   exceção precisa ficar depois da regra de Governança para vencer a cascata
    sem alterar a densidade das tabelas em telas maiores. */
 @media (max-width: 640px) {
   .gso-ui-group .gso-ui-table--pipelines { min-width: 0; }
@@ -1536,8 +1538,8 @@
 }
 
 /* Outras tabelas administrativas compartilham o mesmo comportamento no
-   celular: cada linha vira um registro legÃ­vel, sem reduzir sete colunas a
-   texto microscÃ³pico nem depender de arraste horizontal. */
+   celular: cada linha vira um registro legível, sem reduzir sete colunas a
+   texto microscópico nem depender de arraste horizontal. */
 @media (max-width: 640px) {
   .gso-ui-table--brands,
   .gso-ui-table--access-users,
