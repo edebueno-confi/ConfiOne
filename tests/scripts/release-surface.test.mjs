@@ -302,7 +302,6 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-knowledge-new',
     'public-help-center',
     'admin-access',
-    'admin-cockpit',
     'admin-settings-integrations',
     'admin-settings-dashboard-sources',
     'admin-settings-sync-history',

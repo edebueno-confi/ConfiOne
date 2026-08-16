@@ -17,6 +17,15 @@ const logDir = join(root, 'output', 'local-qa');
 const serverLog = join(logDir, 'web-server.log');
 mkdirSync(logDir, { recursive: true });
 
+function isExternalFontAsset(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'fonts.gstatic.com' || parsed.hostname === 'fonts.googleapis.com';
+  } catch {
+    return false;
+  }
+}
+
 async function waitForWebServer() {
   const deadline = Date.now() + Number(process.env.LOCAL_QA_WEB_START_TIMEOUT_MS ?? 45_000);
   let lastError = 'healthcheck ainda sem resposta';
@@ -86,6 +95,7 @@ const accounts = [
     knowledgeEditorScenario: true,
     themeSurfaceScenario: true,
     settingsIntegrationsScenario: true,
+    settingsAccessScenario: 'admin',
     // Sondagem sem asserção: inventário vivo das telas com
     // `release_enabled = false`. Elas respondem `/access-denied` por decisão de
     // release. Quando uma for publicada, promova para `extraRoutes`.
@@ -99,9 +109,9 @@ const accounts = [
       '/admin/customer-portal',
     ],
   },
-  { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
-  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
-  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
+  { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics', settingsAccessScenario: 'denied' },
+  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied', settingsAccessScenario: 'denied' },
+  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied', settingsAccessScenario: 'denied' },
   { role: 'customer_user', email: qa.LOCAL_QA_CLIENT_EMAIL, password: qa.LOCAL_QA_CLIENT_PASSWORD, desktop: '/portal', mobile: '/portal', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
 ];
 
@@ -115,6 +125,8 @@ const screenshots = [];
 const extraRouteResults = [];
 const probeResults = [];
 const deepScenarios = [];
+const settingsAccessResults = [];
+const settingsRequestMatrix = [];
 let browser;
 try {
   await waitForWebServer();
@@ -123,10 +135,20 @@ try {
     for (const viewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile', width: 390, height: 844 }]) {
       const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
       const page = await context.newPage();
-      const events = { consoleErrors: [], pageErrors: [], requestFailures: [], unexpectedResponses: [], expectedForbidden: 0, administrativeRequests: [] };
-      page.on('console', (message) => { if (message.type() === 'error') events.consoleErrors.push(message.text()); });
+      const events = { consoleErrors: [], pageErrors: [], requestFailures: [], externalAssetWarnings: [], unexpectedResponses: [], expectedForbidden: 0, administrativeRequests: [] };
+      let activeSettingsAudit = null;
+      page.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        const text = message.text();
+        if (/fonts\.gstatic\.com|fonts\.googleapis\.com/i.test(text)) events.externalAssetWarnings.push(text);
+        else events.consoleErrors.push(text);
+      });
       page.on('pageerror', (error) => events.pageErrors.push(error.message));
-      page.on('requestfailed', (request) => events.requestFailures.push(`${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`));
+      page.on('requestfailed', (request) => {
+        const detail = `${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`;
+        if (isExternalFontAsset(request.url())) events.externalAssetWarnings.push(detail);
+        else events.requestFailures.push(detail);
+      });
       page.on('request', (request) => {
         if (account.role !== 'platform_admin' && /\/rpc\/rpc_admin_|analytics_integration_schedule|managed_integrations/.test(request.url())) {
           events.administrativeRequests.push(`${request.method()} ${request.url()}`);
@@ -134,8 +156,21 @@ try {
       });
       page.on('response', (response) => {
         const status = response.status();
+        if (activeSettingsAudit) {
+          try {
+            const parsed = new URL(response.url());
+            if (parsed.port === '54321' && (parsed.pathname.startsWith('/rest/v1/') || parsed.pathname.startsWith('/rpc/'))) {
+              activeSettingsAudit.requests.push({ method: response.request().method(), path: parsed.pathname, status });
+            }
+          } catch {
+            // Respostas que não são URLs HTTP não participam da matriz.
+          }
+        }
         if (status === 403) events.unexpectedResponses.push(`403 ${response.url()}`);
-        if ([400, 401, 404, 409, 422, 500].includes(status)) events.unexpectedResponses.push(`${status} ${response.url()}`);
+        if ([400, 401, 404, 409, 422, 500].includes(status)) {
+          if (status === 404 && isExternalFontAsset(response.url())) events.externalAssetWarnings.push(`${status} ${response.url()}`);
+          else events.unexpectedResponses.push(`${status} ${response.url()}`);
+        }
       });
       await page.goto(`${baseUrl}/login?redirectTo=${encodeURIComponent(account.desktop)}`, { waitUntil: 'domcontentloaded' });
       await page.getByLabel('Email').fill(account.email);
@@ -202,8 +237,32 @@ try {
         const deniedPath = await waitForPathChange(page, '/admin/analytics', 20_000);
         if (deniedPath !== '/access-denied') throw new Error(`LOCAL_QA_CUSTOMER_ANALYTICS_NOT_BLOCKED: ${page.url()}`);
       }
+      if (viewport.name === 'desktop' && account.settingsAccessScenario) {
+        const settingsRoutes = [
+          '/admin/settings',
+          '/admin/settings/integrations',
+          '/admin/settings/dashboard-sources',
+          '/admin/settings/sync-history',
+          '/admin/settings/brands',
+          '/admin/settings/help-center',
+        ];
+        for (const settingsRoute of settingsRoutes) {
+          activeSettingsAudit = { role: account.role, route: settingsRoute, requests: [] };
+          await page.goto(`${baseUrl}${settingsRoute}`, { waitUntil: 'domcontentloaded' });
+          await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
+          await page.waitForTimeout(350);
+          const reachedPath = new URL(page.url()).pathname;
+          const expectedPath = account.settingsAccessScenario === 'admin' ? settingsRoute : '/access-denied';
+          if (reachedPath !== expectedPath) {
+            throw new Error(`LOCAL_QA_SETTINGS_ACCESS_MATRIX_FAILED: ${account.role} ${settingsRoute} -> ${reachedPath}; expected ${expectedPath}`);
+          }
+          settingsAccessResults.push({ role: account.role, route: settingsRoute, reachedPath, expectedPath });
+          settingsRequestMatrix.push({ ...activeSettingsAudit, requests: activeSettingsAudit.requests.slice() });
+          activeSettingsAudit = null;
+        }
+      }
       if (events.administrativeRequests.length) throw new Error(`LOCAL_QA_VIEWER_ADMIN_REQUEST: ${events.administrativeRequests.join(', ')}`);
-      results.push({ role: account.role, viewport: viewport.name, path: expectedPath, consoleErrors: events.consoleErrors.length, pageErrors: events.pageErrors.length, requestFailures: events.requestFailures.length, requestFailureDetails: events.requestFailures, unexpectedResponses: events.unexpectedResponses.length, unexpectedResponseDetails: events.unexpectedResponses, expectedForbidden: events.expectedForbidden, administrativeRequests: events.administrativeRequests.length });
+      results.push({ role: account.role, viewport: viewport.name, path: expectedPath, consoleErrors: events.consoleErrors.length, pageErrors: events.pageErrors.length, requestFailures: events.requestFailures.length, requestFailureDetails: events.requestFailures, externalAssetWarnings: events.externalAssetWarnings.length, unexpectedResponses: events.unexpectedResponses.length, unexpectedResponseDetails: events.unexpectedResponses, expectedForbidden: events.expectedForbidden, administrativeRequests: events.administrativeRequests.length });
       // Cenário profundo de Conhecimento: a listagem já é coberta por
       // `extraRoutes`, aqui o objetivo é entrar no editor de artigo real, que é o
       // arquivo mais pesado da superfície publicada, e verificar que ele monta
@@ -314,19 +373,30 @@ try {
         await page.goto(`${baseUrl}/admin/settings/integrations`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
         await page.waitForTimeout(700);
+        // O blueprint atual usa o cabeçalho compartilhado (h1), dois painéis
+        // de provedor (h3), a região de escopos e a política de segurança.
+        // Os antigos blocos "Conexões e execuções" e "Proteção das
+        // credenciais" foram removidos da composição vigente.
         for (const [name, level] of [
-          ['Integrações', 2],
+          ['Integrações', 1],
           ['HubSpot', 3],
           ['OMIE', 3],
-          ['Conexões e execuções', 3],
-          ['Proteção das credenciais', 3],
+          ['Permissões e escopos', 3],
+          ['Política de segurança', 3],
         ]) {
           const heading = page.getByRole('heading', { name, level, exact: true });
           if (!(await heading.count())) {
             throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_MISSING_BLOCK: ${name}`);
           }
         }
-        const credentialFields = page.locator('.gso-ui-card input[type="password"]');
+        const credentialToggles = page.getByRole('button', { name: 'Gerenciar credenciais', exact: true });
+        if ((await credentialToggles.count()) !== 2) {
+          throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_CREDENTIAL_TOGGLES: ${await credentialToggles.count()}`);
+        }
+        for (let index = 0; index < await credentialToggles.count(); index += 1) {
+          await credentialToggles.nth(index).click();
+        }
+        const credentialFields = page.locator('input[type="password"]');
         const credentialCount = await credentialFields.count();
         if (credentialCount < 3) {
           throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_CREDENTIAL_FIELDS: ${credentialCount}`);
@@ -356,7 +426,7 @@ try {
         await page.goto(`${baseUrl}/admin/settings/dashboard-sources`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle', { timeout: 12_000 }).catch(() => {});
         await page.waitForTimeout(900);
-        const sourcesHeading = page.getByRole('heading', { name: 'Fontes do Dashboard', level: 2, exact: true });
+        const sourcesHeading = page.getByRole('heading', { name: 'Governança de dados', level: 1, exact: true });
         if (!(await sourcesHeading.count())) throw new Error('LOCAL_QA_SETTINGS_SOURCES_MISSING_HEADER');
         const sourcesRows = await page.locator('.gso-ui-table tbody tr').count();
         const sourcesOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
@@ -375,7 +445,7 @@ try {
         await page.goto(`${baseUrl}/admin/settings/sync-history`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
         await page.waitForTimeout(700);
-        const historyHeading = page.getByRole('heading', { name: 'Histórico de sincronizações', level: 2, exact: true });
+        const historyHeading = page.getByRole('heading', { name: 'Histórico de sincronizações', level: 1, exact: true });
         if (!(await historyHeading.count())) throw new Error('LOCAL_QA_SETTINGS_HISTORY_MISSING_HEADER');
         const historyFilters = page.locator('.gso-ui-toolbar select');
         const historyFilterCount = await historyFilters.count();
@@ -401,7 +471,7 @@ try {
         await page.goto(`${baseUrl}/admin/settings/brands`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
         await page.waitForTimeout(900);
-        const brandsHeading = page.getByRole('heading', { name: 'Marcas', level: 2, exact: true });
+        const brandsHeading = page.getByRole('heading', { name: 'Marcas', level: 1, exact: true });
         if (!(await brandsHeading.count())) throw new Error('LOCAL_QA_SETTINGS_BRANDS_MISSING_HEADER');
         const brandsRows = await page.locator('.gso-ui-table tbody tr').count();
         const brandsDetail = await page.locator('.gso-ui-split aside').count();
@@ -421,7 +491,7 @@ try {
         await page.goto(`${baseUrl}/admin/settings/help-center`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
         await page.waitForTimeout(900);
-        const helpCenterHeading = page.getByRole('heading', { name: 'Central de ajuda', level: 2, exact: true });
+        const helpCenterHeading = page.getByRole('heading', { name: 'Central de Ajuda', level: 1, exact: true });
         if (!(await helpCenterHeading.count())) throw new Error('LOCAL_QA_SETTINGS_HELP_CENTER_MISSING_HEADER');
         const helpCenterCards = await page.locator('.gso-ui-card').count();
         const helpCenterFields = await page.locator('.gso-ui-grid input').count();
@@ -464,4 +534,4 @@ try {
 
 const failures = results.filter((item) => item.consoleErrors || item.pageErrors || item.requestFailures || item.unexpectedResponses);
 if (failures.length) throw new Error(`LOCAL_QA_BROWSER_SMOKE_FAILED: ${JSON.stringify(failures)}`);
-console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, deepScenarios, probedRoutes: probeResults, screenshots }));
+console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, deepScenarios, settingsAccessMatrix: settingsAccessResults, settingsRequestMatrix, probedRoutes: probeResults, screenshots }));

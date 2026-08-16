@@ -409,7 +409,11 @@ verify_jwt = false
 verify_jwt = false
 
 [analytics]
-enabled = true
+# A coleta analítica do Supabase depende de um endpoint Docker TCP exposto ao
+# container Vector. Esse endpoint não existe no Docker Desktop com WSL 2 deste
+# checkout e fazia o Vector reiniciar continuamente. Os read models de negócio
+# do ConfiOne permanecem no PostgreSQL e não dependem deste serviço local.
+enabled = false
 port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"

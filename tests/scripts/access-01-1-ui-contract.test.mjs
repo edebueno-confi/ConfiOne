@@ -4,11 +4,11 @@ import test from 'node:test';
 
 const page = await readFile(new URL('../../apps/web/src/features/access/InternalControlPlanePage.tsx', import.meta.url), 'utf8');
 
-test('control plane usa quatro tabs operacionais e separa clientes da lista interna', () => {
+test('control plane usa tres tabs operacionais e separa clientes da lista interna', () => {
   assert.match(page, /Usuários/);
-  assert.match(page, /Convites/);
   assert.match(page, /Estrutura/);
   assert.match(page, /Perfis/);
+  assert.doesNotMatch(page, /Convites/);
   assert.match(page, /Somente identidades com contexto interno aparecem aqui/);
 });
 

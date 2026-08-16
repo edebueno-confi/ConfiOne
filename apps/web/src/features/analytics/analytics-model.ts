@@ -1,5 +1,5 @@
 import type { AnalyticsBlockState, AnalyticsDataStatus, AnalyticsExecutionStatus, AnalyticsSourceStatus, AnalyticsSourceState, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
-import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state';
+import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state.ts';
 
 // Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
 // As views retornam numeric como string (PostgREST), entao normalizamos aqui.

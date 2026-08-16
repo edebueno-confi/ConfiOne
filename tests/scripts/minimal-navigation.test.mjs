@@ -77,7 +77,7 @@ test('builds navigation from contextual screen grants for a non-admin user', () 
 
 test('resolves a short operational label for the current route', () => {
   assert.equal(resolveMinimalRouteLabel('/support/queue'), 'Fila operacional');
-  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Acessos e áreas');
+  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Usuários e acessos');
   assert.equal(resolveMinimalRouteLabel('/support/tickets/ticket-1'), 'Ticket');
 });
 

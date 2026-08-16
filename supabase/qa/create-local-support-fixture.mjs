@@ -1,9 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-
 import { runReconciledMutation } from '../../scripts/lib/reconciled-mutation.mjs';
+import { parsePsqlCsvResult } from '../../scripts/lib/parse-psql-csv.mjs';
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
 import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
 
@@ -13,6 +10,9 @@ const POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
 const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
 const PROCESS_TIMEOUT_MS = Number(process.env.GENIUS_QA_PROCESS_TIMEOUT_MS ?? 90_000);
+const SUPPORT_FIXTURE_TRACE = process.env.SUPPORT_FIXTURE_TRACE === '1';
+const SUPPORT_FIXTURE_TICKET_LIMIT = Number(process.env.SUPPORT_FIXTURE_TICKET_LIMIT ?? 0);
+const SUPPORT_FIXTURE_STOP_AFTER_TICKETS = process.env.SUPPORT_FIXTURE_STOP_AFTER_TICKETS === '1';
 
 const EXTRA_INBOX_TICKETS = [
   {
@@ -1441,6 +1441,12 @@ function logStep(message) {
   console.log(`[support-fixture] ${message}`);
 }
 
+function traceStep(message) {
+  if (SUPPORT_FIXTURE_TRACE) {
+    console.error(`[support-fixture][trace] ${message}`);
+  }
+}
+
 async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -1462,7 +1468,8 @@ async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIME
 }
 
 function readLocalSupabaseStatusEnv() {
-  const status = spawnSync('npx', ['supabase', 'status', '-o', 'env'], {
+  const { command, args } = localSupabaseCommandArgs(['status', '-o', 'env']);
+  const status = spawnSync(command, args, {
     cwd: process.cwd(),
     env: process.env,
     encoding: 'utf-8',
@@ -1607,63 +1614,34 @@ function sqlEscape(value) {
 }
 
 function runSupabaseDbQuery(sql) {
-  const tempDir = mkdtempSync(join(tmpdir(), 'genius-support-os-support-fixture-'));
-  const tempFile = join(tempDir, 'query.sql');
-  writeFileSync(tempFile, `${sql.trim()}\n`, 'utf8');
+  const startedAt = performance.now();
+  const normalizedSql = sql.trim().replace(/;\s*$/, '');
+  const container = process.env.LOCAL_QA_DB_CONTAINER ?? 'supabase_db_genius-support-os';
+  const result = spawnSync(
+    'docker',
+    ['exec', '-i', container, 'psql', '-X', '-q', '--csv', '-P', 'null=\\N', '-U', 'postgres', '-d', 'postgres'],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      input: `${normalizedSql};\n`,
+      windowsHide: true,
+      timeout: PROCESS_TIMEOUT_MS,
+    },
+  );
 
-  const { command, args } = localSupabaseCommandArgs([
-    'db',
-    'query',
-    '--local',
-    '--file',
-    tempFile,
-    '--output',
-    'json',
-  ]);
-
-  try {
-    const stdout = runProcess(command, args);
-    let parsed;
-    try {
-      parsed = JSON.parse(stdout);
-    } catch {
-      if (/^(INSERT|UPDATE|DELETE|BEGIN|COMMIT|SET|RESET)\b/i.test(stdout.trim())) {
-        return { rows: [] };
-      }
-
-      throw new Error(stdout);
-    }
-
-    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.rows)) {
-      return parsed;
-    }
-
-    if (Array.isArray(parsed)) {
-      const rowsEntry = [...parsed].reverse().find((entry) => Array.isArray(entry?.rows));
-      if (rowsEntry) {
-        return rowsEntry;
-      }
-      // CLI nova (>=2.105): `db query --output json` retorna as linhas como array direto.
-      return { rows: parsed };
-    }
-
-    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.results)) {
-      const rowsEntry = [...parsed.results]
-        .reverse()
-        .find((entry) => Array.isArray(entry?.rows));
-      return rowsEntry ?? { rows: [] };
-    }
-
-    return { rows: [] };
-  } catch (error) {
-    fail(
-      error instanceof Error
-        ? error.message
-        : 'Nao foi possivel interpretar a resposta JSON do Supabase CLI.',
-    );
-  } finally {
-    rmSync(tempDir, { recursive: true, force: true });
+  if (result.error) {
+    fail(result.error.code === 'ETIMEDOUT' ? 'Timeout ao executar a query local da fixture.' : result.error.message);
   }
+
+  if (result.status !== 0) {
+    fail([result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join('\n'));
+  }
+
+  const { rows } = parsePsqlCsvResult(result.stdout);
+  traceStep(
+    `db-query ${Math.round(performance.now() - startedAt)}ms ${normalizedSql.split(/\s+/).slice(0, 8).join(' ')}`,
+  );
+  return { rows };
 }
 
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
@@ -1893,6 +1871,9 @@ async function createOrUpdateAuthUser({ email, password, fullName }) {
   `);
 
   const user = result.rows?.[0] ?? null;
+  traceStep(
+    `auth-upsert-result rows=${result.rows?.length ?? 0} keys=${Object.keys(user ?? {}).join(',')} identity_count_type=${typeof user?.identity_count}`,
+  );
   if (!user?.id || user.identity_count !== 1) {
     fail(`Falha ao materializar usuario Auth local por SQL: ${email}.`);
   }
@@ -2391,14 +2372,20 @@ function ensurePlatformAdminRole(userId) {
   }
 
   runSupabaseDbQuery(`
-    insert into public.user_global_roles (user_id, role)
-    select '${sqlEscape(userId)}'::uuid, 'platform_admin'::public.platform_role
-    where not exists (
-      select 1
-      from public.user_global_roles
-      where user_id = '${sqlEscape(userId)}'::uuid
-        and role = 'platform_admin'::public.platform_role
-    );
+    insert into public.user_global_roles (
+      user_id,
+      role,
+      created_by_user_id,
+      updated_by_user_id
+    )
+    values (
+      '${sqlEscape(userId)}'::uuid,
+      'platform_admin'::public.platform_role,
+      '${sqlEscape(userId)}'::uuid,
+      '${sqlEscape(userId)}'::uuid
+    )
+    on conflict (user_id, role) do update
+    set updated_by_user_id = excluded.updated_by_user_id;
   `);
 }
 
@@ -3100,11 +3087,6 @@ async function ensureKnowledgeArticlePublished(adminSession, tenantId, article, 
 }
 
 async function ensureKnowledgeCategoryV2(adminSession, knowledgeSpaceId, category) {
-  const existingId = queryKnowledgeCategoryBySlugInSpace(category.slug, knowledgeSpaceId);
-  if (existingId) {
-    return existingId;
-  }
-
   await callRpcAsUser({
     apiUrl: adminSession.apiUrl,
     anonKey: adminSession.anonKey,
@@ -4615,7 +4597,10 @@ async function main() {
   const createdTickets = [];
   const ticketMap = new Map();
   logStep('criando/atualizando tickets da fixture');
-  for (const ticket of FIXTURE.tickets) {
+  const tickets = SUPPORT_FIXTURE_TICKET_LIMIT > 0
+    ? FIXTURE.tickets.slice(0, SUPPORT_FIXTURE_TICKET_LIMIT)
+    : FIXTURE.tickets;
+  for (const ticket of tickets) {
     const tenantId = tenantMap.get(ticket.tenantSlug);
     const contactId = contactMap.get(ticket.tenantSlug);
 
@@ -4659,6 +4644,11 @@ async function main() {
       status: ticket.status,
     });
     ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
+  }
+
+  if (SUPPORT_FIXTURE_STOP_AFTER_TICKETS) {
+    logStep(`reprodução interrompida após ${tickets.length} ticket(s)`);
+    return;
   }
 
   logStep('criando timeline adicional de tickets');

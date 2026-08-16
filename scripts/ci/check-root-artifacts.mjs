@@ -9,6 +9,7 @@ export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
   '.env.local.qa.example',
   '.gitattributes',
   '.gitignore',
+  '.mailmap',
   'AGENTS.md',
   'CLAUDE.md',
   'COMO-TESTAR.md',

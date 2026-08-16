@@ -35,8 +35,8 @@ test('não duplica o braço base em poses com dois braços explícitos', () => {
 });
 
 test('pose magic usa mão aberta sem silhueta de dedo isolado', () => {
-  assert.match(component, /M234 98c-2-8/);
-  assert.doesNotMatch(component, /M236 98c-4-8-2-18 8-18h4V56/);
+  assert.match(component, /M236 98C232 90 234 80 244 80/);
+  assert.doesNotMatch(component, /M234 98c-2-8/);
 });
 
 test('movimento mágico inclui fumaça vetorial da lâmpada e preserva reduced motion', () => {

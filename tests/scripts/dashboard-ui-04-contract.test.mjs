@@ -17,8 +17,8 @@ test('sync history is collapsible and finance uses the shared editorial KPI grid
   const history = fs.readFileSync(path.join(root, 'apps/web/src/features/settings/SyncHistorySettingsPage.tsx'), 'utf8');
   const finance = fs.readFileSync(path.join(root, 'apps/web/src/features/analytics/AnalyticsFinancePage.tsx'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'apps/web/src/index.css'), 'utf8');
-  assert.match(history, /<details className="gso-settings-history-group"/);
-  assert.match(history, /<summary className="gso-settings-history-summary"/);
+  assert.match(history, /<details className="gso-ui-historygroup"/);
+  assert.match(history, /<summary>/);
   assert.match(finance, /gso-pilot-finance/);
   assert.match(finance, /gso-pilot-kpi-grid/);
   assert.match(css, /\.gso-pilot-finance > \.gso-pilot-kpi-grid/);

@@ -9,9 +9,9 @@ const status = readLocalSupabaseStatus({ ...process.env, ...qa });
 assertLocalSupabaseEnvironment({ ...process.env, ...qa }, { status });
 const baseUrl = process.env.LOCAL_QA_WEB_URL ?? 'http://127.0.0.1:4173';
 const ids = {
-  managerTicket: '55555555-5555-4555-8555-000000000017',
-  customerTicket: '55555555-5555-4555-8555-000000000001',
-  atlasTicket: '55555555-5555-4555-8555-000000000012',
+  managerTicket: 'a5555555-5555-4555-8555-000000000017',
+  customerTicket: 'a5555555-5555-4555-8555-000000000001',
+  atlasTicket: 'a5555555-5555-4555-8555-000000000012',
 };
 const markers = {
   managerNote: '[QA E2E] nota interna visual manager',

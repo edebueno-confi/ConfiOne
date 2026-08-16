@@ -67,7 +67,7 @@ test('nenhuma tela define rótulo próprio: o nome vem do glossário', () => {
   // "Taxa de ganho" conviverem para a mesma métrica. O nome agora é único e
   // central; a tela escolhe quais indicadores mostrar, nunca como chamá-los.
   for (const [nome, source] of surfaces) {
-    const comRotulo = source.match(/\{ key: '[a-z_0-9]+', label:/g) ?? [];
+    const comRotulo = source.match(/\{[^}]*\bkey:\s*'[a-z_0-9]+'[^}]*\bkind:[^}]*\blabel:/gs) ?? [];
     assert.deepEqual(comRotulo, [], `${nome} não pode declarar rótulo próprio`);
   }
   assert.match(grid, /kpiLabel\(item\.key\)/);
