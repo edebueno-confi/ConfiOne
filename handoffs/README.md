@@ -42,6 +42,33 @@ nem tratados como estado corrente sem leitura e classificação.
 9. Somente APPROVED permite seguir para merge ou release conforme autorização
    humana. DONE é usado após o processo de integração aplicável.
 
+## Fila autorizada de lotes — 2026-08-20
+
+O proprietário autorizou a execução sequencial desta fila. A fila não substitui
+`TASK.md`, `IMPLEMENTATION.md`, `REVIEW.md` ou `STATUS.md`; cada item deve ter seu
+próprio ciclo e seus próprios artefatos correntes, arquivados ao encerramento.
+
+| Ordem | Item | Descrição | Estado da fila |
+| --- | --- | --- | --- |
+| 1 | O-01 | Versionar corretamente `.review/baseline.json` e o veredito legado do takeover | APPROVED, ARQUIVADO |
+| 2 | R-01 | Corrigir negação de acesso silenciosa | PRÓXIMO, AUTORIZADO |
+| 3 | R-03 | Restaurar feedback de erro no Support Workspace | AUTORIZADO, AGUARDANDO R-01 |
+| 4 | R-11 | Corrigir scripts npm que apontam para arquivos inexistentes | AUTORIZADO, AGUARDANDO R-03 |
+| 5 | R-14 | Formalizar deny-all intencional para tabelas RLS sem policy | AUTORIZADO, AGUARDANDO R-11 |
+
+Regras da fila:
+
+- somente um item pode estar ativo por vez;
+- o próximo item só pode ser aberto depois de `APPROVED` no item anterior e do
+  retorno de `handoffs/current/` para `IDLE`;
+- cada item exige TASK, IMPLEMENTATION e REVIEW próprios, com entrega em
+  `READY_FOR_REVIEW` e `Owner = Claude` antes da revisão;
+- heartbeat do Codex pode abrir automaticamente o próximo item somente quando a
+  fila estiver liberada pelo `APPROVED` anterior;
+- `BLOCKED`, `OWNER_DECISION_REQUIRED` ou mudança material de escopo interrompem
+  a fila e exigem retorno ao proprietário;
+- push, merge e deploy permanecem fora da autorização desta fila.
+
 `Owner` identifica o agente responsável pelo próximo passo do estado atual. Em
 `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
 responsável esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, é Claude.
