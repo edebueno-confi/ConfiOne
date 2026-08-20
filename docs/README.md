@@ -1,5 +1,21 @@
 # Docs
 
+- [Engenharia e governança](./engineering/PROJECT.md) — índice inicial da camada normativa para Codex e Claude.
+- [Protocolo de revisão multiagente](./engineering/REVIEW_PROTOCOL.md) — papéis, precedência, estados e artefatos.
+- [CODE_REVIEW_PROTOCOL_V1.md](./CODE_REVIEW_PROTOCOL_V1.md) — contrato de revisão entre agente implementador e agente revisor, quality gates e política de severidade.
+- [`.review/README.md`](../.review/README.md) — área de trabalho do revisor: pedidos, vereditos, baseline de débito e estado do ciclo.
+
+- [Handoff temporário do ConfiOne para o Claude, 2026-08-19](../handoffs/CLAUDE_PROJECT_TAKEOVER_2026-08-19.md)
+- [Prompt de takeover temporário do ConfiOne, 2026-08-19](../handoffs/PROMPT_CLAUDE_PROJECT_TAKEOVER_2026-08-19.md)
+
+- [CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md](./CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md)
+- [Importação local do diretório HubSpot](./reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md)
+
+- [VIEW_RPC_CONTRACTS.md](./VIEW_RPC_CONTRACTS.md) — contratos de agrupamento interno da Central de Clientes (`customer_account_groups`).
+- [Customer Relationship Groups V1](./reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md) — decisão de domínio, implementação e validação da Central de Clientes.
+
+- [Operational Support Flow V1 kickoff](./reports/OPERATIONAL_SUPPORT_FLOW_V1_KICKOFF_2026-08-16.md) — contrato de autorização corrigido e ativação local controlada do Support Workspace.
+
 - [Handoff Recharts 3 e reconciliação da suíte](./reports/2026-08-11_recharts-suite-reconciliation-handoff.md) — migração concluída e falhas amplas classificadas para a próxima publicação.
 
 ## Decisão visual vigente — Administração e Configurações

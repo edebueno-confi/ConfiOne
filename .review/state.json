@@ -1,0 +1,19 @@
+{
+  "atualizadoEm": "2026-08-20",
+  "ultimaVarredura": {
+    "head": "55353058f537761536d53513b7db4d2e412c81f3",
+    "branch": "main",
+    "entradas": 83,
+    "diffCheck": "limpo",
+    "gates": "0 regressoes bloqueantes"
+  },
+  "ultimoHeartbeat": {
+    "em": "2026-08-20T02:44:00Z",
+    "resultado": "STATUS.md em READY_FOR_REVIEW com Owner Claude; ciclo de re-review executado",
+    "acoes": "quality gates, docs:validate, diff --check e validacao de JSON reexecutados"
+  },
+  "notas": [
+    "Metadados de automacao apenas. O estado da tarefa, o Owner e o veredito ficam em handoffs/current/STATUS.md e handoffs/current/REVIEW.md.",
+    "Atualizado pelo agente revisor ao fechar cada ciclo de varredura."
+  ]
+}

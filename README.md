@@ -5,6 +5,8 @@ Ponto de entrada curto do repositório. A documentação canônica fica em `docs
 ## Leitura recomendada
 
 - [docs/README.md](./docs/README.md)
+- [docs/engineering/PROJECT.md](./docs/engineering/PROJECT.md)
+- [handoffs/README.md](./handoffs/README.md)
 - [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md)
 - [PRODUCT.md](./PRODUCT.md)
 - [DESIGN.md](./DESIGN.md)

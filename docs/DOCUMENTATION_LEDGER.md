@@ -1,5 +1,81 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Handoff multiagente — reconciliação do protocolo — 2026-08-20
+
+- **Tipo:** governança de engenharia e reconciliação documental; nenhuma mudança de produto, banco, contrato, permissão ou release surface.
+- **Fonte canônica:** `handoffs/current/TASK.md`, `IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md`, com `docs/engineering/REVIEW_PROTOCOL.md` como norma e `.review/` como complemento técnico opcional.
+- **Correções:** uma única ponte de colaboração em `AGENTS.md`; Owner definido como responsável pelo próximo passo; escala de findings e vocabulário de vereditos correntes unificados; `.review/state.json` restrito a metadados de automação.
+- **Histórico preservado:** o baseline e os vereditos históricos em `.review/` não foram reescritos; a equivalência entre `BLOCKER/MAJOR/MINOR/NIT` e `CRITICAL/HIGH/MEDIUM/LOW` está documentada.
+- **Decisões do proprietário:** D-01 classifica o worktree de produto preexistente como `BASELINE_LEGACY / PREEXISTING_WORK`, preservando o Review Cycle 0 e os findings R-01 a R-14 fora de TASK retroativa. D-02 estabelece `IMPLEMENTED != RELEASE_AUTHORIZED`; `/inicio`, `/admin/tenants`, landing pós-login e release surface exigem TASK e autorização próprias.
+- **Riscos restantes:** nenhuma superfície preexistente foi publicada ou revertida; a autorização de integração deste lote não autoriza commit de código de produto nem release. Nenhum push, merge, deploy ou escrita remota foi executado.
+- **Telas afetadas:** nenhuma.
+- **Views/RPCs afetadas:** nenhuma.
+- **Impacto futuro na FAQ:** nenhum.
+
+## Code Review Protocol V1 — infraestrutura de revisão por agente — 2026-08-19
+
+- **Tipo:** processo de engenharia e ferramenta de auditoria; nenhuma mudança de produto, banco, contrato, permissão ou release surface.
+- **Fonte canônica:** `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho em `.review/` e `.review/README.md`.
+- **Implementação:** `scripts/review/quality-gates.mjs` e `scripts/review/collect-review-context.mjs`; scripts `review:gates`, `review:gates:json`, `review:gates:baseline` e `review:context` no `package.json`; `/.review/context/` ignorado no `.gitignore`.
+- **Decisão de processo:** o gate compara o estado atual com um débito congelado em `.review/baseline.json` e falha somente em regressão. Um gate que reprova o repositório inteiro no primeiro dia é desligado no segundo; o débito é reduzido por lote autorizado, sem enfraquecer verificação.
+- **Decisão de domínio:** objeto backend sem consumidor entra no gate `SURFACE_PENDING_UI` com severidade informativa. É funcionalidade pronta aguardando UI ou release, não código morto. Customer Operations V1 responde por sete das RPCs nessa condição, por decisão registrada em `docs/CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`.
+- **Política de sanitização registrada:** documento desatualizado é atualizado no lote; documento depreciado é arquivado com cabeçalho de status, nunca apagado; funcionalidade desenvolvida e não publicada é preservada e registrada no roadmap.
+- **Telas afetadas:** nenhuma.
+- **Views/RPCs afetadas:** nenhuma.
+- **Docs alterados:** `docs/CODE_REVIEW_PROTOCOL_V1.md` (novo), `docs/README.md`, `docs/PROJECT_STATE.md`, `AGENTS.md`, `.review/README.md`, este ledger.
+- **Validação:** `npm run review:gates` com baseline congelado e zero regressões; `npm run review:context` gerando pacote com 151 objetos de banco do worktree corrente, 23 sem cobertura pgTAP; `npm run docs:validate`, `npm run lint`, `npm run web:typecheck`, `npm run contracts:typecheck`, `npm run build` e `npm run test` executados na sequência do lote.
+- **Risco restante:** os gates usam análise textual, não execução; menção de objeto em pgTAP não prova cobertura de comportamento, e chamada dinâmica de RPC aparece como sem consumidor. O protocolo declara essas limitações explicitamente.
+- **Impacto futuro na FAQ:** nenhum.
+
+## Navegação da Central de Clientes — 2026-08-16
+
+- A Central de Clientes agora pertence visualmente a `Minha área`, fora de Configurações.
+- O nome visível da rota `/inicio` é `Meu espaço`; a rota e o identificador `user-reception` foram preservados por compatibilidade.
+- Nenhuma permissão, migration, integração externa ou contrato backend foi alterado neste ajuste.
+
+## Importação local do diretório HubSpot — 2026-08-16
+
+- **Tipo:** carga local idempotente de clientes After Sale e correção mínima de ACL de leitura.
+- **Relatório:** `docs/reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md`.
+- **Escopo:** 264 empresas HubSpot com `e_cliente_aftersale_ = Sim`, vinculadas a `tenants` e `customer_account_sources`; sem Omie, lojas, grupos econômicos, projetos ou carteiras CS.
+- **Validação:** leitura autenticada de 264 fontes e 264 linhas importadas no diretório, sem duplicidade; migration local `20260816152000_customer_operations_read_acl_fix_v2.sql` aplicada para eliminar o 42501 causado pela revogação indevida de `EXECUTE`.
+- **Sincronizador:** o 502 foi rastreado a um 403 na leitura de `hubspot_sync_runs` pelo `service_role`; a migration local `20260816153000_hubspot_orchestrator_service_acl_fix_v1.sql` corrigiu a ACL mínima e o teste `supabase/tests/118_hubspot_orchestrator_service_acl_fix_v1.sql` passou.
+- **Resultado:** nova execução local concluiu com `success`, 48 itens `succeeded`, 61.843 registros recebidos e 62.066 promovidos. HubSpot e Omie permaneceram sem escrita externa.
+
+## Customer Relationship Groups V1 — agrupamento interno de clientes
+
+- **Tipo:** contrato de dados, RLS, read models e RPCs administrativas para a Central de Clientes.
+- **Relatório:** `docs/reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md`.
+- **Implementação:** migrations `supabase/migrations/20260816110000_customer_relationship_groups_v1.sql`, `20260816112000_customer_central_release_activation_v1.sql`, `20260816113000_customer_central_screen_capability_v1.sql` e `20260816114000_customer_relationship_groups_scope_fix.sql`, com os testes pgTAP `supabase/tests/115_customer_relationship_groups_v1.sql` e `supabase/tests/116_customer_relationship_groups_scope_fix.sql`.
+- **Decisão:** `tenants` continua sendo a conta operacional; grupos internos suportam grupo econômico e guarda-chuva de serviço, sem afirmar relação jurídica ou financeira. Carteira CS permanece no domínio de atribuições de Customer Success e não pode ser criada como grupo.
+- **Contratos:** `vw_admin_customer_account_groups_list`, `vw_admin_customer_account_group_detail` e `vw_admin_tenant_group_context`.
+- **Integrações:** HubSpot e OMIE/OME permanecem fontes externas; nenhum write ou sincronização foi executado.
+- **Validação:** migrations aplicadas localmente sem reset; lint SQL sem erros; pgTAP focado com 24 testes aprovados; web typecheck e smoke Playwright autenticado aprovados.
+- **UI:** `CustomerGroupsPanel` permite criar agrupamentos, adicionar contas ou marcas e arquivar membros; não cria dados externos nem presume vínculo jurídico.
+
+## Customer Operations and Migration Domain V1 — backend-only
+
+- **Fonte canônica:** `docs/CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`.
+- **Implementação:** migrations `20260816150000_customer_operations_migration_domain_v1.sql`, `20260816151000_customer_operations_acl_hardening.sql`, `20260816151100_customer_operations_read_acl_fix.sql`, `20260816151200_customer_operations_validation_idempotency.sql`, `20260816151300_customer_operations_scope_and_idempotency_v1.sql`, `20260816151400_customer_operations_lint_cleanup.sql` e `20260816151500_customer_operations_lint_cleanup_v2.sql`; teste `supabase/tests/117_customer_operations_migration_domain_v1.sql`.
+- **Escopo:** origens After Sale V1/Genius, lojas, inventário versionado e idempotente, evidências, projetos, migração, elegibilidade, lotes, levas, aprovação, executor contratual, validação e histórico.
+- **Superfície:** `apps/web/src/features/tenants/CustomerOperationsPanel.tsx`, acessível pela Central de Clientes como leitura operacional aditiva; não cria carteira CS nem altera agrupamentos.
+- **Limites:** sem edição visual de projetos, scraping, credenciais, escrita em V1/Boss/Genius/V2 ou migration remota.
+- **Validação:** pgTAP focado do domínio e da ACL com 3 arquivos e 52 testes aprovados. A suíte completa percorre 120 arquivos e 1.859 testes, com uma falha de fixture legada em `110_analytics_operation_scope.sql` causada pela presença do snapshot real local; nenhum teste foi enfraquecido.
+
+## Support Workspace V1 — ativação controlada
+
+- **Tipo:** backend authorization contract plus local QA kickoff.
+- **Fonte canônica:** `docs/reports/OPERATIONAL_SUPPORT_FLOW_V1_KICKOFF_2026-08-16.md`.
+- **Implementação:** `supabase/migrations/20260816100000_support_screen_capability_grants_v1.sql` e `supabase/tests/114_support_screen_capability_grants_v1.sql`.
+- **Decisão:** corrigir a capacidade ausente sem publicar rotas no release surface padrão. O modo `VITE_RELEASE_SURFACE=full` foi usado apenas para validação local autenticada.
+- **Evidência:** pgTAP 116 arquivos e 1.788 testes aprovados; matriz de 10 combinações de perfil/rota com autorização correta e read models de suporte em HTTP 200.
+- **Smoke versionado:** `scripts/local-qa/support-release-smoke.mjs` e `tests/scripts/support-release-smoke-contract.test.mjs`; o catálogo local é habilitado temporariamente e restaurado no `finally`.
+- **Escrita operacional:** `scripts/local-qa/support-operational-write-smoke.mjs` executou o harness Playwright existente em fixture local e confirmou atribuição, status, mensagens, anexo, reload e isolamento por tenant. O harness recebeu apenas espera assíncrona e idempotência de estado já aplicado.
+- **Gates de fechamento:** segunda rodada com 262 testes focados, 549 amplos, contracts/web typecheck, build, pgTAP, auth smoke, Playwright geral, Support smoke, secret scan e quality gate aprovados. Lint sem erros com 159 avisos legados; lint SQL sem falha com 19 avisos não bloqueantes.
+- **Próxima etapa:** `Support Release Surface Activation V1`, com validação de ações e publicação somente após aceite operacional.
+
+# Registro anterior — Interface High-Density V1 — 2026-08-03
+
 ## ACCESS CONTROL V2 — ciclo de vida e evidência de permissões — 2026-08-11
 
 - **Escopo:** `/admin/access`, control plane interno; sem Dashboard, governança de dados, integrações, push, deploy ou migration remota.

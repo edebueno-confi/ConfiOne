@@ -1,5 +1,68 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Handoff multiagente — reconciliação do protocolo — 2026-08-20
+
+- `handoffs/current/IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md` são a interface canônica do ciclo entre Codex e Claude. `.review/` permanece complemento técnico opcional; `.review/state.json` contém somente metadados de automação.
+- A escala corrente de findings é `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` e `INFO`, com mapa de compatibilidade para os termos históricos `BLOCKER`, `MAJOR`, `MINOR` e `NIT`.
+- Os vereditos correntes são `APPROVED`, `REQUEST_CHANGES` e `BLOCKED`. D-01 classifica o trabalho de produto preexistente como `BASELINE_LEGACY / PREEXISTING_WORK`, fora da máquina de estados de uma TASK retroativa. D-02 estabelece `IMPLEMENTED != RELEASE_AUTHORIZED`: `/inicio`, `/admin/tenants` e mudanças de landing/release surface exigem TASK e autorização explícita próprias.
+
+## Protocolo de revisão por agente revisor — 2026-08-19
+
+- O repositório passou a ter um contrato explícito de revisão entre agente implementador e agente revisor em `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho versionada em `.review/`.
+- `npm run review:gates` executa doze verificações determinísticas sobre documentação, contratos backend, cobertura pgTAP, higiene de frontend e de QA. O gate é somente leitura e falha apenas em regressão contra `.review/baseline.json`.
+- O débito histórico foi congelado no baseline em 2026-08-19: 7 links de documentação quebrados, 16 scripts npm sem arquivo, 64 RPCs e 23 views sem menção em pgTAP, 19 tabelas com RLS habilitada e sem policy, 7 estados React descartados, 9 `catch` vazios, 4 asserções pgTAP posicionais, 1 smoke acoplado a contagem literal, 3 documentos acima de 120KB. Nenhum item foi corrigido, removido ou silenciado neste lote.
+- `npm run review:context` monta o pacote de revisão de um lote: frentes tocadas, objetos de banco alterados com marcação de cobertura pgTAP, resultado dos gates e `git diff --stat`. Os pacotes são artefato e não são versionados.
+- Decisão de domínio: objeto backend sem consumidor no repositório é classificado como `SURFACE_PENDING_UI`, ou seja, funcionalidade pronta aguardando UI ou release surface. Customer Operations V1 é o caso explícito, com sete RPCs nessa condição por decisão registrada. Isso não é código morto e não autoriza remoção.
+- Nada foi removido, movido ou renomeado. O lote é aditivo: `scripts/review/`, `.review/`, `docs/CODE_REVIEW_PROTOCOL_V1.md`, quatro scripts npm, uma linha de `.gitignore` e as seções documentais correspondentes.
+
+## Navegação operacional da Central de Clientes e do espaço pessoal — 2026-08-16
+
+- A Central de Clientes foi retirada do agrupamento visual de Configurações e passou a aparecer na área operacional `Minha área`.
+- A rota técnica continua sendo `/admin/tenants`; IDs, grants, contratos e permissões não foram alterados.
+- O item de entrada `/inicio` passou a usar o nome visível `Meu espaço`, mantendo a recepção como conceito técnico de sessão.
+- Breadcrumbs, subtítulos e estados de carregamento foram alinhados ao novo texto, sem alterar a lógica de autenticação ou redirecionamento.
+
+## Customer Relationship Groups V1 — 2026-08-16
+
+- A Central de Clientes agora possui uma camada aditiva de agrupamento interno em `customer_account_groups` e `customer_account_group_members`.
+- O modelo preserva `tenants` como conta operacional e permite membros do tipo `tenant` ou `brand`, com relacoes `contract_holder`, `served_brand` e `operational_member`.
+- `economic_group` e `service_umbrella` sao classificacoes internas de relacionamento. `portfolio` ficou legado apenas para leitura de registros antigos e nao pode ser criado nesta camada. Carteira de Customer Success usa `cs_customer_portfolio_assignments`.
+- O backend expoe `vw_admin_customer_account_groups_list`, `vw_admin_customer_account_group_detail` e `vw_admin_tenant_group_context`, todos restritos a `platform_admin` e com `security_barrier`.
+- As escritas passam por RPCs administrativas auditaveis. Nenhuma sincronizacao ou escrita foi executada no HubSpot, OMIE/OME ou outro servico externo.
+- As migrations locais `20260816110000_customer_relationship_groups_v1.sql`, `20260816112000_customer_central_release_activation_v1.sql`, `20260816113000_customer_central_screen_capability_v1.sql` e `20260816114000_customer_relationship_groups_scope_fix.sql` foram aplicadas sem reset. O pgTAP focado `115_customer_relationship_groups_v1.sql` passou com 24 testes e o teste de escopo `116_customer_relationship_groups_scope_fix.sql` cobre a separacao da carteira CS.
+- A Central agora possui o painel `CustomerGroupsPanel`, com criacao de agrupamento, vinculo de tenants ou marcas e arquivamento de membros por RPC. A tela continua fora de Configuracoes, na area operacional `Minha area`.
+
+## Customer Operations and Migration Domain V1 — 2026-08-16
+
+- O backend agora possui origens distintas After Sale V1 e Genius, lojas individualizadas, snapshots de inventário, observações de funcionalidades, evidências privadas, projetos genéricos e especialização de migração para After Sale V2.
+- O escopo de lojas é explícito e validado por trigger; um projeto não pode misturar cliente ou origem. A carteira CS não participa deste agrupamento e continua em `cs_customer_portfolio_assignments`.
+- Decisão de domínio reforçada: carteira de CS não é agrupamento de marcas, full commerce, guarda-chuva de serviço ou grupo econômico. Esses relacionamentos são contexto comercial separado e não definem atribuição operacional de CSM.
+- Elegibilidade, aprovação, solicitação de executor e validação pós-save são entidades auditáveis. Nenhum executor externo ou escrita em origem/destino foi acionado.
+- Read models, RPCs e a leitura operacional aditiva da Central estão documentados em `docs/CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`. A superfície não cria carteira CS nem executa escrita externa.
+
+## Diretório local de clientes HubSpot — 2026-08-16
+
+- Foram importadas localmente 264 empresas `COMPANY` do HubSpot filtradas por `e_cliente_aftersale_ = Sim`.
+- Cada registro possui tenant canônico e vínculo `customer_account_sources` com `source_system = hubspot`, `source_product = after_sale` e `source_version = current`; 247 fontes estão `confirmed` e 17 `inactive` por status Churn/Bloqueado.
+- A carga não criou lojas, grupos, projetos ou carteiras de CS. Omie não foi consultado nem alterado.
+- A leitura autenticada da Central retornou 264 tenants importados dentro de 267 linhas do diretório local, sem duplicidade. A migration local `20260816152000_customer_operations_read_acl_fix_v2.sql` restaura o `EXECUTE` necessário à policy de leitura.
+- O código do Admin Console deixou de montar filtros REST `in` com centenas de UUIDs para o contexto de grupos, evitando falha de preflight CORS quando a base cresce.
+- O sincronizador automático do dashboard teve a causa raiz do 502 corrigida: o worker recebia 403 ao ler `hubspot_sync_runs` com `service_role` porque a ACL havia sido revogada. A migration local `20260816153000_hubspot_orchestrator_service_acl_fix_v1.sql` restaura apenas `SELECT/UPDATE` para o runner, mantendo a escrita interativa bloqueada.
+- A nova execução local concluiu com status `success`, 48 itens `succeeded`, 61.843 registros recebidos e 62.066 promovidos ao snapshot local. Nenhum serviço externo recebeu escrita.
+- Relatório: `docs/reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md`.
+
+## Support Workspace V1 — contrato de autorização e ativação controlada — 2026-08-16
+
+- A primeira fatia de evolução do suporte corrigiu a lacuna entre grants de tela e capacidade efetiva. A migration `20260816100000_support_screen_capability_grants_v1.sql` concede `screen.support.view` somente a `platform_admin`, `support_manager` e `support_agent`.
+- O teste pgTAP `114_support_screen_capability_grants_v1.sql` valida capacidade, grants de fila/tickets e ausência da capacidade para `dashboard_viewer`.
+- A validação autenticada local em `VITE_RELEASE_SURFACE=full` confirmou fila e tickets para os três perfis autorizados, com read models/RPCs de suporte em HTTP 200. `dashboard_viewer` e `customer_user` permaneceram negados.
+- O smoke versionado `npm.cmd run local:qa:support-release-smoke` registra 10 combinações de rota/perfil, bloqueia requests de tabela-base sensível e restaura o catálogo local após o teste.
+- O smoke `npm.cmd run local:qa:support-operational-writes` confirmou persistência de atribuição, status, notas, respostas, anexo e reload na fixture local, além de isolamento entre tenants e invisibilidade de notas internas no Portal. O harness somente recebeu espera assíncrona e tolerância a fixture já em `in_progress`.
+- Após a migration local, pgTAP passou com 116 arquivos e 1.788 testes; a segunda rodada passou com 262 focados, 549 amplos, typechecks, build, smoke Playwright, autenticação, secret scan e quality gate. Lint segue com 0 erros e 159 avisos legados; lint SQL segue com 19 avisos não bloqueantes.
+- O release surface padrão continua sem as rotas Support. A publicação definitiva aguarda aceite operacional de ações, escrita, tenant, timeline, mensagens, classificação, SLA, Knowledge e handoff. Não houve migration remota, push ou deploy.
+
+# Estado anterior — Interface High-Density V1 — 2026-08-03
+
 ## Atualização corrente — Recharts 3 e reconciliação de suíte — 2026-08-11
 
 - `apps/web` usa `recharts` `3.10.1`; a migração a partir de `2.15.4` foi
