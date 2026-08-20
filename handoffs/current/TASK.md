@@ -2,62 +2,23 @@
 
 ## Task ID
 
-UNSET
+NONE
 
 ## Título
 
-UNSET
+Nenhuma tarefa ativa.
 
 ## Contexto
 
-UNSET
+O lote `R01-ACCESS-DENIAL-2026-08-20` foi aprovado pelo Claude, integrado em
+commit próprio e arquivado. O finding `R01-F01` será tratado em lote separado.
 
-## Objetivo
+## Estado
 
-UNSET
+Não iniciar implementação sem preencher este arquivo com uma nova TASK
+autorizada.
 
-## Escopo
+## Próximo item autorizado
 
-- UNSET
-
-## Fora de escopo
-
-- UNSET
-
-## Requisitos funcionais
-
-- UNSET
-
-## Requisitos técnicos
-
-- UNSET
-
-## Critérios de aceitação
-
-- UNSET
-
-## Documentos normativos aplicáveis
-
-- `AGENTS.md`
-- `docs/engineering/REVIEW_PROTOCOL.md`
-- `handoffs/README.md`
-
-## Riscos conhecidos
-
-- UNSET
-
-## Base commit SHA
-
-UNSET
-
-## Branch
-
-UNSET
-
-## Responsável atual
-
-Ede define o próximo lote e o Owner inicial.
-
-## Observações do proprietário
-
-Nenhuma TASK nova está ativa. Preencher este arquivo antes de qualquer implementação.
+`R01-B-ACCESS-DENIAL-LOGIN-2026-08-20` deve ser aberto antes de qualquer avanço
+para R-03.

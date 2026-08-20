@@ -3,18 +3,18 @@
 Task: NONE
 State: IDLE
 Owner: Ede
-Base SHA: NONE
-Current SHA: NONE
-Last reviewer: NONE
-Last review: NONE
+Base SHA: eece172fba56f290fa03b025d33263c3ac3f6528
+Current SHA: eece172fba56f290fa03b025d33263c3ac3f6528
+Last reviewer: Claude
+Last review: 2026-08-20 — R01 aprovado no escopo declarado e arquivado
 Updated at: 2026-08-20
 
 ## Notes
 
-- Nenhuma TASK está ativa em `handoffs/current/`.
-- O lote `GOV-O01-2026-08-20` foi aprovado, integrado no checkpoint Git e
-  arquivado em `handoffs/archive/GOV-O01-2026-08-20/`.
-- G-01 e O-02 foram resolvidos no lote de governança; `/.review/context/` foi
-  incluído no `.gitignore`.
-- O baseline de produto e os findings R-01 a R-14 permanecem preservados.
-- Próximo item autorizado da fila: R-01. Abrir TASK própria antes de implementar.
+- `R01-ACCESS-DENIAL-2026-08-20` foi integrado em commit próprio e arquivado em
+  `handoffs/archive/R01-ACCESS-DENIAL-2026-08-20/`.
+- D-02 permanece encerrada: `/inicio` e `/admin/tenants` continuam implementados,
+  mas não estão autorizados para release sem aprovação explícita.
+- `R01-F01` não foi encerrado pelo lote anterior. O próximo lote autorizado é
+  `R01-B-ACCESS-DENIAL-LOGIN-2026-08-20`.
+- R-03, R-11 e R-14 não devem ser iniciados neste ciclo.

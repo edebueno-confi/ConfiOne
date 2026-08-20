@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
+import { MinimalNotice } from '../../components/minimal-ui';
 import { cx } from '../../components/ui';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import { useAuthContext } from '../auth/auth-context';
 import { listInboxItems, type InboxItem } from '../inbox/inbox-api';
 
 type LoadState = { phase: 'loading' } | { phase: 'ready'; items: InboxItem[] } | { phase: 'error' };
+type AccessDeniedNavigationState = { fromAccessDenied?: boolean; reason?: unknown };
 
 const OPEN_STATUSES = new Set(['new', 'triage', 'in_progress', 'waiting_customer', 'waiting_support', 'waiting_engineering']);
 
@@ -31,6 +33,22 @@ function formatWhen(value: string | null) {
     return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
   }
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date);
+}
+
+function describeAccessDeniedNotice(reason: unknown) {
+  if (reason === 'missing-profile') {
+    return 'Sua conta foi autenticada, mas ainda não tem acesso liberado para a área solicitada.';
+  }
+
+  if (reason === 'inactive-profile') {
+    return 'Sua conta está inativa neste momento. Fale com quem administra o acesso para voltar a operar.';
+  }
+
+  if (reason === 'missing-platform-admin' || reason === 'route-not-authorized') {
+    return 'Sua conta não tem permissão para abrir a área solicitada.';
+  }
+
+  return 'A área solicitada não está liberada para a sua conta agora. Revise seu acesso com a equipe responsável.';
 }
 
 function KpiCard({
@@ -73,8 +91,13 @@ function KpiCard({
 }
 
 export function HomePage() {
+  const location = useLocation();
   const { user } = useAuthContext();
   const [state, setState] = useState<LoadState>({ phase: 'loading' });
+  const accessDeniedState = location.state as AccessDeniedNavigationState | null;
+  const accessDeniedNotice = accessDeniedState?.fromAccessDenied
+    ? describeAccessDeniedNotice(accessDeniedState.reason)
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +158,15 @@ export function HomePage() {
           </div>
         </div>
       </header>
+
+      {accessDeniedNotice ? (
+        <div className="px-5 pt-5 sm:px-6">
+          <MinimalNotice tone="warning">
+            <p className="font-semibold">Acesso não liberado</p>
+            <p className="mt-1">Você foi direcionado para o seu espaço. {accessDeniedNotice}</p>
+          </MinimalNotice>
+        </div>
+      ) : null}
 
       <div className="px-5 py-5 sm:px-6">
         {state.phase === 'loading' ? (

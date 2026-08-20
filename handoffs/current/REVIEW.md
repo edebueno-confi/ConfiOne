@@ -1,32 +1,7 @@
 # Review
 
-## Task ID
+Nenhuma revisão corrente. O lote anterior foi arquivado com seu veredito
+`APPROVED`.
 
-UNSET
-
-## Reviewer
-
-UNSET
-
-## Commit revisado
-
-UNSET
-
-## Base commit
-
-UNSET
-
-## Data da revisão
-
-UNSET
-
-## Resultado final
-
-NOT_STARTED
-
-Nenhuma revisão corrente. O reviewer deve preencher este arquivo somente quando
-existir uma TASK ativa e o estado estiver `REVIEWING`.
-
-## Findings
-
-Nenhum.
+O reviewer deve preencher este arquivo somente após uma nova TASK ser entregue
+em `READY_FOR_REVIEW`.

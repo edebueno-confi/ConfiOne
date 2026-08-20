@@ -1,61 +1,10 @@
 # Implementation
 
-## Task ID
-
-UNSET
-
-## Implementador
-
-UNSET
-
-## Base SHA
-
-UNSET
-
-## Implementation SHA
-
-UNSET
-
-## Resumo
-
 Nenhuma implementação corrente.
 
-## Decisões tomadas
+O lote `R01-ACCESS-DENIAL-2026-08-20` foi arquivado em
+`handoffs/archive/R01-ACCESS-DENIAL-2026-08-20/` após aprovação e integração.
+Consulte o arquivo arquivado para o resumo, evidências e limitações daquele
+lote.
 
-- UNSET
-
-## Arquivos adicionados
-
-- Nenhum.
-
-## Arquivos modificados
-
-- Nenhum.
-
-## Migrations
-
-Nenhuma.
-
-## Testes adicionados
-
-Nenhum.
-
-## Comandos de validação executados
-
-Nenhum.
-
-## Resultados
-
-Nenhum lote corrente.
-
-## Limitações conhecidas
-
-Nenhuma.
-
-## Possíveis riscos
-
-Nenhum.
-
-## Itens que o reviewer deve observar
-
-Nenhum.
+O próximo lote autorizado é `R01-B-ACCESS-DENIAL-LOGIN-2026-08-20`.
