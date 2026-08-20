@@ -262,7 +262,6 @@ interface SupportCustomerPreviewSnapshot {
   accountContext: SupportCustomerAccountContext | null;
   productContexts: SupportCustomerProductContext[];
   recentTicketsWindow: SupportCustomerRecentTicketsWindow;
-  recentEventsWindow: SupportCustomerRecentEventsWindow;
 }
 
 const OPEN_TICKET_FILTERS = ['all', 'in_progress', 'awaiting', 'urgent', 'operations', 'engineering'] as const;
@@ -2635,12 +2634,8 @@ function SupportWorkspaceView({
   );
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
-  const [customerAccountContext, setCustomerAccountContext] =
-    useState<SupportCustomerAccountContext | null>(null);
   const [customerRecentTickets, setCustomerRecentTickets] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
-  const [customerRecentEvents, setCustomerRecentEvents] =
-    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
   const [knowledgeLinks, setKnowledgeLinks] =
     useState<SupportTicketKnowledgeLink[]>(emptyTicketKnowledgeLinks());
   const [knowledgeArticlePicker, setKnowledgeArticlePicker] =
@@ -2650,7 +2645,6 @@ function SupportWorkspaceView({
   const [attachmentPhase, setAttachmentPhase] = useState<AttachmentPhase>('idle');
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
-  const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<Uuid | null>(null);
   const [attachmentUploadDraft, setAttachmentUploadDraft] =
     useState<TicketAttachmentUploadDraft>(emptyAttachmentUploadDraft());
   const [engineeringLinks, setEngineeringLinks] =
@@ -2944,7 +2938,6 @@ function SupportWorkspaceView({
         setTimelineLoadingMore(false);
         setCustomer(null);
         setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-        setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
         setAttachments(emptyTicketAttachments());
         setAttachmentPhase('idle');
         setAttachmentMessage(null);
@@ -2971,19 +2964,15 @@ function SupportWorkspaceView({
         return;
       }
 
-      const [customerRow, customerAccountRow, recentTicketsWindow, recentEventsWindow] = await Promise.all([
+      const [customerRow, recentTicketsWindow] = await Promise.all([
         getSupportCustomer360(detail.tenantId),
-        getSupportCustomerAccountContext(detail.tenantId),
         getSupportCustomerRecentTickets(detail.tenantId),
-        getSupportCustomerRecentEvents(detail.tenantId),
       ]);
       setTicketDetail(detail);
       setTimelineWindow(timelineRecent);
       setTimelineLoadingMore(false);
       setCustomer(customerRow);
-      setCustomerAccountContext(customerAccountRow);
       setCustomerRecentTickets(recentTicketsWindow);
-      setCustomerRecentEvents(recentEventsWindow);
       setDetailPhase('ready');
       setStatusDraft(
         buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ??
@@ -3177,9 +3166,7 @@ function SupportWorkspaceView({
       setTimelineWindow(emptyTimelineWindow());
       setTimelineLoadingMore(false);
       setCustomer(null);
-      setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-      setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
       setAttachments(emptyTicketAttachments());
       setAttachmentPhase('idle');
       setAttachmentMessage(null);
@@ -3253,9 +3240,7 @@ function SupportWorkspaceView({
       setTimelineWindow(emptyTimelineWindow());
       setTimelineLoadingMore(false);
       setCustomer(null);
-      setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-      setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
       setAttachments(emptyTicketAttachments());
       setAttachmentPhase('idle');
       setAttachmentMessage(null);
@@ -3604,8 +3589,8 @@ function SupportWorkspaceView({
   }
 
   async function handleDownloadAttachment(attachmentId: Uuid) {
-    setAttachmentDownloadingId(attachmentId);
-    setDetailNotice(null);
+    setDetailNotice('Preparando o download seguro da evidência...');
+    setDetailNoticeTone('default');
 
     try {
       const payload = await getSupportTicketAttachmentSignedUrl(attachmentId);
@@ -3625,8 +3610,6 @@ function SupportWorkspaceView({
         return;
       }
       applyFailure(friendlyAttachmentDownloadErrorMessage(classified.message));
-    } finally {
-      setAttachmentDownloadingId(null);
     }
   }
 
@@ -4818,6 +4801,22 @@ function SupportWorkspaceView({
     (ticketDetail?.canUpdateStatus ?? false) &&
     engineeringPhase !== 'contract-unavailable' &&
     engineeringPhase !== 'error';
+  const auxiliaryLoadFeedback = [
+    agentsPhase === 'error' || agentsPhase === 'contract-unavailable'
+      ? agentsMessage ?? 'O diretório de agentes atribuíveis não ficou disponível.'
+      : null,
+    attachmentPhase === 'error' || attachmentPhase === 'contract-unavailable'
+      ? attachmentMessage ?? 'As evidências do ticket não ficaram disponíveis.'
+      : null,
+    engineeringPhase === 'error' || engineeringPhase === 'contract-unavailable'
+      ? engineeringMessage ?? 'O handoff técnico não ficou disponível.'
+      : null,
+    knowledgePhase === 'error' || knowledgePhase === 'contract-unavailable'
+      ? knowledgeMessage ?? 'O painel de conhecimento não ficou disponível.'
+      : null,
+  ].find((message): message is string => Boolean(message)) ?? null;
+  const visibleDetailNotice = detailNotice ?? auxiliaryLoadFeedback;
+  const visibleDetailNoticeTone = detailNotice ? detailNoticeTone : 'critical';
   const selectedQueueTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const previewTicket = ticketDetail ?? null;
@@ -5871,8 +5870,8 @@ function SupportWorkspaceView({
                   submitting={submitting}
                 />
               }
-              detailNotice={detailNotice}
-              detailNoticeTone={detailNoticeTone}
+              detailNotice={visibleDetailNotice}
+              detailNoticeTone={visibleDetailNoticeTone}
               header={
                 <SupportTicketWorkspaceHeader
                   badges={
@@ -6711,8 +6710,6 @@ export function SupportCustomersPage() {
   >([]);
   const [selectedRecentTicketsWindow, setSelectedRecentTicketsWindow] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
-  const [selectedRecentEventsWindow, setSelectedRecentEventsWindow] =
-    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
   const [selectedPhase, setSelectedPhase] = useState<DetailPhase>('idle');
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -6722,7 +6719,6 @@ export function SupportCustomersPage() {
     setSelectedAccountContext(snapshot.accountContext);
     setSelectedProductContexts(snapshot.productContexts);
     setSelectedRecentTicketsWindow(snapshot.recentTicketsWindow);
-    setSelectedRecentEventsWindow(snapshot.recentEventsWindow);
   }
 
   const loadCustomers = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
@@ -6790,18 +6786,16 @@ export function SupportCustomersPage() {
       setSelectedAccountContext(null);
       setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
-      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(null);
       setSelectedPhase(customerSummary ? 'ready' : 'loading');
     }
 
     try {
-      const [detail, context, productContexts, recentTickets, recentEvents] = await Promise.all([
+      const [detail, context, productContexts, recentTickets] = await Promise.all([
         getSupportCustomer360(tenantId),
         getSupportCustomerAccountContext(tenantId),
         listSupportCustomerProductContexts(tenantId),
         getSupportCustomerRecentTickets(tenantId),
-        getSupportCustomerRecentEvents(tenantId),
       ]);
 
       if (selectedPreviewRequestRef.current !== requestId) {
@@ -6817,7 +6811,6 @@ export function SupportCustomersPage() {
         accountContext: context,
         productContexts,
         recentTicketsWindow: recentTickets,
-        recentEventsWindow: recentEvents,
       } satisfies SupportCustomerPreviewSnapshot;
 
       previewCacheRef.current.set(tenantId, snapshot);
@@ -6843,7 +6836,6 @@ export function SupportCustomersPage() {
       setSelectedAccountContext(null);
       setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
-      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(classified.message);
       setSelectedPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
