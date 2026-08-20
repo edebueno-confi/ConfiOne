@@ -51,8 +51,8 @@ próprio ciclo e seus próprios artefatos correntes, arquivados ao encerramento.
 | Ordem | Item | Descrição | Estado da fila |
 | --- | --- | --- | --- |
 | 1 | O-01 | Versionar corretamente `.review/baseline.json` e o veredito legado do takeover | APPROVED, ARQUIVADO |
-| 2 | R-01 | Corrigir negação de acesso silenciosa | PRÓXIMO, AUTORIZADO |
-| 3 | R-03 | Restaurar feedback de erro no Support Workspace | AUTORIZADO, AGUARDANDO R-01 |
+| 2 | R-01 / R01-B | Corrigir negação de acesso silenciosa e o caminho de login relacionado | R-01 aprovado; R01-B ATIVO, AUTORIZADO |
+| 3 | R-03 | Restaurar feedback de erro no Support Workspace | AUTORIZADO, AGUARDANDO R01-B |
 | 4 | R-11 | Corrigir scripts npm que apontam para arquivos inexistentes | AUTORIZADO, AGUARDANDO R-03 |
 | 5 | R-14 | Formalizar deny-all intencional para tabelas RLS sem policy | AUTORIZADO, AGUARDANDO R-11 |
 

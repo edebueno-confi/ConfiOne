@@ -10,8 +10,8 @@ Nenhuma tarefa ativa.
 
 ## Contexto
 
-O lote `R01-ACCESS-DENIAL-2026-08-20` foi aprovado pelo Claude, integrado em
-commit próprio e arquivado. O finding `R01-F01` será tratado em lote separado.
+O lote `R01-B-ACCESS-DENIAL-LOGIN-2026-08-20` foi aprovado pelo Claude,
+integrado em commit próprio e arquivado. R-01 foi encerrado na fila.
 
 ## Estado
 
@@ -20,5 +20,5 @@ autorizada.
 
 ## Próximo item autorizado
 
-`R01-B-ACCESS-DENIAL-LOGIN-2026-08-20` deve ser aberto antes de qualquer avanço
-para R-03.
+`R03-SUPPORT-ERROR-FEEDBACK-2026-08-20` deve ser aberto antes de qualquer
+avanço para R-11.
