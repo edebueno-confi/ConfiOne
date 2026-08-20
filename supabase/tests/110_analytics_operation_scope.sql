@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(9);
 
 select has_function(
   'public',
@@ -39,10 +39,28 @@ select is(
 );
 
 select is(
-  (public.rpc_analytics_support_stage_breakdown_by_operation(null, 'Aftersale')
-    -> 'stages' -> 0 ->> 'open_tickets')::integer,
-  1,
+  (
+    select coalesce(sum((stage ->> 'open_tickets')::integer), 0)
+    from jsonb_array_elements(
+      public.rpc_analytics_support_stage_breakdown_by_operation(
+        'operation-scope-aftersale',
+        'Aftersale'
+      ) -> 'stages'
+    ) as stage
+  ),
+  1::bigint,
   'fila por etapa inclui somente os tickets da operacao selecionada'
+);
+
+select is(
+  jsonb_array_length(
+    public.rpc_analytics_support_stage_breakdown_by_operation(
+      'operation-scope-aftersale',
+      'Neotrust'
+    ) -> 'stages'
+  ),
+  0,
+  'fila por etapa nao mistura pipeline Aftersale na operacao Neotrust'
 );
 
 select has_function(
