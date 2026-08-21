@@ -65,8 +65,12 @@ idempotentes por planilha/aba/linha. O teste está em
   e o risco operacional de Comercial e CS/Suporte?
 - Fontes atuais: HubSpot sincronizado server-side.
 - Fonte futura do Ciclo A1: CSV/XLSX importado de forma controlada.
-- Timezone operacional padrão: ainda precisa ser confirmado; até lá, views
-  devem preservar timestamps UTC e a UI deve indicar a convenção adotada.
+- Timezone operacional padrão: `America/Sao_Paulo`, conforme `OD-003` em
+  `docs/engineering/OWNER_DECISIONS.md`. Limites de período, coortes e
+  comparativos históricos usam esse fuso retroativamente, sem data de corte.
+  Timestamps de origem permanecem em UTC; o backend materializa as fronteiras
+  no fuso operacional usando as regras IANA, e a UI calcula datas de calendário
+  nesse mesmo fuso.
 - Janela padrão atual: todo o histórico disponível na fonte. Filtros temporais
   e comparação entre períodos são evolução do painel, não estão implementados
   no contrato V1 atual.

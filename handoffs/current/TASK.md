@@ -10,7 +10,7 @@ Separar criado no período de existente no período
 
 ## Estado
 
-READY_FOR_IMPLEMENTATION
+READY_FOR_REVIEW
 
 ## Contexto
 
@@ -73,15 +73,15 @@ explícitos.
 
 ## Critérios de aceitação
 
-- [ ] inventário de fontes e consumidores temporais documentado;
-- [ ] criado no período e existente no período possuem evidência separada;
-- [ ] timezone, limites, nulos, coortes, reaberturas e estoque/movimento foram
+- [x] inventário de fontes e consumidores temporais documentado;
+- [x] criado no período e existente no período possuem evidência separada;
+- [x] timezone, limites, nulos, coortes, reaberturas e estoque/movimento foram
       tratados ou explicitamente classificados;
-- [ ] nenhum hardcode ou heurística local foi criado para decidir semântica;
-- [ ] testes relevantes, typecheck/build/lint aplicáveis e `git diff --check`
+- [x] nenhum hardcode ou heurística local foi criado para decidir semântica;
+- [x] testes relevantes, typecheck/build/lint aplicáveis e `git diff --check`
       executados e registrados;
-- [ ] diff limitado ao lote, sem absorver alterações preexistentes;
-- [ ] implementação entregue em `READY_FOR_REVIEW` com `Owner = Claude`.
+- [x] diff limitado ao lote, sem absorver alterações preexistentes;
+- [x] implementação entregue em `READY_FOR_REVIEW` com `Owner = Sentinel`.
 
 ## Documentos normativos aplicáveis
 
@@ -96,9 +96,16 @@ explícitos.
 
 ## Base e responsabilidade
 
-- Base commit SHA: `c7c700d`
+- Base commit SHA: `705c886`
 - Branch: `main`
-- Responsável atual: Codex
+- Responsável atual: Sentinel, reviewer independente ativo
 - Approval: APPROVED na fila canônica
 - Observações do proprietário: não alterar release surface nem executar
   operações externas protegidas.
+
+## Decisão aplicada
+
+`OD-003`, registrada em `docs/engineering/OWNER_DECISIONS.md`, define
+`America/Sao_Paulo` como timezone operacional do analytics, com aplicação
+retroativa a séries, coortes e comparativos históricos e sem data de corte.
+As fronteiras continuam meia-abertas: `>= from` e `< to + 1`.

@@ -45,6 +45,7 @@ import {
   type AnalyticsSyncHistoryRow,
   mapAnalyticsSourceStatus,
 } from './analytics-model';
+import { resolveAnalyticsTimeseriesPeriod } from './analytics-periods';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { analyticsSyncError } from './analytics-sync-errors.mjs';
@@ -782,14 +783,7 @@ export type TimeseriesGrain = 'day' | 'week' | 'month';
  * sugerir tendência que o dado não sustenta.
  */
 function defaultTimeseriesWindow(grain: TimeseriesGrain): { from: string; to: string } {
-  const to = new Date();
-  const from = new Date(to);
-  if (grain === 'day') from.setDate(from.getDate() - 60);
-  else if (grain === 'week') from.setDate(from.getDate() - 26 * 7);
-  else from.setMonth(from.getMonth() - 11);
-  from.setDate(1);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(from), to: iso(to) };
+  return resolveAnalyticsTimeseriesPeriod(grain);
 }
 
 export async function getAnalyticsTimeseries(

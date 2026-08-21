@@ -1,23 +1,32 @@
 # Status
 
 Task: DATA-TEMPORAL-SEMANTICS-2026-08-21
-State: READY_FOR_IMPLEMENTATION
-Owner: Codex
+State: APPROVED
+Owner: Forge
 Role: EXECUTOR
-Review mode: CLAUDE_REQUIRED
-Base SHA: c7c700d
-Current SHA: c7c700d
-Last reviewer: NONE
-Last review: NONE
+Reviewer active: Sentinel
+Review mode: SENTINEL_REQUIRED
+Base SHA: 705c886
+Current SHA: UNCOMMITTED_WORKTREE
+Last reviewer: Sentinel
+Last review: 2026-08-21 — APPROVED por Sentinel; F-TEMPORAL-001 e F-TEMPORAL-002 encerrados
 Updated at: 2026-08-21
 
 ## Notes
 
-- Lote promovido automaticamente após `DATA-PIPELINE-STAGE-SCOPE-2026-08-21`
-  atingir APPROVED e ser integrado em checkpoint local `c7c700d`.
-- Codex deve investigar e implementar somente esta TASK, preservando alterações
-  preexistentes e mantendo o backend como fonte da verdade.
-- Ao concluir, atualizar IMPLEMENTATION.md e entregar READY_FOR_REVIEW com
-  Owner = Claude.
-- Nenhum push, merge, pull request, deploy, migration remota, secret ou release
-  surface está autorizado.
+- O bloqueio OWNER_DECISION_REQUIRED foi resolvido pelo proprietário e está
+  registrado como OD-003 em docs/engineering/OWNER_DECISIONS.md.
+- Decisão aplicada: timezone operacional America/Sao_Paulo, retroativo a
+  séries, coortes e comparativos históricos, sem data de corte.
+- A implementação está documentada em handoffs/current/IMPLEMENTATION.md, com
+  migration forward-only, testes comportamentais e evidências dos gates.
+- A implementação cobre frontend, RPCs temporais, catálogo, fronteira próxima
+  à meia-noite e datas anteriores a 2019 com regras IANA.
+- Sentinel encerrou F-TEMPORAL-001 e F-TEMPORAL-002 após validação independente
+  e aprovou o lote. P-GOV-001 foi registrado como PROPOSED fora do escopo.
+- O lote retorna a Forge para FINALIZE_LOCAL, conforme autorização persistente
+  da fila canônica.
+- O repositório possui alterações preexistentes fora deste lote. Elas devem
+  permanecer fora da revisão e de qualquer commit futuro deste lote.
+- Push, merge, pull request, deploy, migration remota, secrets e release surface
+  continuam proibidos, conforme OD-001.
