@@ -1,27 +1,22 @@
 # Status
 
-Task: CONTRACT-EXPIRY-2026-08-21
-State: APPROVED
+Task: CS-DOMAIN-AUDIT-2026-08-21
+State: READY_FOR_IMPLEMENTATION
 Owner: Forge
 Role: EXECUTOR
 Reviewer active: Sentinel
 Review mode: SENTINEL_REQUIRED
-Base SHA: 667a4a31b0a9764427d7488ef54ecb68378d70ed
-Current SHA: 667a4a31b0a9764427d7488ef54ecb68378d70ed
+Base SHA: 278482a299c511576b39a304da3e6b5c25e76f66
+Current SHA: 278482a299c511576b39a304da3e6b5c25e76f66
 Last reviewer: Sentinel (Codex Independent Reviewer)
-Last review: 2026-08-21 — CONTRACT-EXPIRY-2026-08-21 APPROVED; F-CONTRACT-001 resolvido
+Last review: 2026-08-21 — CONTRACT-EXPIRY-2026-08-21 APPROVED e finalizado localmente
 Updated at: 2026-08-21
 
 ## Handoff
 
-- Forge concluiu e arquivou `COMMERCIAL-PREDICTION-2026-08-21` com commit local
-  `fd2a0407601b77004baf75c227cf057c2740b6da`.
-- Forge investigou as fontes reais de contratos, renovação, responsáveis e MRR
-  e registrou a fundação documental.
-- Não há contrato suficiente para publicar lista de vencimentos, alerta ou MRR
-  em risco por renovação futura.
-- O finding `F-CONTRACT-001` foi corrigido e reavaliado por Sentinel. Todos os
-  artefatos canônicos usam agora `667a4a31b0a9764427d7488ef54ecb68378d70ed`
-  como base do lote; `fd2a040...` permanece apenas como histórico.
+- `CONTRACT-EXPIRY-2026-08-21` foi aprovado por Sentinel, recebeu o commit
+  local `6511d8ef0a5a270a02133b677cf2ae8f2c73dd1c` e foi arquivado como `DONE`.
+- A fila promoveu `CS-DOMAIN-AUDIT-2026-08-21` para `ACTIVE`.
+- O próximo lote permanece documental até que as fontes reais sejam auditadas.
 - Push, merge, deploy, migration remota, secrets e release surface continuam
   proibidos.
