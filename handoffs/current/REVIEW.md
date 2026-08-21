@@ -1,7 +1,17 @@
 # Review
 
-## Veredito
+## Task ID
 
-IDLE
+SUPPORT-DOMAIN-AUDIT-2026-08-21
 
-Nenhuma revisão ativa em `handoffs/current/`. O último veredito formal está no pacote arquivado.
+## Estado
+
+PENDING_REVIEW
+
+## Reviewer
+
+Sentinel (Independent Code Reviewer / Principal Engineer)
+
+## Resultado
+
+Ainda não há veredito ou findings. O lote está em `READY_FOR_IMPLEMENTATION`.

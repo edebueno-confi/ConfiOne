@@ -15,7 +15,8 @@ READY_FOR_REVIEW
 ## Base e SHAs
 
 - Base SHA: `e8347f64f9b94a778d5e10df28dcf460ae33e072`.
-- Implementation SHA: `UNCOMMITTED_WORKTREE`.
+- Implementation SHA: `8c3eff708811bcb19e28e56dbafda6131d89ea35`.
+- Finalização local: commit exclusivo do lote criado em 2026-08-21.
 - Current HEAD antes das alterações documentais: `dcea8fd051acfccb29c01a479f4b5fc0419ac48e`.
 - Branch: `main`.
 
