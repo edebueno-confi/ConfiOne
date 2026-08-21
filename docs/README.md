@@ -10,6 +10,7 @@
 
 - [CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md](./CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md)
 - [Importação local do diretório HubSpot](./reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md)
+- [Auditoria do domínio Customer Success V1](./ANALYTICS_CS_DOMAIN_AUDIT_V1.md) — fontes locais, descoberta oficial das APIs HubSpot e lacunas de health score, churn, expansão e renovação.
 
 - [VIEW_RPC_CONTRACTS.md](./VIEW_RPC_CONTRACTS.md) — contratos de agrupamento interno da Central de Clientes (`customer_account_groups`).
 - [Customer Relationship Groups V1](./reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md) — decisão de domínio, implementação e validação da Central de Clientes.
@@ -61,6 +62,8 @@ Fonte oficial da documentação do Genius Support OS.
 - [ANALYTICS_MRR_GOALS_FOUNDATION_V1.md](./ANALYTICS_MRR_GOALS_FOUNDATION_V1.md)
 - [ANALYTICS_PREDICTION_FOUNDATION_V1.md](./ANALYTICS_PREDICTION_FOUNDATION_V1.md)
 - [ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md](./ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md)
+- [ANALYTICS_CS_DOMAIN_AUDIT_V1.md](./ANALYTICS_CS_DOMAIN_AUDIT_V1.md)
+- [reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md](./reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md)
 - [reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md](./reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md)
 - [reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md](./reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md)
 - [superpowers/specs/2026-06-09-minimal-operational-redesign-design.md](./superpowers/specs/2026-06-09-minimal-operational-redesign-design.md)

@@ -1,5 +1,19 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+# Plano de autorização administrativa e acesso de usuários — 2026-08-21
+
+- **Tipo:** decisão de produto, planejamento e decomposição no Development Control Plane; sem mudança de runtime.
+- **Fonte canônica:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`.
+- **Decisão:** priorizar a reprodução e correção do acesso negado indevido de administrador válido; depois simplificar progressivamente para nível, área, tela e `READ/WRITE`, preservando backend, isolamento e auditoria.
+- **Fila:** `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` ficou `READY/APPROVED`; tasks estruturais 30 a 37 ficaram `BACKLOG/PROPOSED` e dependentes.
+- **Estado atual:** `handoffs/current/` continua ocupado por `CS-DOMAIN-AUDIT-2026-08-21`, aprovado pelo Sentinel e sob responsabilidade do Forge, mas ainda não retornou a `IDLE`; a primeira task ainda não foi aberta nem implementada.
+- **Docs alterados:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`, `docs/PROJECT_STATE.md`, `docs/ROADMAP_BUILDOUT_V3.md`, `docs/README.md`, `docs/engineering/OWNER_DECISIONS.md`, `handoffs/README.md` e este ledger.
+- **Telas afetadas:** nenhuma neste lote.
+- **Views/RPCs/migrations afetadas:** nenhuma; somente referenciadas como evidência para discovery.
+- **Validação:** inspeção do Control Plane, handoffs R01/R01-B, contratos de auth, estado Git e `git diff --check` após a edição.
+- **Riscos restantes:** a causa raiz do bug ainda não foi reproduzida neste lote; o modelo atual é complexo e não deve ser removido por analogia; a abertura de `handoffs/current/` depende do retorno do ciclo atual a `IDLE`.
+- **Impacto futuro na FAQ:** documentar claramente a diferença entre autenticação, autorização, nível, área, tela e `READ/WRITE`, somente após o contrato ser aprovado.
+
 ## Fundação de metas financeiras e MRR — 2026-08-21
 
 - **Tipo:** fundação documental de contrato futuro; sem mudança de runtime,
@@ -20,6 +34,41 @@
   temporal de MRR; um próximo lote precisará de decisão e contrato server-side.
 - **Impacto futuro na FAQ:** documentar a origem e a data considerada de cada
   realizado quando a interface de metodologia for criada.
+
+## Auditoria do domínio de Customer Success — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  contrato executável, permissão ou release surface.
+- **Fontes canônicas:** `vw_cs_customer_portfolio`,
+  `cs_customer_portfolio_assignments`, `rpc_admin_upsert_cs_customer_portfolio`,
+  `rpc_analytics_customer_success_kpis_v2()` e as fundações de KPI e renovação.
+- **Regra:** carteira, risco operacional, churn, expansão e renovação são
+  domínios separados. `health_summary_status` é `unavailable`; o
+  `portfolio_health_status` manual não é score calculado. Health Score/Health
+  Status nativo do HubSpot é premissa do fluxo-alvo, com configuração e cálculo
+  upstream no HubSpot, leitura oficial e futura ingestão/read model no
+  ConfiOne, sem recálculo local. Portal, propriedade, scopes, plano, seat,
+  permissões e ingestão ainda não foram verificados: estado atual
+  `REQUIRES_NEW_INGESTION`, possivelmente `REQUIRES_SCOPE`, nunca
+  `API_LIMITATION`. Churn/expansão permanecem `awaiting_history` localmente
+  quando falta série suficiente.
+- **Descoberta externa:** APIs oficiais de propriedades, objetos, busca,
+  atividades e associações foram registradas em
+  `docs/ANALYTICS_CS_DOMAIN_AUDIT_V1.md`, sem chamada ao portal ou leitura de
+  secrets. A matriz exige registrar endpoint, objeto, propriedade, scopes,
+  paginação, rate limits, histórico e classificação de disponibilidade antes
+  de qualquer ingestão.
+- **Docs alterados:** `docs/ANALYTICS_CS_DOMAIN_AUDIT_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas e objetos executáveis:** nenhum objeto executável foi alterado. A
+  documentação registra a UI existente apenas como consumidora da carteira e
+  separa a indicação visual local de atenção de um KPI de saúde.
+- **Riscos restantes:** faltam decisão de produto e contrato server-side para
+  health, eventos/coortes de churn e expansão, janela/owner de renovação e
+  vínculo MRR-assinatura.
+- **Impacto futuro na FAQ:** explicar fonte, data observada, posição atual,
+  estados de cobertura e limitações de cada indicador sem exigir leitura do
+  código.
 
 ## Fundação de predição comercial explicável — 2026-08-21
 

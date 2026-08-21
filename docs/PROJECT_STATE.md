@@ -1,5 +1,23 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Planejamento de cadastro, liberação e autorização de usuários — 2026-08-21
+
+- O Owner registrou uma frente P1 para reproduzir e corrigir o caso de
+  administrador válido recebendo `Acesso negado`, seguida de auditoria e
+  simplificação progressiva para `Usuário -> Nível -> Área -> Tela -> READ /
+  WRITE`.
+- A fila canônica contém `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` em `READY`
+  e as tasks estruturais de 30 a 37 em `BACKLOG/PROPOSED`. A task crítica não
+  foi aberta em `handoffs/current/` porque o handoff corrente de Customer
+  Success está em `APPROVED`, sob responsabilidade do Forge, e ainda não
+  retornou a `IDLE`.
+- O modelo atual não foi substituído: papéis globais, contexto interno,
+  áreas, perfis, capabilities, overrides, release allowlist, views, RPCs e RLS
+  permanecem evidência vigente até o inventário e o de-para das tasks.
+- Fonte do plano: `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`.
+  Não houve alteração de código, banco, migration, RLS, RPC, integração,
+  release surface ou serviço externo neste registro.
+
 ## Handoff multiagente — reconciliação do protocolo — 2026-08-20
 
 - `handoffs/current/IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md` são a interface canônica do ciclo entre Codex e Claude. `.review/` permanece complemento técnico opcional; `.review/state.json` contém somente metadados de automação.
@@ -51,6 +69,31 @@
   para calcular MRR em risco por renovação futura.
 - Fonte de continuidade: `docs/ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md`.
   O lote permanece documental até decisão de produto e contrato server-side.
+
+## Auditoria do domínio de Customer Success — 2026-08-21
+
+- A carteira corrente é `vw_cs_customer_portfolio`, com tenant, assinaturas
+  ativas/suspensas, owner de CS, tickets atuais, atribuição operacional e
+  `renewalAt` quando preenchido. O acesso é tenant-aware e governado por
+  membership na área `customer_success`.
+- `health_summary_status` permanece `unavailable`. `portfolio_health_status` é
+  um atributo manual de atribuição com histórico, não um health score calculado
+  ou versionado. Churn e expansão não possuem série canônica publicada; os
+  indicadores analíticos correspondentes permanecem `awaiting_history` quando
+  não há snapshots suficientes.
+- O Health Score/Health Status nativo do HubSpot é premissa do fluxo-alvo:
+  configuração e cálculo ficam no HubSpot; o ConfiOne deve ler pela API oficial
+  e futuramente ingerir o valor em read model com tenant, proveniência,
+  cobertura, frescor, permissões e estados de ausência, sem recalcular
+  localmente. O portal, os nomes internos das propriedades, scopes, plano, seat,
+  permissões e retenção histórica ainda não foram verificados. A capacidade
+  alvo é suportada, mas o estado atual é `REQUIRES_NEW_INGESTION`, possivelmente
+  `REQUIRES_SCOPE`; não é `API_LIMITATION`.
+- Risco operacional, atraso financeiro, tickets e ausência de atividade são
+  sinais separados e não formam uma probabilidade de churn ou renovação. A
+  fonte de continuidade é `docs/ANALYTICS_CS_DOMAIN_AUDIT_V1.md`.
+- Nenhum código, migration, view, RPC, RLS, contrato executável, integração ou
+  UI foi alterado neste lote.
 
 ## Protocolo de revisão por agente revisor — 2026-08-19
 
