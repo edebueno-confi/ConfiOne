@@ -104,6 +104,10 @@ idempotentes por planilha/aba/linha. O teste está em
 ### Caveats comerciais
 
 - A view atual usa o pipeline ativo configurado em `analytics_source_config`.
+- No snapshot filtrado, `total_deals` usa a coorte de `created_at`,
+  `open_deals` representa a posição atual pelo estágio, e ganhos/perdidos,
+  receita e conversão usam a coorte de `closed_at`. Esses números não devem
+  ser somados como se fossem a mesma população.
 - Receita é tratada como valor doméstico do HubSpot; a moeda e a política
   financeira precisam ser exibidas quando a planilha entrar.
 - Deals ganhos na tendência mensal são atribuídos ao mês de criação, conforme
