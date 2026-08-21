@@ -2,110 +2,90 @@
 
 ## Task ID
 
-DATA-TEMPORAL-SEMANTICS-2026-08-21
+COMMERCIAL-RECONCILIATION-2026-08-21
 
 ## Título
 
-Separar criado no período de existente no período
+Reconciliar totais, perdidos e fechados
 
 ## Estado
 
-READY_FOR_REVIEW
+READY_FOR_IMPLEMENTATION
 
 ## Contexto
 
-O lote anterior formalizou a compatibilidade entre Operação, Pipeline e Stage.
-O próximo risco autorizado é misturar, nos mesmos indicadores, movimento criado
-dentro da janela selecionada e estoque que apenas existe no estado atual. A
-semântica deve ser determinada pelos contratos, read models, RPCs e dados reais,
-sem inferência cosmética no frontend.
+As métricas comerciais do ConfiOne apresentam uma divergência operacional que
+precisa ser investigada na fonte de dados, nos contratos e nos consumidores.
+O lote deve explicar a diferença observada entre 208 e 206 e o valor exibido
+para perdidos, sem ajustar números por hardcode ou cosmética de interface.
 
 ## Objetivo
 
-Definir e aplicar, somente onde houver divergência comprovada, a separação entre
-eventos criados no período e entidades existentes no período, preservando a
-fonte da verdade no backend e tornando janelas, coortes, timezone e nulos
-explícitos.
+Reconciliar os totais comerciais, os registros perdidos e os registros fechados
+no caminho executável atual, mantendo explícitas a fonte, a janela temporal, o
+universo, os filtros, os nulos e a diferença entre movimento e estoque.
 
 ## Escopo
 
-- inventariar RPCs, views, read models, snapshots e consumidores de métricas
-  temporais e de estoque;
-- verificar a semântica atual de período, criação, atualização, status e
-  permanência;
-- investigar timezone, limites inclusivos/exclusivos, nulos, reaberturas,
-  coortes e diferença entre estoque e movimento;
-- corrigir apenas divergências comprovadas no caminho atual;
-- adicionar testes comportamentais ou de contrato sem enfraquecer asserções;
-- preservar tenant isolation, autorização, RLS, auditoria e compatibilidade.
+- localizar as fontes, RPCs, views, read models e consumidores responsáveis por
+  totais, perdidos e fechados;
+- reproduzir a divergência 208 versus 206 e identificar sua causa com evidência;
+- verificar se perdidos e fechados usam o mesmo universo, período, timezone,
+  pipeline, stage, tenant e filtros de autorização;
+- corrigir somente divergências comprovadas no caminho atual;
+- adicionar ou ajustar testes comportamentais e contra-testes sem enfraquecer
+  asserções;
+- atualizar o catálogo ou documentação canônica somente quando a correção
+  tornar o documento obsoleto.
 
 ## Fora de escopo
 
-- criar KPIs, coortes ou regras sem fonte real;
-- alterar release surface, landing, rotas públicas ou permissões;
-- criar integração, credencial ou catálogo paralelo;
 - alterar dados históricos para obter números esperados;
-- executar migration remota, push, merge, deploy ou alterar secrets;
-- corrigir findings não relacionados.
+- criar KPI, regra de negócio, integração, credencial, tabela, RPC ou catálogo
+  paralelo sem contrato e fonte real;
+- alterar release surface, landing, rotas públicas ou permissões;
+- corrigir findings não relacionados, incluindo P-GOV-001 do lote anterior;
+- executar migration remota, push, merge, deploy, alterar secrets ou publicar.
 
-## Requisitos funcionais
+## Requisitos de aceitação
 
-1. O período deve distinguir movimento criado dentro da janela de estoque
-   existente no estado consultado.
-2. Limites de data, timezone e tratamento de nulos devem ser explícitos no
-   contrato aplicável.
-3. Reaberturas, mudanças de status e entidades sem evento temporal não podem
-   ser classificadas silenciosamente.
-4. Ausência de dimensão ou evidência deve permanecer explícita, nunca virar
-   zero ou total global silencioso.
-5. Nenhuma correção pode enfraquecer isolamento de tenant, RLS, autorização,
-   auditoria ou segurança.
-
-## Requisitos técnicos
-
-- validar documentação contra código executável, migrations, RPCs, views e
-  testes reais;
-- manter o backend como fonte da verdade;
-- testar lógica pura quando aplicável e adicionar contra-testes reais;
-- registrar comandos, resultados e limitações em IMPLEMENTATION.md;
-- registrar `UNRESOLVED — requires project owner decision` quando a semântica
-  não puder ser determinada com segurança.
-
-## Critérios de aceitação
-
-- [x] inventário de fontes e consumidores temporais documentado;
-- [x] criado no período e existente no período possuem evidência separada;
-- [x] timezone, limites, nulos, coortes, reaberturas e estoque/movimento foram
-      tratados ou explicitamente classificados;
-- [x] nenhum hardcode ou heurística local foi criado para decidir semântica;
-- [x] testes relevantes, typecheck/build/lint aplicáveis e `git diff --check`
-      executados e registrados;
-- [x] diff limitado ao lote, sem absorver alterações preexistentes;
-- [x] implementação entregue em `READY_FOR_REVIEW` com `Owner = Sentinel`.
+1. A causa da divergência 208 versus 206 deve ser reproduzida por comando,
+   fixture ou consulta local verificável.
+2. Totais, perdidos e fechados devem declarar universo, período, timezone,
+   filtros, nulos e semântica de movimento ou estoque no contrato aplicável.
+3. A correção deve ocorrer na fonte da verdade, não em heurística local do
+   frontend.
+4. Deve existir contra-teste para impedir que a divergência ou um total global
+   silencioso retorne.
+5. Tenant isolation, RLS, autorização, auditoria e compatibilidade devem ser
+   preservados.
+6. `IMPLEMENTATION.md` deve registrar investigação, arquivos, comandos,
+   resultados, limitações e allowlist.
+7. Ao concluir, Forge deve entregar `READY_FOR_REVIEW` com `Owner = Sentinel`.
 
 ## Documentos normativos aplicáveis
 
 - `AGENTS.md`
 - `docs/PROJECT_STATE.md`
-- `docs/engineering/PROJECT.md`
-- `docs/engineering/ARCHITECTURE.md`
-- `docs/engineering/ENGINEERING_RULES.md`
-- `docs/engineering/SECURITY.md`
+- `docs/README.md`
+- `docs/ROADMAP_BUILDOUT_V3.md`
+- `docs/VIEW_RPC_CONTRACTS.md`
 - `docs/engineering/REVIEW_PROTOCOL.md`
 - `handoffs/README.md`
 
-## Base e responsabilidade
+## Base e autorização
 
-- Base commit SHA: `705c886`
+- Base commit SHA: `8d9e7da1c70d1aee8aad21e4e0896c3bf325d2d2`
 - Branch: `main`
-- Responsável atual: Sentinel, reviewer independente ativo
+- Owner: Forge
+- Reviewer active: Sentinel
 - Approval: APPROVED na fila canônica
-- Observações do proprietário: não alterar release surface nem executar
-  operações externas protegidas.
+- Dependências: `DATA-PIPELINE-STAGE-SCOPE-2026-08-21` e
+  `DATA-TEMPORAL-SEMANTICS-2026-08-21`, ambas DONE.
 
-## Decisão aplicada
+## Guardrails
 
-`OD-003`, registrada em `docs/engineering/OWNER_DECISIONS.md`, define
-`America/Sao_Paulo` como timezone operacional do analytics, com aplicação
-retroativa a séries, coortes e comparativos históricos e sem data de corte.
-As fronteiras continuam meia-abertas: `>= from` e `< to + 1`.
+- Não absorver alterações preexistentes do worktree.
+- Não alterar baseline para obter aprovação.
+- Se a semântica não puder ser determinada com segurança, registrar
+  `UNRESOLVED — requires project owner decision` e parar o lote.

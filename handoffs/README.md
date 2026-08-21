@@ -1,11 +1,15 @@
-# Handoffs entre Codex e Claude
+# Handoffs entre Forge e Sentinel
 
 ## Finalidade
 
 Este diretório é a interface persistente de colaboração entre:
 
-- Codex, Software Engineer / Executor;
-- Claude, Principal Engineer / Reviewer.
+- Forge, alias operacional do Codex, Senior Software Engineer / Implementer;
+- Sentinel, Independent Code Reviewer / Principal Engineer ativo.
+
+Referências a Codex e Claude em pacotes históricos permanecem preservadas. Claude
+continua disponível para auditoria retroativa quando retornar, mas não bloqueia a
+fila enquanto `Reviewer active = Sentinel`.
 
 O handoff é baseado no repositório, não no histórico de conversas. O código, os
 commits, os SHAs, os documentos, os testes e as evidências são a fonte compartilhada.
@@ -33,21 +37,22 @@ nem tratados como estado corrente sem leitura e classificação.
 
 ## Fluxo
 
-1. O proprietário ou Codex preenche current/TASK.md.
+1. O proprietário ou Forge preenche current/TASK.md.
 2. STATUS.md passa a READY_FOR_IMPLEMENTATION.
-3. Codex muda para IMPLEMENTING, executa o lote e atualiza IMPLEMENTATION.md.
-4. Codex executa as validações reais e muda para READY_FOR_REVIEW. Quando o
+3. Forge muda para IMPLEMENTING, executa o lote e atualiza IMPLEMENTATION.md.
+4. Forge executa as validações reais e muda para READY_FOR_REVIEW. Quando o
    lote já estiver autorizado para auto-revisão, pode usar `VALIDATING` para
    registrar os gates finais antes do veredito.
-5. Claude lê TASK, IMPLEMENTATION, diff, contratos e evidências, muda para
-   REVIEWING e escreve REVIEW.md. Se o proprietário tiver ativado
+5. Sentinel lê TASK, IMPLEMENTATION, diff, contratos e evidências, muda para
+   REVIEWING e escreve REVIEW.md. Claude permanece como reviewer histórico ou de
+   auditoria posterior. Se o proprietário tiver ativado
    `OWNER_AUTHORIZED_SELF_REVIEW`, Codex assume `Role: REVIEWER` em uma rodada
    separada e registra essa limitação no REVIEW.md.
 6. O reviewer designado em STATUS.md registra APPROVED, REQUEST_CHANGES ou
    BLOCKED.
-7. REQUEST_CHANGES devolve o lote a Codex, que usa findings válidos e muda para
+7. REQUEST_CHANGES devolve o lote a Forge, que usa findings válidos e muda para
    FIXING.
-8. Depois da correção, Codex atualiza IMPLEMENTATION, preserva REVIEW histórico
+8. Depois da correção, Forge atualiza IMPLEMENTATION, preserva REVIEW histórico
    dentro do ciclo e retorna a READY_FOR_REVIEW.
 9. Em lote com `Approval = APPROVED`, `APPROVED` aciona automaticamente
    `FINALIZE_LOCAL`: validar escopo e gates, criar commit local exclusivo,
@@ -58,7 +63,7 @@ nem tratados como estado corrente sem leitura e classificação.
     release surface continuam bloqueados. `DONE` permanece como classificação
     da fila após o checkpoint local concluído.
 
-Para lotes previamente autorizados na fila, `APPROVED` autoriza o Codex a
+Para lotes previamente autorizados na fila, `APPROVED` autoriza o Forge a
 executar `FINALIZE_LOCAL`, criar o checkpoint Git local exclusivo do lote,
 arquivar o handoff e promover o próximo item elegível sem nova autorização
 conversacional. O stage deve ser seletivo e baseado na allowlist do lote. Essa
@@ -75,7 +80,7 @@ Ela representa o trabalho futuro; `handoffs/current/` continua sendo a fonte da
 tarefa ativa e de seu estado detalhado.
 
 `Approval = APPROVED` significa autorização do proprietário para execução
-autônoma. Isso não ignora dependências: Codex nunca executa item em `State =
+autônoma. Isso não ignora dependências: Forge nunca executa item em `State =
 PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
 
 | Ordem | Task ID | Project | Title | Priority | State | Approval | Dependencies | Origin | Summary |
@@ -89,8 +94,8 @@ PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
 | 7 | CONTROL-PLANE-BACKLOG-2026-08-21 | ConfiOne / Engineering | Materializar backlog prolongado e estados de elegibilidade | P0 | DONE | APPROVED | R-14 | Owner mission 2026-08-21 | Registrar a decomposição normativa sem tocar no produto e preparar a primeira task do ciclo. |
 | 8 | DATA-OPERATION-SCOPE-2026-08-21 | ConfiOne / Analytics | Auditar e fechar o filtro de Operação ponta a ponta | P1 | DONE | APPROVED | CONTROL-PLANE-BACKLOG-2026-08-21 | Owner mission 2026-08-21 | APPROVED no ciclo 2; checkpoint local `4219a0cd26a70c74fb11e5bcaea11db16b4ae14c`; handoff arquivado. |
 | 9 | DATA-PIPELINE-STAGE-SCOPE-2026-08-21 | ConfiOne / Analytics | Formalizar compatibilidade Operação → Pipeline → Stage | P1 | DONE | APPROVED | DATA-OPERATION-SCOPE-2026-08-21 | Owner mission 2026-08-21 | APPROVED no ciclo 1; checkpoint local `c7c700d`; handoff arquivado. |
-| 10 | DATA-TEMPORAL-SEMANTICS-2026-08-21 | ConfiOne / Analytics | Separar criado no período de existente no período | P1 | ACTIVE | APPROVED | DATA-OPERATION-SCOPE-2026-08-21 | Owner mission 2026-08-21 | Próximo lote elegível; definir janelas, coortes, timezone, nulos e estoque versus movimento na camada de dados. |
-| 11 | COMMERCIAL-RECONCILIATION-2026-08-21 | ConfiOne / Comercial | Reconciliar totais, perdidos e fechados | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Investigar 208 versus 206 e o valor de perdidos sem hardcode ou ajuste cosmético. |
+| 10 | DATA-TEMPORAL-SEMANTICS-2026-08-21 | ConfiOne / Analytics | Separar criado no período de existente no período | P1 | DONE | APPROVED | DATA-OPERATION-SCOPE-2026-08-21 | Owner mission 2026-08-21 | APPROVED por Sentinel; checkpoint local exclusivo `8d9e7da1c70d1aee8aad21e4e0896c3bf325d2d2`; handoff arquivado. |
+| 11 | COMMERCIAL-RECONCILIATION-2026-08-21 | ConfiOne / Comercial | Reconciliar totais, perdidos e fechados | P1 | ACTIVE | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Próximo lote elegível; investigar 208 versus 206 e o valor de perdidos sem hardcode ou ajuste cosmético. |
 | 12 | COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21 | ConfiOne / Comercial | Formalizar cálculo de conversão e impedir percentuais impossíveis | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Definir universo, denominador, período e tratamento de ganhos, perdas e reaberturas. |
 | 13 | COMMERCIAL-OWNER-STAGE-2026-08-21 | ConfiOne / Comercial | Corrigir filtro de estágio por responsável | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21 | Owner mission 2026-08-21 | Investigar por que stages relevantes desaparecem ao selecionar responsável. |
 | 14 | OVERVIEW-SNAPSHOT-FLOW-2026-08-21 | ConfiOne / Dashboard | Separar Agora de No período | P1 | BACKLOG | APPROVED | DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Snapshot atual não pode mudar com período histórico, mas deve respeitar dimensões aplicáveis. |
@@ -115,12 +120,12 @@ Regras da fila:
 - o próximo item só pode ser aberto depois de `APPROVED` no item anterior, suas
   dependências satisfeitas e o retorno de `handoffs/current/` para `IDLE`;
 - `Approval` é autorização do proprietário; `State` controla elegibilidade e
-  progresso. `PROPOSED` nunca é executado por Codex;
+  progresso. `PROPOSED` nunca é executado por Forge;
 - quando um item aprovado e integrado termina, ele passa a `DONE` e a fila pode
   promover o próximo item aprovado e sem dependências pendentes para `APPROVED`;
 - cada item exige TASK, IMPLEMENTATION e REVIEW próprios, com entrega em
-  `READY_FOR_REVIEW` e `Owner = Claude` antes da revisão;
-- heartbeat do Codex pode abrir automaticamente o próximo item somente quando a
+  `READY_FOR_REVIEW` e `Owner = Sentinel` antes da revisão;
+- heartbeat do Forge pode abrir automaticamente o próximo item somente quando a
   fila estiver liberada pelo `APPROVED` anterior;
 - `BLOCKED`, `OWNER_DECISION_REQUIRED` ou mudança material de escopo interrompem
   a fila e exigem retorno ao proprietário;
@@ -131,16 +136,17 @@ Regras da fila:
 
 `Owner` identifica o agente responsável pelo próximo passo do estado atual. Em
 `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
-responsável esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, é Claude,
-salvo `OWNER_AUTHORIZED_SELF_REVIEW`, quando Codex assume `Role: REVIEWER`.
+responsável esperado é Forge. Em `READY_FOR_REVIEW` e `REVIEWING`, é Sentinel
+quando `Reviewer active = Sentinel`. Após `APPROVED`, o responsável volta a Forge
+para integração local.
 
 ## Exceção temporária de agente único
 
 Quando autorizada explicitamente pelo proprietário, a ausência temporária do
 Claude pode ser coberta pelo mesmo Codex em rodadas alternadas:
 
-- `Role: EXECUTOR`: Codex implementa, testa e escreve IMPLEMENTATION.md;
-- `Role: REVIEWER`: Codex não altera código executável e revisa o lote contra
+- `Role: EXECUTOR`: Forge implementa, testa e escreve IMPLEMENTATION.md;
+- `Role: REVIEWER`: o agente reviewer não altera código executável e revisa o lote contra
   TASK, diff, contratos e evidências;
 - `Review mode: OWNER_AUTHORIZED_SELF_REVIEW` deve constar em STATUS.md;
 - o REVIEW.md deve identificar que a revisão não é independente;
@@ -154,7 +160,7 @@ um segundo sistema de fila.
 
 Não editar código do produto simultaneamente na mesma working tree. Durante
 REVIEWING, o reviewer designado somente lê o produto e escreve artefatos de revisão. Durante
-IMPLEMENTING ou FIXING, Codex é o único agente autorizado a alterar produto.
+IMPLEMENTING ou FIXING, Forge é o único agente autorizado a alterar produto.
 
 ## Relação com .review
 
