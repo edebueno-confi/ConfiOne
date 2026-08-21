@@ -42,25 +42,42 @@ nem tratados como estado corrente sem leitura e classificação.
 9. Somente APPROVED permite seguir para merge ou release conforme autorização
    humana. DONE é usado após o processo de integração aplicável.
 
-## Fila autorizada de lotes — 2026-08-20
+Para lotes previamente autorizados na fila, `APPROVED` também autoriza o Codex
+a criar o checkpoint Git local exclusivo do lote, arquivar o handoff e promover
+o próximo item elegível sem nova autorização conversacional. Essa autorização
+não inclui push, force push, merge, deploy, migration remota, alteração de
+secrets ou release surface. Se alterações preexistentes não puderem ser
+separadas com segurança, registrar `OWNER_DECISION_REQUIRED` e interromper.
 
-O proprietário autorizou a execução sequencial desta fila. A fila não substitui
-`TASK.md`, `IMPLEMENTATION.md`, `REVIEW.md` ou `STATUS.md`; cada item deve ter seu
-próprio ciclo e seus próprios artefatos correntes, arquivados ao encerramento.
+## Fila canônica de trabalho — 2026-08-20
 
-| Ordem | Item | Descrição | Estado da fila |
-| --- | --- | --- | --- |
-| 1 | O-01 | Versionar corretamente `.review/baseline.json` e o veredito legado do takeover | APPROVED, ARQUIVADO |
-| 2 | R-01 / R01-B | Corrigir negação de acesso silenciosa e o caminho de login relacionado | APPROVED, INTEGRADO |
-| 3 | R-03 | Restaurar feedback de erro no Support Workspace | APPROVED, INTEGRADO |
-| 4 | R-11 | Corrigir scripts npm que apontam para arquivos inexistentes | AUTORIZADO, AGUARDANDO R-03 |
-| 5 | R-14 | Formalizar deny-all intencional para tabelas RLS sem policy | AUTORIZADO, AGUARDANDO R-11 |
+O proprietário autorizou a execução sequencial desta fila. Esta tabela é a fila
+canônica, mantida neste README para não criar um segundo sistema operacional.
+Ela representa o trabalho futuro; `handoffs/current/` continua sendo a fonte da
+tarefa ativa e de seu estado detalhado.
+
+`Approval = APPROVED` significa autorização do proprietário para execução
+autônoma. Isso não ignora dependências: Codex nunca executa item em `State =
+PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
+
+| Ordem | Task ID | Project | Title | Priority | State | Approval | Dependencies | Origin | Summary |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | O-01 | ConfiOne | Baseline e veredito legado em `.review/` | P1 | DONE | APPROVED | — | Owner decision 2026-08-20 | Artefatos legados materializados e divergência documental resolvida. |
+| 2 | R-01 / R01-B | ConfiOne | Negação de acesso e feedback pós-login | P1 | DONE | APPROVED | O-01 | Owner queue 2026-08-20 | Denial context preservado sem autorizar nova release surface. |
+| 3 | R-03 | ConfiOne | Feedback de erro no Support Workspace | P1 | DONE | APPROVED | R-01 / R01-B | Owner queue 2026-08-20 | Falhas auxiliares visíveis; integrado em `1ea22b2`. |
+| 4 | DEV-CONTROL-MVP | ConfiOne / Engineering | Development Control Plane MVP read-only | P0 | DONE | APPROVED | R-03 | Owner request 2026-08-20 | Aprovado no ciclo 5; handoff arquivado para integração aplicável. |
+| 5 | R-11 | ConfiOne | Scripts npm que apontam para arquivos inexistentes | P1 | DONE | APPROVED | DEV-CONTROL-MVP | Owner queue 2026-08-20 | Aprovado no ciclo 2 e integrado em checkpoint local; handoff arquivado. |
+| 6 | R-14 | ConfiOne | Deny-all intencional para tabelas RLS sem policy | P1 | ACTIVE | APPROVED | R-11 | Owner queue 2026-08-20 | Lote aberto após integração do R-11; formalizar intenção sem enfraquecer isolamento. |
 
 Regras da fila:
 
-- somente um item pode estar ativo por vez;
-- o próximo item só pode ser aberto depois de `APPROVED` no item anterior e do
-  retorno de `handoffs/current/` para `IDLE`;
+- somente um item pode estar `ACTIVE` por vez;
+- o próximo item só pode ser aberto depois de `APPROVED` no item anterior, suas
+  dependências satisfeitas e o retorno de `handoffs/current/` para `IDLE`;
+- `Approval` é autorização do proprietário; `State` controla elegibilidade e
+  progresso. `PROPOSED` nunca é executado por Codex;
+- quando um item aprovado e integrado termina, ele passa a `DONE` e a fila pode
+  promover o próximo item aprovado e sem dependências pendentes para `APPROVED`;
 - cada item exige TASK, IMPLEMENTATION e REVIEW próprios, com entrega em
   `READY_FOR_REVIEW` e `Owner = Claude` antes da revisão;
 - heartbeat do Codex pode abrir automaticamente o próximo item somente quando a
@@ -68,6 +85,8 @@ Regras da fila:
 - `BLOCKED`, `OWNER_DECISION_REQUIRED` ou mudança material de escopo interrompem
   a fila e exigem retorno ao proprietário;
 - push, merge e deploy permanecem fora da autorização desta fila.
+- commit local de lote `APPROVED` e previamente autorizado na fila não exige
+  nova autorização conversacional, desde que seja exclusivo e verificável.
 
 `Owner` identifica o agente responsável pelo próximo passo do estado atual. Em
 `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o

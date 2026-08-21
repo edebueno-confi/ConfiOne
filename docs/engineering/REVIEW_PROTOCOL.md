@@ -81,6 +81,14 @@ CHANGES_REQUESTED -> FIXING -> READY_FOR_REVIEW
 BLOCKED -> intervenção do proprietário
 APPROVED -> DONE somente após o processo de integração aplicável
 
+Após `APPROVED`, uma tarefa previamente autorizada na fila possui autorização
+persistente para checkpoint local. O Codex pode criar o commit local exclusivo
+do lote, arquivar o handoff e promover o próximo item elegível sem nova
+autorização conversacional. Essa autorização não inclui push, force push, merge,
+deploy, migration remota, alteração de secrets ou alteração da release surface.
+Se o escopo do commit não puder ser separado com segurança das alterações
+preexistentes, o Codex deve parar e registrar `OWNER_DECISION_REQUIRED`.
+
 Em `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
 Owner esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, o Owner esperado é
 Claude. A transição deve ser registrada em `STATUS.md` pelo agente que entrega o
@@ -150,6 +158,8 @@ frases vagas. Toda rejeição precisa apontar requisito, evidência e impacto.
 
 - não fazer commit, push, merge, rebase, reset, clean, deploy ou migration remota
   durante review;
+- não fazer commit local de tarefa sem `APPROVED` formal, sem `Approval = APPROVED`
+  na fila ou com escopo misturado;
 - não alterar secrets ou escrever em serviços externos;
 - não remover finding por edição do documento;
 - não reduzir testes ou baseline para obter aprovação;

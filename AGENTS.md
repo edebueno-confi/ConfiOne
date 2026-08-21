@@ -103,10 +103,15 @@ Antes de executar `supabase:verify` ou qualquer agregador semelhante, leia integ
 - IA nunca decide permissão, nunca substitui fonte citável e nunca executa ação voltada ao cliente sem revisão humana.
 - Não exponha secrets, tokens, cookies, JWTs, `service_role`, credenciais ou dados sensíveis em código, logs, relatórios ou respostas.
 
-Sem autorização humana explícita, é proibido:
+Sem autorização humana explícita ou sem a autorização persistente descrita no
+handoff, é proibido:
 
 - executar `git reset`, `git clean`, descartar alterações, excluir conteúdo de forma ampla ou realizar outra ação destrutiva;
-- fazer commit, push, force push, merge ou rebase;
+- fazer push, force push, merge ou rebase. Um commit local é permitido quando a
+  tarefa corrente estiver `APPROVED`, a fila marcar `Approval = APPROVED`, o
+  commit estiver limitado ao lote aprovado e não houver ambiguidade de escopo;
+- fazer commit local de tarefa não aprovada, de item `PROPOSED` ou com mistura de
+  alterações preexistentes não pertencentes ao lote;
 - fazer deploy, migration remota, escrita em produção ou alteração de serviços externos;
 - criar, revelar, rotacionar ou alterar secrets e credenciais;
 - resetar banco, aplicar migration destrutiva ou provocar perda de dados;
@@ -195,6 +200,10 @@ Ao implementar:
   não houver commit;
 - execute validações reais e registre comandos e resultados;
 - mude STATUS.md para READY_FOR_REVIEW somente após fechar o lote;
+- após `APPROVED`, integre por commit local somente quando a TASK estiver
+  previamente autorizada na fila. O heartbeat pode executar essa integração sem
+  nova autorização conversacional, desde que preserve o escopo e mantenha push,
+  merge, deploy e release surface proibidos;
 - nunca altere REVIEW.md para remover ou suavizar finding do Claude;
 - nunca autodeclare APPROVED.
 

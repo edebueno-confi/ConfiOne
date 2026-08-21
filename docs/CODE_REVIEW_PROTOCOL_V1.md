@@ -15,7 +15,7 @@ sequência em que essas regras são verificadas.
 | --- | --- | --- |
 | Implementador (Codex) | Entender o problema, implementar o lote, escrever/atualizar testes, rodar as validações, atualizar a documentação impactada e publicar o pedido de revisão | Todo o repositório, dentro do escopo autorizado |
 | Revisor (Claude) | Auditar o lote contra contratos, segurança, cobertura e documentação; emitir veredito; propor correção mínima | `.review/`, `docs/` e correções explicitamente autorizadas |
-| Product owner (Ede) | Autorizar escopo, publicação, release surface, commit, push, deploy e qualquer operação destrutiva | Tudo |
+| Product owner (Ede) | Autorizar escopo, publicação, release surface, push, deploy e qualquer operação destrutiva; a autorização persistente da fila também pode liberar checkpoint local após APPROVED | Tudo |
 
 Regra dura: **o revisor não publica, não faz merge, não faz push, não aplica migration
 remota e não altera secret**. Se a correção exigir mais que um ajuste mínimo dentro do
@@ -36,7 +36,8 @@ Claude audita e escreve handoffs/current/REVIEW.md
    ↓
 Opcionalmente, Claude escreve .review/verdicts/<lote>.md alinhado ao REVIEW.md
    ↓
-Ede decide commit / publicação
+Codex integra por commit local se a fila já autorizou o lote e Claude registrou APPROVED
+Ede decide push / merge / deploy / publicação
 ```
 
 ### 2.0 Handoff persistente
