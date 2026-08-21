@@ -5,16 +5,15 @@ State: IDLE
 Owner: Codex
 Role: EXECUTOR
 Review mode: CLAUDE_REQUIRED
-Base SHA: 268132f38455d3beb26f795e3217da7c673af982
-Current SHA: 268132f38455d3beb26f795e3217da7c673af982
+Base SHA: bdc1ea6404928e1ca4e8c7ccf9213d6a3090b6f9
+Current SHA: LOCAL_CHECKPOINT_PENDING
 Last reviewer: Claude
-Last review: 2026-08-21 — CONTROL-PLANE-BACKLOG-2026-08-21 APPROVED e finalizado localmente
+Last review: 2026-08-21 — DATA-OPERATION-SCOPE-2026-08-21 APPROVED e arquivado
 Updated at: 2026-08-21
 
 ## Notes
 
-- Lote `CONTROL-PLANE-BACKLOG-2026-08-21` arquivado.
-- Commit local exclusivo do lote: `268132f38455d3beb26f795e3217da7c673af982`.
-- Nenhum push, merge, deploy, migration remota, alteração de secrets ou
-  release surface foi executado.
-- Próximo item elegível: `DATA-OPERATION-SCOPE-2026-08-21`.
+- Handoff de `DATA-OPERATION-SCOPE-2026-08-21` arquivado.
+- Próximo item elegível da fila: `DATA-PIPELINE-STAGE-SCOPE-2026-08-21`.
+- Nenhum push, merge, pull request, deploy, migration remota, secret ou release
+  surface foi autorizado.

@@ -96,6 +96,8 @@ const EXECUTIVE_BANDS: BoardBand[] = [
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
+  sharedOperation,
+  onSharedOperationChange,
   onRetry,
   isDashboardViewer = false,
   sourceStatus,
@@ -120,7 +122,18 @@ export function AnalyticsCeoPage({
   const [operationKpis, setOperationKpis] = useState<{ commercial: unknown; support: unknown; supportSnapshot: CsSnapshot } | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
-  const [groupCompany, setGroupCompany] = useState<string>('');
+  const [groupCompany, setGroupCompany] = useState<string>(sharedOperation ?? '');
+
+  useEffect(() => {
+    if (sharedOperation !== undefined && sharedOperation !== groupCompany) {
+      setGroupCompany(sharedOperation);
+    }
+  }, [groupCompany, sharedOperation]);
+
+  const handleGroupCompanyChange = (value: string) => {
+    setGroupCompany(value);
+    onSharedOperationChange?.(value);
+  };
 
   useEffect(() => {
     listAnalyticsSourceConfig()
@@ -193,11 +206,14 @@ export function AnalyticsCeoPage({
       />
     );
 
-  const scopedExecutiveKpis = operationKpis ? mergeOperationKpis(executiveKpis, operationKpis) : executiveKpis;
+  const scopedExecutiveKpis = operationKpis
+    ? maskUnscopedOperationKpis(mergeOperationKpis(executiveKpis, operationKpis))
+    : executiveKpis;
   const data = operationKpis ? applyOperationScope(result.data, operationKpis) : result.data;
   const currentSourceStatus = result.sourceStatus ?? sourceStatus;
   const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
-  const exceptions = buildExecutiveExceptions(data);
+  const operationScoped = Boolean(groupCompany);
+  const exceptions = buildExecutiveExceptions(data, { operationScoped });
   const pipelines = rankExecutivePipelines(data.support.byPipeline);
   const snapshotUnavailable = [
     "empty",
@@ -246,8 +262,9 @@ export function AnalyticsCeoPage({
   const domainCards = buildDomainCards(
     data,
     hubspotUnavailable,
-    omieUnavailable,
+    omieUnavailable || operationScoped,
     currentSourceStatus,
+    operationScoped,
   );
 
   return (
@@ -261,7 +278,8 @@ export function AnalyticsCeoPage({
       pipelines={pipelines}
       comparison={comparison}
       unavailable={hubspotUnavailable}
-      financeUnavailable={omieUnavailable}
+      financeUnavailable={omieUnavailable || Boolean(groupCompany)}
+      operationScoped={operationScoped}
       refreshing={refreshing}
       mobileFiltersOpen={mobileFiltersOpen}
       setMobileFiltersOpen={setMobileFiltersOpen}
@@ -272,7 +290,7 @@ export function AnalyticsCeoPage({
       syncBusy={syncBusy}
       configuredPipelines={configuredPipelines}
       groupCompany={groupCompany}
-      setGroupCompany={setGroupCompany}
+      onGroupCompanyChange={handleGroupCompanyChange}
       coverageItems={buildCoverageItems(data, hubspotUnavailable, omieUnavailable, currentSourceStatus)}
       canOpenGovernance={canSyncSources}
     />
@@ -298,6 +316,17 @@ function mergeOperationKpis(base: unknown, scoped: { commercial: unknown; suppor
   replace(scoped.commercial, ['open_pipeline_amount', 'open_deals', 'won_deals', 'lost_deals', 'won_amount', 'win_rate']);
   replace(scoped.support, ['open_backlog', 'created_tickets', 'resolved_tickets']);
   return { ...baseObject, kpis: mergedKpis };
+}
+
+function maskUnscopedOperationKpis(payload: unknown): unknown {
+  const base = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
+  const rawKpis = base.kpis && typeof base.kpis === 'object' ? base.kpis as Record<string, unknown> : {};
+  const maskedKeys = new Set(['mrr_total', 'active_customers', 'received_amount', 'overdue_receivables', 'mrr_overdue', 'nrr']);
+  const kpis = Object.fromEntries(Object.entries(rawKpis).map(([key, entry]) => {
+    if (!maskedKeys.has(key) || !entry || typeof entry !== 'object') return [key, entry];
+    return [key, { ...(entry as Record<string, unknown>), state: 'unavailable', value: null, reason: 'operation_dimension_unavailable' }];
+  }));
+  return { ...base, kpis };
 }
 
 function applyOperationScope(data: CeoSnapshot, scoped: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot }): CeoSnapshot {
@@ -338,6 +367,7 @@ function buildDomainCards(
   hubspotUnavailable: boolean,
   omieUnavailable: boolean,
   sourceStatus?: AnalyticsSourceStatusPayload,
+  operationScoped = false,
 ): DomainCard[] {
   const hubspotState = sourceStatus
     ? analyticsSourceToBlockState(sourceStatus.hubspot)
@@ -356,7 +386,7 @@ function buildDomainCards(
         : formatCurrency(data.commercial.openPipelineValue),
       details: hubspotUnavailable
         ? "Dados comerciais indisponíveis"
-        : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
+        : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${operationScoped ? "ciclo do recorte indisponível" : data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
       href: analyticsHref("commercial"),
       state: hubspotState,
       tone: "blue",
@@ -377,14 +407,14 @@ function buildDomainCards(
       description: "Volume e risco da fila",
       value: hubspotUnavailable
         ? "Indisponível"
-        : formatCountLabel(
-            data.support.highPriorityOpen,
-            "alta prioridade",
-            "altas prioridades",
-          ),
+        : operationScoped
+          ? formatCountLabel(data.support.openTickets, "ticket na fila", "tickets na fila")
+          : formatCountLabel(data.support.highPriorityOpen, "alta prioridade", "altas prioridades"),
       details: hubspotUnavailable
         ? "Dados de suporte indisponíveis"
-        : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
+        : operationScoped
+          ? "Prioridade e encerramento do recorte ainda não têm dimensão publicada"
+          : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
       href: analyticsHref("support"),
       state: hubspotState,
       tone: "cyan",
@@ -419,6 +449,7 @@ function ExecutiveHdCanvas({
   comparison,
   unavailable,
   financeUnavailable,
+  operationScoped,
   refreshing,
   mobileFiltersOpen,
   setMobileFiltersOpen,
@@ -429,7 +460,7 @@ function ExecutiveHdCanvas({
   syncBusy,
   configuredPipelines,
   groupCompany,
-  setGroupCompany,
+  onGroupCompanyChange,
   coverageItems,
   canOpenGovernance,
 }: {
@@ -448,6 +479,7 @@ function ExecutiveHdCanvas({
   };
   unavailable: boolean;
   financeUnavailable: boolean;
+  operationScoped: boolean;
   refreshing: boolean;
   mobileFiltersOpen: boolean;
   setMobileFiltersOpen: (value: boolean) => void;
@@ -458,7 +490,7 @@ function ExecutiveHdCanvas({
   syncBusy: boolean;
   configuredPipelines: AnalyticsSourceConfig[];
   groupCompany: string;
-  setGroupCompany: (value: string) => void;
+  onGroupCompanyChange: (value: string) => void;
   coverageItems: AnalyticsCoverageItem[];
   canOpenGovernance: boolean;
 }) {
@@ -525,9 +557,9 @@ function ExecutiveHdCanvas({
             extraFields={
               configuredPipelines.length > 0 ? (
                 <AnalyticsOperationScope
-                  storageKey="analytics-overview-operation"
+                  storageKey="analytics-operation-scope"
                   value={groupCompany}
-                  onChange={setGroupCompany}
+                  onChange={onGroupCompanyChange}
                   options={configuredPipelines.map((pipeline) => ({
                     value: pipeline.groupCompany,
                     source: pipeline.groupCompanySource,
@@ -539,7 +571,7 @@ function ExecutiveHdCanvas({
         </div>
       </div>
 
-      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte foi espelhado nos read models de Comercial e Suporte. Customer Success e Financeiro permanecem consolidados porque seus contratos atuais não publicam dimensão de operação; nenhum valor desses domínios é atribuído artificialmente.</p> : null}
+      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte foi aplicado aos read models de Comercial e Suporte. Customer Success e Financeiro exibem somente indicadores com dimensão publicada; o consolidado global é marcado como indisponível neste recorte.</p> : null}
 
       {executiveKpis ? (
         <>
@@ -613,7 +645,9 @@ function ExecutiveHdCanvas({
             }
             detail={unavailable
               ? "Contagem de tickets indisponível"
-              : formatCountLabel(data.support.closedTickets, "ticket encerrado", "tickets encerrados")}
+              : operationScoped
+                ? "Encerramentos do recorte indisponíveis"
+                : formatCountLabel(data.support.closedTickets, "ticket encerrado", "tickets encerrados")}
             comparison={comparison.tickets?.label}
           />
         </div>
@@ -658,7 +692,9 @@ function ExecutiveHdCanvas({
             }
             detail={unavailable
               ? "Contagem de tickets indisponível"
-              : formatCountLabel(data.support.highPriorityOpen, "alta prioridade aberta", "altas prioridades abertas")}
+              : operationScoped
+                ? "Prioridade do recorte indisponível"
+                : formatCountLabel(data.support.highPriorityOpen, "alta prioridade aberta", "altas prioridades abertas")}
           />
         </div>
       </section>
@@ -791,9 +827,9 @@ function ExecutiveHdCanvas({
           description="Séries publicadas pelas fontes, com coorte, unidade e estado de cobertura explícitos."
         />
         <div className="grid gap-4 lg:grid-cols-3">
-          <AnalyticsTrendPanel domain="commercial" />
-          <AnalyticsTrendPanel domain="support" />
-          <AnalyticsTrendPanel domain="finance" />
+          <AnalyticsTrendPanel domain="commercial" groupCompany={groupCompany} />
+          <AnalyticsTrendPanel domain="support" groupCompany={groupCompany} />
+          <AnalyticsTrendPanel domain="finance" groupCompany={groupCompany} />
         </div>
       </section>
 

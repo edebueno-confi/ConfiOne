@@ -62,7 +62,7 @@ const TITULOS: Record<TimeseriesDomain, { title: string; description: string }> 
   },
 };
 
-export function AnalyticsTrendPanel({ domain }: { domain: TimeseriesDomain }) {
+export function AnalyticsTrendPanel({ domain, groupCompany = null }: { domain: TimeseriesDomain; groupCompany?: string | null }) {
   const [grain, setGrain] = useState<TimeseriesGrain>('month');
   const [payload, setPayload] = useState<unknown>(null);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -70,7 +70,7 @@ export function AnalyticsTrendPanel({ domain }: { domain: TimeseriesDomain }) {
   useEffect(() => {
     let cancelled = false;
     setPhase('loading');
-    void getAnalyticsTimeseries(domain, grain)
+    void getAnalyticsTimeseries(domain, grain, undefined, groupCompany)
       .then((data) => {
         if (cancelled) return;
         setPayload(data);
@@ -84,7 +84,7 @@ export function AnalyticsTrendPanel({ domain }: { domain: TimeseriesDomain }) {
     return () => {
       cancelled = true;
     };
-  }, [domain, grain]);
+  }, [domain, grain, groupCompany]);
 
   const copy = TITULOS[domain];
 

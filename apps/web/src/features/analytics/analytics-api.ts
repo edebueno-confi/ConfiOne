@@ -795,14 +795,16 @@ export async function getAnalyticsTimeseries(
   domain: TimeseriesDomain,
   grain: TimeseriesGrain = 'month',
   window?: { from?: string | null; to?: string | null },
+  groupCompany: string | null = null,
 ): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
   const fallback = defaultTimeseriesWindow(grain);
-  const { data, error } = await client.rpc('rpc_analytics_timeseries', {
+  const { data, error } = await client.rpc('rpc_analytics_timeseries_by_operation', {
     p_domain: domain,
     p_from: window?.from || fallback.from,
     p_to: window?.to || fallback.to,
     p_grain: grain,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a evolução do período.');
   return data;

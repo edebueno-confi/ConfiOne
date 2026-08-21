@@ -1,7 +1,7 @@
 # Implementation
 
 Task ID: NONE
-State: IDLE
+Status: IDLE
 
-Nenhuma implementação ativa. Este arquivo será preenchido pelo Codex após a
-abertura de uma TASK.
+Nenhuma implementação ativa. Consulte a fila canônica em
+`handoffs/README.md` para o próximo lote elegível.

@@ -10,11 +10,14 @@ const commercialPage = fs.readFileSync('apps/web/src/features/analytics/Analytic
 const supportPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCsPage.tsx', 'utf8');
 const customerSuccessPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCustomerSuccessPage.tsx', 'utf8');
 const financePage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsFinancePage.tsx', 'utf8');
+const trendPanel = fs.readFileSync('apps/web/src/features/analytics/AnalyticsTrendPanel.tsx', 'utf8');
+const analyticsApi = fs.readFileSync('apps/web/src/features/analytics/analytics-api.ts', 'utf8');
+const timeseriesScopeMigration = fs.readFileSync('supabase/migrations/20260821090000_analytics_timeseries_operation_scope_v1.sql', 'utf8');
 
 test('visão executiva expõe evolução real por domínio sem misturar unidades', () => {
-  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" \/>/);
-  assert.match(executive, /<AnalyticsTrendPanel domain="support" \/>/);
-  assert.match(executive, /<AnalyticsTrendPanel domain="finance" \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="finance" groupCompany=\{groupCompany\} \/>/);
   assert.match(executive, /Evolução por domínio/);
 });
 
@@ -51,6 +54,15 @@ test('escopo de operação é espelhado nos read models HubSpot e limita domíni
   assert.match(executive, /getSupportKpisV2\(filters, groupCompany\)/);
   assert.match(executive, /getCsSnapshot\(filters, \[\], groupCompany\)/);
   assert.match(executive, /applyOperationScope/);
-  assert.match(executive, /Financeiro permanecem consolidados/);
+  assert.match(executive, /Financeiro exibem somente indicadores com dimens.o publicada/);
+  assert.match(executive, /maskUnscopedOperationKpis/);
+  assert.match(financePage, /Financeiro consolidado fora do recorte/);
   assert.match(financePage, /Abrir Governança/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(commercialPage, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(supportPage, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(trendPanel, /getAnalyticsTimeseries\(domain, grain, undefined, groupCompany\)/);
+  assert.match(analyticsApi, /rpc_analytics_timeseries_by_operation/);
+  assert.match(timeseriesScopeMigration, /operation_dimension_unavailable/);
 });
