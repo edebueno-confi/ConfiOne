@@ -6,7 +6,7 @@
 - **Fonte canônica:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`.
 - **Decisão:** priorizar a reprodução e correção do acesso negado indevido de administrador válido; depois simplificar progressivamente para nível, área, tela e `READ/WRITE`, preservando backend, isolamento e auditoria.
 - **Fila:** `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` ficou `READY/APPROVED`; tasks estruturais 30 a 37 ficaram `BACKLOG/PROPOSED` e dependentes.
-- **Estado atual:** `handoffs/current/` continua ocupado por `CS-DOMAIN-AUDIT-2026-08-21`, aprovado pelo Sentinel e sob responsabilidade do Forge, mas ainda não retornou a `IDLE`; a primeira task ainda não foi aberta nem implementada.
+- **Estado atual:** `CS-DOMAIN-AUDIT-2026-08-21` foi finalizado localmente e arquivado; `handoffs/current/` está ocupado por `SUPPORT-DOMAIN-AUDIT-2026-08-21`, em `READY_FOR_REVIEW`, sob responsabilidade do Sentinel.
 - **Docs alterados:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`, `docs/PROJECT_STATE.md`, `docs/ROADMAP_BUILDOUT_V3.md`, `docs/README.md`, `docs/engineering/OWNER_DECISIONS.md`, `handoffs/README.md` e este ledger.
 - **Telas afetadas:** nenhuma neste lote.
 - **Views/RPCs/migrations afetadas:** nenhuma; somente referenciadas como evidência para discovery.
@@ -70,6 +70,41 @@
   estados de cobertura e limitações de cada indicador sem exigir leitura do
   código.
 
+## Auditoria do domínio de Suporte — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  contrato executável, permissão ou release surface.
+- **Fontes canônicas:** `public.tickets`, mensagens, eventos, views/RPCs do
+  Support Workspace, `rpc_support_ticket_queue_page`, contratos de
+  classificação/SLA, fundação de canais e
+  `rpc_analytics_support_kpis_v2`.
+- **Regra:** o ticket local, a timeline, o tipo de conversa e o canal são
+  conceitos distintos. Chat/e-mail/API aparecem como origens classificáveis,
+  mas não como integração de resposta direta. A especificação existente de
+  Conversations API documenta inboxes, canais, threads, mensagens, atores,
+  associação a tickets, `conversations.read` e paginação, sem existir read
+  model local ou ingestão executável. O analytics de Suporte é um read model
+  HubSpot separado da fila local.
+- **Semântica temporal:** a fila local usa posição corrente e ordena por
+  `updated_at`/`created_at`; `closed_at` é fechamento formal local. O contrato
+  analítico usa bases específicas por KPI, como `hs_created_at`, `resolved_at`,
+  `last_activity_at`, `synced_at` e snapshots históricos.
+- **Disponibilidade:** tickets, fila, detalhe, timeline, classificação e
+  contexto de SLA locais são `AVAILABLE_NOW`; Conversations API exige
+  `REQUIRES_SCOPE` para confirmar `conversations.read` e permissões do portal,
+  enquanto seu read model local exige `REQUIRES_NEW_INGESTION`. A verificação
+  de horas úteis/feriados é `PENDING_LOCAL_CONTRACT_VALIDATION`, não uma
+  pendência de scope. Não foi encontrada evidência de `API_LIMITATION`.
+- **Docs alterados:** `docs/ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md`, `docs/README.md` e
+  os artefatos do handoff corrente.
+- **Telas e objetos executáveis:** nenhum objeto executável foi alterado. A UI
+  existente foi usada apenas para confirmar que lê contratos backend-first.
+- **Riscos restantes:** confirmar a aplicação de horas úteis/feriados no SLA,
+  definir eventual ingestão de threads externas e estabelecer retenção e
+  cobertura de backlog histórico antes de publicar novos KPIs.
+- **Impacto futuro na FAQ:** exibir fonte, campo de data, período, timezone,
+  frescor, cobertura e estado de ausência sem exigir leitura do código.
 ## Fundação de predição comercial explicável — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,

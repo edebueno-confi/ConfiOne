@@ -94,6 +94,31 @@
   fonte de continuidade é `docs/ANALYTICS_CS_DOMAIN_AUDIT_V1.md`.
 - Nenhum código, migration, view, RPC, RLS, contrato executável, integração ou
   UI foi alterado neste lote.
+## Auditoria do domínio de Suporte — 2026-08-21
+
+- O Support Workspace local possui contrato operacional de tickets, mensagens,
+  eventos, atribuições, fila, detalhe e timeline, todos com `tenant_id` e
+  governança server-side. A fila paginada aplica filtros, contagens e limite de
+  50 itens; status, prioridade, severidade, categoria, motivo e SLA são
+  dimensões separadas.
+- `conversation_type_key` é classificação do ticket. `ticket_source = chat`,
+  e-mail e API existem como origem/canal, mas a resposta direta é marcada como
+  futura/indisponível. A especificação local de Conversations API confirma a
+  capacidade oficial de ler inboxes, canais, threads, mensagens e atores, mas
+  ainda não existe read model ou ingestão local dessa fonte.
+- O contrato analítico de Suporte é separado: `rpc_analytics_support_kpis_v2`
+  usa `hubspot_tickets`, coortes por `hs_created_at`, resolução, atividade,
+  frescor `synced_at` e histórico de snapshots. Não se deve misturar sua
+  semântica com `public.tickets` ou assumir `closed_at` universal.
+- SLA, aging, ausência de histórico e cobertura são estados explícitos. O
+  calendário de negócio existe, mas o comportamento integral de horas úteis e
+  feriados é `PENDING_LOCAL_CONTRACT_VALIDATION`, não ausência de scope. A
+  capacidade Conversations API usa `REQUIRES_SCOPE` somente para confirmar
+  `conversations.read` e permissões efetivas do portal, e `REQUIRES_NEW_INGESTION`
+  para o read model local.
+- Fonte de continuidade: `docs/ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md`. Nenhum
+  código, migration, view, RPC, RLS, contrato executável, integração ou UI foi
+  alterado neste lote.
 
 ## Protocolo de revisão por agente revisor — 2026-08-19
 
