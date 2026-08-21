@@ -11,6 +11,27 @@ export function selectedAnalyticsPipelineIds(configs, operation, excludedPipelin
     .filter((pipelineId) => pipelineId && !excluded.has(pipelineId));
 }
 
+export function commercialStageCatalogFilters(filters) {
+  const value = filters && typeof filters === 'object' ? filters : {};
+  return { ...value, ownerId: '', stageId: '' };
+}
+
+export function buildCommercialStageQueryPlan(filters, excludedPipelineIds = [], groupCompany = null) {
+  const dataFilters = { ...(filters && typeof filters === 'object' ? filters : {}) };
+  const catalogFilters = dataFilters.ownerId || dataFilters.stageId
+    ? commercialStageCatalogFilters(dataFilters)
+    : null;
+  const buildRequest = (requestFilters) => ({
+    filters: requestFilters,
+    excludedPipelineIds: [...excludedPipelineIds],
+    groupCompany,
+  });
+  return {
+    data: buildRequest(dataFilters),
+    catalog: catalogFilters ? buildRequest(catalogFilters) : null,
+  };
+}
+
 export function readAnalyticsStageScope(rows, selectedPipelineIds) {
   const selected = new Set(selectedPipelineIds.filter(Boolean));
   const options = [];
@@ -51,6 +72,15 @@ export function readAnalyticsStageScope(rows, selectedPipelineIds) {
 export function hasCompatibleAnalyticsStage(rows, selectedPipelineIds, stageId) {
   if (!stageId) return true;
   return readAnalyticsStageScope(rows, selectedPipelineIds).options.some((option) => option.value === stageId);
+}
+
+export function composeCommercialStageView(dataSnapshot, catalogSnapshot, selectedPipelineIds) {
+  const data = dataSnapshot && typeof dataSnapshot === 'object' ? dataSnapshot : {};
+  const catalog = catalogSnapshot && typeof catalogSnapshot === 'object' ? catalogSnapshot : data;
+  return {
+    stageScope: readAnalyticsStageScope(catalog.funnel, selectedPipelineIds),
+    dataState: data.state,
+  };
 }
 
 export function applyCommercialStageScope(snapshot, payload) {

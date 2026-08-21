@@ -1,7 +1,5 @@
 # Task
 
-Não há task ativa. `current/` está normalizado em `IDLE`.
-
 ## Task ID
 
 COMMERCIAL-OWNER-STAGE-2026-08-21

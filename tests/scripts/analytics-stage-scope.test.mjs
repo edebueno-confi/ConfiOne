@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   applyCommercialStageScope,
+  buildCommercialStageQueryPlan,
+  commercialStageCatalogFilters,
+  composeCommercialStageView,
   hasCompatibleAnalyticsStage,
   readAnalyticsStageScope,
   selectedAnalyticsPipelineIds,
@@ -41,6 +44,39 @@ test('pipeline sem operação não entra silenciosamente no recorte', () => {
   ];
   assert.deepEqual(selectedAnalyticsPipelineIds(configs, 'Confi'), ['pipeline-a']);
   assert.deepEqual(selectedAnalyticsPipelineIds(configs, ''), ['pipeline-a', 'pipeline-b', 'pipeline-c']);
+});
+
+test('catálogo de stages não herda owner ou stage do recorte de dados', () => {
+  const filters = { from: '2026-08-01', to: '2026-08-31', ownerId: 'owner-a', stageId: 'stage-b', priority: '' };
+  assert.deepEqual(commercialStageCatalogFilters(filters), {
+    from: '2026-08-01',
+    to: '2026-08-31',
+    ownerId: '',
+    stageId: '',
+    priority: '',
+  });
+  assert.deepEqual(filters, { from: '2026-08-01', to: '2026-08-31', ownerId: 'owner-a', stageId: 'stage-b', priority: '' });
+});
+
+test('preserva o stage no catálogo quando o owner não tem atividade e mantém o vazio dos dados', () => {
+  const filters = { from: '2026-08-01', to: '2026-08-31', ownerId: 'owner-sem-atividade', stageId: 'stage-qualificacao', priority: '' };
+  const plan = buildCommercialStageQueryPlan(filters, ['pipeline-b'], 'Confi');
+
+  assert.deepEqual(plan.data.filters, filters);
+  assert.deepEqual(plan.data.excludedPipelineIds, ['pipeline-b']);
+  assert.deepEqual(plan.catalog, {
+    filters: { from: '2026-08-01', to: '2026-08-31', ownerId: '', stageId: '', priority: '' },
+    excludedPipelineIds: ['pipeline-b'],
+    groupCompany: 'Confi',
+  });
+
+  const view = composeCommercialStageView(
+    { funnel: [], state: { status: 'empty' } },
+    { funnel: [{ label: 'Qualificação', pipelineBreakdown: [{ pipelineId: 'pipeline-a', stageId: 'stage-qualificacao' }] }] },
+    ['pipeline-a'],
+  );
+  assert.deepEqual(view.stageScope.options, [{ value: 'stage-qualificacao', label: 'Qualificação' }]);
+  assert.equal(view.dataState.status, 'empty');
 });
 
 test('payload parcial permanece explícito e não cria opção por inferência', () => {
