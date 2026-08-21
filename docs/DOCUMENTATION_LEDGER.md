@@ -37,6 +37,21 @@
 - **Riscos restantes:** sem contrato server-side e método validado, data,
   probabilidade, receita futura e confiança permanecem indisponíveis.
 
+## Fundação de contratos próximos do vencimento — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  permissão ou release surface.
+- **Fontes canônicas:** `customer_product_subscriptions`,
+  `vw_admin_customer_product_subscriptions`, `vw_cs_customer_portfolio` e os
+  read models financeiros de MRR.
+- **Regra:** `renewal_at` é observado quando preenchido; não há janela de
+  vencimento, owner de renovação nem vínculo publicado entre assinatura e MRR.
+- **Docs alterados:** `docs/ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas e objetos executáveis:** nenhum.
+- **Riscos restantes:** qualquer MRR em risco por renovação futura exigirá
+  decisão de produto, chave de reconciliação, permissões e contrato server-side.
+
 ## Semântica de conversão comercial — 2026-08-21
 
 - **Tipo:** correção de contrato de métrica, coortes e apresentação; sem release

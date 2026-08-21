@@ -41,6 +41,17 @@
 - Fonte de continuidade: `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`. O lote
   permanece documental até existir contrato server-side e método validado.
 
+## Fundação de contratos próximos do vencimento — 2026-08-21
+
+- Existem `renewal_at`, `ended_at`, status e owners de Customer Success nas
+  fontes de assinatura e carteira, mas não há janela canônica de alerta nem
+  contrato de vencimento próximo.
+- O MRR financeiro e o sinal `contract_not_current` pertencem a fontes e
+  semânticas distintas; não existe vínculo publicado entre MRR e assinatura
+  para calcular MRR em risco por renovação futura.
+- Fonte de continuidade: `docs/ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md`.
+  O lote permanece documental até decisão de produto e contrato server-side.
+
 ## Protocolo de revisão por agente revisor — 2026-08-19
 
 - O repositório passou a ter um contrato explícito de revisão entre agente implementador e agente revisor em `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho versionada em `.review/`.

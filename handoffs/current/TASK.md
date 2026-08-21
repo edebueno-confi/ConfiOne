@@ -10,7 +10,7 @@ Investigar contratos próximos do vencimento
 
 ## Estado
 
-READY_FOR_IMPLEMENTATION
+READY_FOR_REVIEW
 
 ## Objetivo
 
@@ -47,7 +47,7 @@ sem inventar dados ou publicar uma UI sem contrato backend.
 
 ## Dependências e autorização
 
-- Base SHA: `fd2a0407601b77004baf75c227cf057c2740b6da`.
+- Base SHA: `667a4a31b0a9764427d7488ef54ecb68378d70ed`.
 - Branch: `main`.
 - Owner: Forge.
 - Reviewer active: Sentinel.
