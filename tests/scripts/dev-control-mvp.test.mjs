@@ -45,7 +45,11 @@ test('snapshot do control plane lê o checkout real e os handoffs correntes', as
   assert.equal(snapshot.project.head, head);
   assert.equal(typeof snapshot.current.status.task, 'string');
   assert.ok(snapshot.current.status.task.length > 0);
-  assert.ok(snapshot.queue.some((item) => item.task_id === snapshot.current.status.task));
+  if (snapshot.current.status.state === 'IDLE') {
+    assert.equal(snapshot.current.status.task, 'NONE');
+  } else {
+    assert.ok(snapshot.queue.some((item) => item.task_id === snapshot.current.status.task));
+  }
   assert.ok(['IDLE', 'READY_FOR_IMPLEMENTATION', 'IMPLEMENTING', 'VALIDATING', 'READY_FOR_REVIEW', 'REVIEWING', 'CHANGES_REQUESTED', 'FIXING', 'APPROVED', 'FINALIZING_LOCAL', 'COMPLETED', 'BLOCKED', 'DONE'].includes(snapshot.current.status.state));
   assert.ok(['Codex', 'Claude', 'Ede'].includes(snapshot.current.status.owner));
   assert.ok(snapshot.queue.some((item) => item.task_id === 'R-03' && item.state === 'DONE'));
