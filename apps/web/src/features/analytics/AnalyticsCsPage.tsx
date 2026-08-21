@@ -29,6 +29,7 @@ import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 import { readStageBreakdown } from './analytics-stage-breakdown.mjs';
 import { AnalyticsQueueHealth } from './AnalyticsQueueHealth';
+import { hasCompatibleAnalyticsStage, readAnalyticsStageScope, selectedAnalyticsPipelineIds } from './analytics-stage-scope.mjs';
 
 // Resolucao, tempo de resolucao e primeira resposta passaram a existir depois
 // que a ingestao foi corrigida para pedir os campos que a conta realmente
@@ -171,7 +172,9 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, sharedOper
   const { byStatus, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
   const supportOwnerPerformance = readSupportOwnerPerformance(kpiPayload);
   const stages = readStageBreakdown(stagePayload);
-  const stageOptions = byStatus.map((status) => ({ value: status.stageId, label: status.label }));
+  const selectedPipelineIds = selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, excludedPipelineIds);
+  const stageScope = readAnalyticsStageScope(byStatus, selectedPipelineIds);
+  const stageOptions = stageScope.options;
   const priorityOptions = [{ value: 'HIGH', label: 'Alta' }, { value: 'MEDIUM', label: 'Média' }, { value: 'LOW', label: 'Baixa' }];
   const pipelineOptions: PipelineFilterOption[] = configuredPipelines.map((pipeline) => {
     const observed = byPipeline.find((item) => item.pipelineId === pipeline.pipelineId);
@@ -274,7 +277,8 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, sharedOper
   return (
     <AnalyticsHdDomainFrame title="Suporte" description="Fila, tempo de resposta e distribuição dos atendimentos." source="HubSpot" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={handleGroupCompanyChange} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /></> : null} />
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={(value) => { handleGroupCompanyChange(value); setFilters((current) => ({ ...current, stageId: '' })); }} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={(next) => { setExcludedPipelineIds(next); setFilters((current) => hasCompatibleAnalyticsStage(byStatus, selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, next), current.stageId) ? current : { ...current, stageId: '' }); }} /></> : null} />
+      {stageScope.notice ? <p role="status" className="text-xs text-[color:var(--minimal-text-tertiary)]">{stageScope.notice}</p> : null}
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       <AnalyticsDomainTabs tabs={subTabs} activeId={subTab} onChange={setSubTab} />
     </div>

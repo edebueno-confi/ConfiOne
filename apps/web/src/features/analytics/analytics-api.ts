@@ -50,6 +50,7 @@ import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { analyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
+import { applyCommercialStageScope } from './analytics-stage-scope.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -228,7 +229,7 @@ export async function getCommercialSnapshot(filters: AnalyticsFilters, excludedP
     p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise comercial filtrada.');
-  return mapCommercialSnapshot(data);
+  return applyCommercialStageScope(mapCommercialSnapshot(data), data) as CommercialSnapshot;
 }
 
 export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = [], groupCompany: string | null = null): Promise<CsSnapshot> {

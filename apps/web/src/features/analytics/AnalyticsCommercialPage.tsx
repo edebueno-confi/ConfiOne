@@ -28,6 +28,7 @@ import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDom
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
+import { hasCompatibleAnalyticsStage, readAnalyticsStageScope, selectedAnalyticsPipelineIds } from './analytics-stage-scope.mjs';
 
 // Indicadores com coorte declarada, publicados pelo read model de KPI.
 // Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
@@ -143,7 +144,9 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sh
   const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
   const commercialKpiDetails = mapCommercialKpiDetails(kpiPayload);
   const ownersWithPeriodActivity = commercialKpiDetails.byOwner.filter((owner) => owner.openDeals > 0 || owner.wonDeals > 0 || owner.lostDeals > 0);
-  const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
+  const selectedPipelineIds = selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, excludedPipelineIds);
+  const stageScope = readAnalyticsStageScope(funnel, selectedPipelineIds);
+  const stageOptions = stageScope.options;
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
   const pipelineOptions = configuredPipelines.map((pipeline) => {
     const observed = byPipeline.find((item) => item.pipelineId === pipeline.pipelineId);
@@ -274,7 +277,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sh
   return (
     <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState} headerAside={<AnalyticsExecutionMeta provider="HubSpot" run={latestHubspotRun} />}>
     <div className="gso-hd-domain-surface gso-pilot-commercial space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={handleGroupCompanyChange} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /></> : null} />
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={(value) => { handleGroupCompanyChange(value); setFilters((current) => ({ ...current, stageId: '' })); }} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={(next) => { setExcludedPipelineIds(next); setFilters((current) => hasCompatibleAnalyticsStage(funnel, selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, next), current.stageId) ? current : { ...current, stageId: '' }); }} /></> : null} />
+      {stageScope.notice ? <p role="status" className="text-xs text-[color:var(--minimal-text-tertiary)]">{stageScope.notice}</p> : null}
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
