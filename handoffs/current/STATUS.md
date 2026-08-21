@@ -1,22 +1,22 @@
 # Status
 
-Task: COMMERCIAL-RECONCILIATION-2026-08-21
-State: READY_FOR_IMPLEMENTATION
+Task: NONE
+State: IDLE
 Owner: Forge
 Role: EXECUTOR
 Reviewer active: Sentinel
 Review mode: SENTINEL_REQUIRED
-Base SHA: 8d9e7da1c70d1aee8aad21e4e0896c3bf325d2d2
-Current SHA: 8d9e7da1c70d1aee8aad21e4e0896c3bf325d2d2
+Base SHA: 0f603b7c1d15a5993634f118ab2f94f2574bc60e
+Current SHA: 0f603b7c1d15a5993634f118ab2f94f2574bc60e
 Last reviewer: Sentinel
-Last review: 2026-08-21 — DATA-TEMPORAL-SEMANTICS APPROVED e finalizado localmente
+Last review: 2026-08-21 — COMMERCIAL-RECONCILIATION APPROVED e finalizado localmente
 Updated at: 2026-08-21
 
 ## Notes
 
-- O lote anterior foi arquivado e marcado DONE na fila canônica.
-- Esta é a próxima task autorizada e elegível; suas dependências estão DONE.
-- Forge deve investigar e corrigir somente o lote atual, sem absorver alterações
-  preexistentes do worktree.
+- `COMMERCIAL-RECONCILIATION-2026-08-21` foi integrado no commit local
+  `0f603b7c1d15a5993634f118ab2f94f2574bc60e` e arquivado.
+- O handoff corrente foi normalizado para `IDLE`; a próxima task aprovada será
+  aberta em seguida pela promoção administrativa da fila.
 - Push, merge, pull request, deploy, migration remota, secrets e release surface
   continuam proibidos.
