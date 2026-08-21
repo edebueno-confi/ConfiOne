@@ -1,74 +1,83 @@
 # Task
 
-Task ID: DATA-PIPELINE-STAGE-SCOPE-2026-08-21
-Título: Formalizar compatibilidade Operação → Pipeline → Stage
-Estado: READY_FOR_REVIEW
+## Task ID
+
+DATA-TEMPORAL-SEMANTICS-2026-08-21
+
+## Título
+
+Separar criado no período de existente no período
+
+## Estado
+
+READY_FOR_IMPLEMENTATION
 
 ## Contexto
 
-O lote anterior fechou o escopo de Operação nos caminhos de leitura aplicáveis.
-O próximo risco autorizado é permitir que uma Operação, Pipeline e Stage
-incompatíveis sejam combinados no frontend ou aceitos por contratos de leitura.
-A fonte da verdade deve continuar sendo o backend, sua configuração canônica,
-read models, RPCs, políticas e testes.
+O lote anterior formalizou a compatibilidade entre Operação, Pipeline e Stage.
+O próximo risco autorizado é misturar, nos mesmos indicadores, movimento criado
+dentro da janela selecionada e estoque que apenas existe no estado atual. A
+semântica deve ser determinada pelos contratos, read models, RPCs e dados reais,
+sem inferência cosmética no frontend.
 
 ## Objetivo
 
-Garantir que os filtros de Operação, Pipeline e Stage representem somente
-combinações publicadas e compatíveis, com estado explícito quando a fonte não
-possuir cobertura suficiente.
+Definir e aplicar, somente onde houver divergência comprovada, a separação entre
+eventos criados no período e entidades existentes no período, preservando a
+fonte da verdade no backend e tornando janelas, coortes, timezone e nulos
+explícitos.
 
 ## Escopo
 
-- localizar o contrato canônico de compatibilidade entre operação, pipeline e
-  stage;
-- mapear as fontes, RPCs, read models e consumidores dos filtros de Comercial e
-  Suporte;
-- verificar opções incompatíveis, operação ausente, pipeline sem operação,
-  stage sem cruzamento e payload parcial;
-- corrigir somente divergências comprovadas no caminho atual;
+- inventariar RPCs, views, read models, snapshots e consumidores de métricas
+  temporais e de estoque;
+- verificar a semântica atual de período, criação, atualização, status e
+  permanência;
+- investigar timezone, limites inclusivos/exclusivos, nulos, reaberturas,
+  coortes e diferença entre estoque e movimento;
+- corrigir apenas divergências comprovadas no caminho atual;
 - adicionar testes comportamentais ou de contrato sem enfraquecer asserções;
-- preservar tenant isolation, autorização, RLS e auditoria existentes.
+- preservar tenant isolation, autorização, RLS, auditoria e compatibilidade.
 
 ## Fora de escopo
 
-- criar fonte externa, integração, credencial ou catálogo paralelo;
-- inventar compatibilidade por nome, posição, heurística ou regra local no
-  frontend;
-- formalizar semântica temporal, coortes, KPIs derivados ou reconciliação
-  comercial, reservados a lotes posteriores;
-- alterar release surface, landing, rotas públicas, permissões ou produção;
+- criar KPIs, coortes ou regras sem fonte real;
+- alterar release surface, landing, rotas públicas ou permissões;
+- criar integração, credencial ou catálogo paralelo;
+- alterar dados históricos para obter números esperados;
 - executar migration remota, push, merge, deploy ou alterar secrets;
 - corrigir findings não relacionados.
 
 ## Requisitos funcionais
 
-1. Combinações válidas devem vir de contrato ou configuração publicada pelo
-   backend.
-2. Combinações incompatíveis devem ser impedidas ou marcadas explicitamente,
-   sem virar zero, lista vazia ou total global silencioso.
-3. O filtro de Stage deve respeitar a Operação e o Pipeline efetivamente
-   selecionados.
-4. Ausência ou cobertura parcial deve permanecer visível para o operador.
-5. Nenhuma correção pode enfraquecer tenant isolation, RLS, autorização ou
-   auditoria.
+1. O período deve distinguir movimento criado dentro da janela de estoque
+   existente no estado consultado.
+2. Limites de data, timezone e tratamento de nulos devem ser explícitos no
+   contrato aplicável.
+3. Reaberturas, mudanças de status e entidades sem evento temporal não podem
+   ser classificadas silenciosamente.
+4. Ausência de dimensão ou evidência deve permanecer explícita, nunca virar
+   zero ou total global silencioso.
+5. Nenhuma correção pode enfraquecer isolamento de tenant, RLS, autorização,
+   auditoria ou segurança.
 
 ## Requisitos técnicos
 
-- validar documentação canônica contra código executável e contratos reais;
+- validar documentação contra código executável, migrations, RPCs, views e
+  testes reais;
 - manter o backend como fonte da verdade;
-- testar comportamento quando houver lógica pura testável;
+- testar lógica pura quando aplicável e adicionar contra-testes reais;
 - registrar comandos, resultados e limitações em IMPLEMENTATION.md;
-- registrar `UNRESOLVED — requires project owner decision` quando a
-  compatibilidade não puder ser determinada com segurança.
+- registrar `UNRESOLVED — requires project owner decision` quando a semântica
+  não puder ser determinada com segurança.
 
 ## Critérios de aceitação
 
-- [ ] inventário de fontes e consumidores da compatibilidade documentado;
-- [ ] combinações válidas e inválidas cobertas por evidência executável;
-- [ ] operação ausente, pipeline sem operação, stage sem cruzamento e payload
-      parcial tratados explicitamente;
-- [ ] nenhum hardcode ou heurística local foi criado para decidir compatibilidade;
+- [ ] inventário de fontes e consumidores temporais documentado;
+- [ ] criado no período e existente no período possuem evidência separada;
+- [ ] timezone, limites, nulos, coortes, reaberturas e estoque/movimento foram
+      tratados ou explicitamente classificados;
+- [ ] nenhum hardcode ou heurística local foi criado para decidir semântica;
 - [ ] testes relevantes, typecheck/build/lint aplicáveis e `git diff --check`
       executados e registrados;
 - [ ] diff limitado ao lote, sem absorver alterações preexistentes;
@@ -78,11 +87,6 @@ possuir cobertura suficiente.
 
 - `AGENTS.md`
 - `docs/PROJECT_STATE.md`
-- `docs/README.md`
-- `docs/ROADMAP_BUILDOUT_V3.md`
-- `docs/ARCHITECTURE_RULES.md`
-- `docs/VIEW_RPC_CONTRACTS.md`
-- `docs/AUTH_CONTEXT_STRATEGY.md`
 - `docs/engineering/PROJECT.md`
 - `docs/engineering/ARCHITECTURE.md`
 - `docs/engineering/ENGINEERING_RULES.md`
@@ -90,24 +94,11 @@ possuir cobertura suficiente.
 - `docs/engineering/REVIEW_PROTOCOL.md`
 - `handoffs/README.md`
 
-## Riscos conhecidos
-
-- A estrutura atual pode publicar pipeline sem stage compatível ou stage sem
-  cruzamento verificável.
-- A origem pode possuir cobertura parcial por operação e por pipeline.
-- Uma divergência entre documentação, configuração e contrato executável deve
-  ser reportada, não resolvida por preferência do executor.
-
 ## Base e responsabilidade
 
-Base commit SHA: b676e6f095cdff09bb9b4150af36822612b3c5b7
-Branch: main
-Responsável atual: Claude
-Approval: APPROVED na fila canônica do proprietário
-Reviewer: Claude
-
-## Observações do proprietário
-
-Executar somente este lote. Preservar o baseline legado e alterações
-preexistentes. Não avançar para `DATA-TEMPORAL-SEMANTICS-2026-08-21` antes de
-aprovação e finalização deste lote.
+- Base commit SHA: `c7c700d`
+- Branch: `main`
+- Responsável atual: Codex
+- Approval: APPROVED na fila canônica
+- Observações do proprietário: não alterar release surface nem executar
+  operações externas protegidas.
