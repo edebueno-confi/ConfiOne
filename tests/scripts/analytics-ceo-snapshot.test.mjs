@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   buildOverviewSnapshotQueryPlan,
   buildOperationPeriodMetrics,
+  getOverviewQueueMetricDefinitions,
   buildUnavailableOperationKpiPayload,
   composeCeoSnapshot,
   mergeExecutiveKpiPayload,
@@ -141,4 +142,15 @@ test('não usa o consolidado quando o movimento operacional está ausente', () =
     commercial: { wonDeals: null, lostDeals: null, wonRevenue: null, conversionRate: null },
     support: { createdTickets: null },
   });
+});
+
+test('diferencia posição corrente de volume recebido no período', () => {
+  const definitions = getOverviewQueueMetricDefinitions();
+
+  assert.notEqual(definitions.current.key, definitions.received.key);
+  assert.notEqual(definitions.current.label, definitions.received.label);
+  assert.equal(definitions.current.period, 'current');
+  assert.equal(definitions.received.period, 'selected');
+  assert.equal(definitions.current.source, 'support.open_backlog');
+  assert.equal(definitions.received.source, 'support.created_tickets');
 });

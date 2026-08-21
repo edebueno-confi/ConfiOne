@@ -51,6 +51,23 @@ export function buildOperationPeriodMetrics(periodCommercial, periodSupport) {
   };
 }
 
+export function getOverviewQueueMetricDefinitions() {
+  return {
+    current: {
+      key: 'open_backlog',
+      label: 'Tickets em aberto agora',
+      period: 'current',
+      source: 'support.open_backlog',
+    },
+    received: {
+      key: 'created_tickets',
+      label: 'Atendimentos recebidos no período',
+      period: 'selected',
+      source: 'support.created_tickets',
+    },
+  };
+}
+
 export function buildOverviewSnapshotQueryPlan(filters) {
   const base = filters && typeof filters === 'object' ? filters : {};
   return {

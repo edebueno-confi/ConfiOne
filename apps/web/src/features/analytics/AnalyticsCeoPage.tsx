@@ -35,7 +35,7 @@ import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./
 import { AnalyticsDataCoveragePanel, analyticsCoverageStatus, type AnalyticsCoverageItem } from './AnalyticsDataCoveragePanel';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 import { readKpi } from './analytics-kpi-contract.mjs';
-import { buildOperationPeriodMetrics, buildUnavailableOperationKpiPayload, mergeOperationKpiPayload } from './analytics-ceo-snapshot.mjs';
+import { buildOperationPeriodMetrics, buildUnavailableOperationKpiPayload, getOverviewQueueMetricDefinitions, mergeOperationKpiPayload } from './analytics-ceo-snapshot.mjs';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -107,6 +107,8 @@ const EXECUTIVE_BANDS: BoardBand[] = [
     ],
   },
 ];
+
+const OVERVIEW_QUEUE_METRICS = getOverviewQueueMetricDefinitions();
 
 const EMPTY_OPERATION_SNAPSHOT: CsSnapshot = {
   kpis: { totalTickets: 0, openTickets: 0, closedTickets: 0, closedRate: 0 },
@@ -339,6 +341,7 @@ export function AnalyticsCeoPage({
     currentSourceStatus,
     operationScoped,
     operationCurrentAvailability,
+    operationPeriodAvailability,
   );
 
   return (
@@ -453,6 +456,7 @@ function buildDomainCards(
   sourceStatus?: AnalyticsSourceStatusPayload,
   operationScoped = false,
   operationCurrentAvailability: OperationCurrentAvailability = { commercialPipeline: true, commercialDeals: true, supportOpen: true },
+  operationPeriodAvailability: OperationPeriodAvailability = { commercialWonDeals: true, commercialLostDeals: true, commercialWonRevenue: true, commercialConversion: true, supportCreated: true },
 ): DomainCard[] {
   const hubspotState = sourceStatus
     ? analyticsSourceToBlockState(sourceStatus.hubspot)
@@ -491,19 +495,15 @@ function buildDomainCards(
     {
       key: "support",
       title: "Suporte",
-      description: "Volume e risco da fila",
+      description: OVERVIEW_QUEUE_METRICS.received.label,
       value: hubspotUnavailable
-        || (operationScoped && !operationCurrentAvailability.supportOpen)
+        || (operationScoped && !operationPeriodAvailability.supportCreated)
         ? "Indisponível"
-        : operationScoped
-          ? formatCountLabel(data.support.openTickets, "ticket na fila", "tickets na fila")
-          : formatCountLabel(data.support.highPriorityOpen, "alta prioridade", "altas prioridades"),
+        : formatCountLabel(data.support.createdTickets, "atendimento recebido", "atendimentos recebidos"),
       details: hubspotUnavailable
-        || (operationScoped && !operationCurrentAvailability.supportOpen)
+        || (operationScoped && !operationPeriodAvailability.supportCreated)
         ? "Dados de suporte indisponíveis"
-        : operationScoped
-          ? "Prioridade e encerramento do recorte ainda não têm dimensão publicada"
-          : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
+        : `${OVERVIEW_QUEUE_METRICS.received.source} · ${operationScoped ? "recorte selecionado" : "período selecionado"}`,
       href: analyticsHref("support"),
       state: hubspotState,
       tone: "cyan",
@@ -734,7 +734,7 @@ function ExecutiveHdCanvas({
             comparison={comparison.conversion?.label}
           />
           <HdMetric
-            label="Atendimentos recebidos"
+            label={OVERVIEW_QUEUE_METRICS.received.label}
             value={
               unavailable || (operationScoped && !operationPeriodAvailability.supportCreated)
                 ? "Indisponível"
@@ -781,7 +781,7 @@ function ExecutiveHdCanvas({
             detail={financeUnavailable || unavailable ? "Reconciliação financeira indisponível" : "Inadimplência reconciliada"}
           />
           <HdMetric
-            label="Fila atual"
+            label={OVERVIEW_QUEUE_METRICS.current.label}
             value={
               unavailable || (operationScoped && !operationCurrentAvailability.supportOpen)
                 ? "Indisponível"
