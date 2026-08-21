@@ -6,8 +6,8 @@ Owner: Forge
 Role: EXECUTOR
 Reviewer active: Sentinel
 Review mode: SENTINEL_REQUIRED
-Base SHA: 278482a299c511576b39a304da3e6b5c25e76f66
-Current SHA: 278482a299c511576b39a304da3e6b5c25e76f66
+Base SHA: e8347f64f9b94a778d5e10df28dcf460ae33e072
+Current SHA: e8347f64f9b94a778d5e10df28dcf460ae33e072
 Last reviewer: Sentinel (Codex Independent Reviewer)
 Last review: 2026-08-21 — CONTRACT-EXPIRY-2026-08-21 APPROVED e finalizado localmente
 Updated at: 2026-08-21

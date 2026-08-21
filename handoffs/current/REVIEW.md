@@ -8,7 +8,7 @@ PENDING_REVIEW
 
 - Task ID: `CS-DOMAIN-AUDIT-2026-08-21`
 - Estado: `READY_FOR_IMPLEMENTATION`
-- Base SHA: `278482a299c511576b39a304da3e6b5c25e76f66`
+- Base SHA: `e8347f64f9b94a778d5e10df28dcf460ae33e072`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 
