@@ -16,6 +16,11 @@ continua sendo suporte automatizado, baseline e evidência técnica opcional. Ne
 artefato em `.review/` pode manter pedido, estado ou veredito conflitante com o
 handoff corrente.
 
+Decisões duráveis do proprietário ficam registradas em
+[`OWNER_DECISIONS.md`](./OWNER_DECISIONS.md). Quando uma autorização ou exceção
+operacional depender de decisão do proprietário, esse registro é a referência
+persistente correspondente.
+
 ## Papéis
 
 ### Codex, Software Engineer / Executor
@@ -85,13 +90,15 @@ conflito e não escolhe silenciosamente.
 
 Os estados permitidos são:
 
-IDLE, READY_FOR_IMPLEMENTATION, IMPLEMENTING, READY_FOR_REVIEW, REVIEWING,
-CHANGES_REQUESTED, FIXING, VALIDATING, APPROVED, FINALIZING_LOCAL,
+IDLE, BACKLOG, READY, READY_FOR_IMPLEMENTATION, IMPLEMENTING, READY_FOR_REVIEW,
+REVIEWING, CHANGES_REQUESTED, FIXING, VALIDATING, APPROVED, FINALIZING_LOCAL,
 COMPLETED, BLOCKED, DONE.
 
 Fluxo normal:
 
 READY_FOR_IMPLEMENTATION -> Codex
+BACKLOG -> aguardando dependências ou elegibilidade
+READY -> Codex pode abrir a TASK quando dependências e autorização estiverem satisfeitas
 IMPLEMENTING -> Codex trabalha
 VALIDATING -> Codex executa os gates finais aplicáveis
 READY_FOR_REVIEW -> Codex preenche IMPLEMENTATION.md
@@ -108,6 +115,12 @@ Para um lote com `Approval = APPROVED` na fila, o heartbeat deve tratar
 `APPROVED` como a ação `FINALIZE_LOCAL`, sem aguardar nova intervenção humana:
 
 `IMPLEMENTING -> VALIDATING -> APPROVED -> FINALIZING_LOCAL -> COMPLETED -> IDLE`
+
+`BACKLOG` e `READY` são estados da fila. `BACKLOG` representa trabalho
+decomposto que ainda aguarda dependência, prioridade ou seleção. `READY`
+representa trabalho elegível para abrir uma TASK. Ao abrir a TASK, o estado
+corrente deve ser `READY_FOR_IMPLEMENTATION`; a fila permanece `READY` até a
+implementação começar.
 
 Durante `FINALIZING_LOCAL`, o Codex relê TASK, IMPLEMENTATION e REVIEW, confirma
 o veredito APPROVED, executa os gates finais e `git diff --check`, verifica a

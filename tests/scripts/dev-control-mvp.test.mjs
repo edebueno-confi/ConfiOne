@@ -24,6 +24,8 @@ test('fila canônica expõe autorização, dependências e resumo estruturado', 
   const controlPlane = queue.find((item) => item.task_id === 'DEV-CONTROL-MVP');
   const r11 = queue.find((item) => item.task_id === 'R-11');
   const r14 = queue.find((item) => item.task_id === 'R-14');
+  const backlogTask = queue.find((item) => item.task_id === 'CONTROL-PLANE-BACKLOG-2026-08-21');
+  const operationScope = queue.find((item) => item.task_id === 'DATA-OPERATION-SCOPE-2026-08-21');
 
   assert.ok(controlPlane);
   assert.equal(controlPlane.project, 'ConfiOne / Engineering');
@@ -35,6 +37,10 @@ test('fila canônica expõe autorização, dependências e resumo estruturado', 
   assert.ok(r11);
   assert.equal(r11?.dependencies, 'DEV-CONTROL-MVP');
   assert.equal(r14?.dependencies, 'R-11');
+  assert.equal(backlogTask?.approval, 'APPROVED');
+  assert.equal(operationScope?.dependencies, 'CONTROL-PLANE-BACKLOG-2026-08-21');
+  assert.equal(queue.filter((item) => item.state === 'ACTIVE').length, 1);
+  assert.ok(queue.filter((item) => item.state === 'BACKLOG').length >= 10);
 });
 
 test('snapshot do control plane lê o checkout real e os handoffs correntes', async () => {

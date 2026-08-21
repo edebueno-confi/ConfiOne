@@ -10,6 +10,11 @@ Este diretório é a interface persistente de colaboração entre:
 O handoff é baseado no repositório, não no histórico de conversas. O código, os
 commits, os SHAs, os documentos, os testes e as evidências são a fonte compartilhada.
 
+As decisões duráveis do proprietário estão em
+[`docs/engineering/OWNER_DECISIONS.md`](../docs/engineering/OWNER_DECISIONS.md)
+e devem ser consultadas quando a fila ou o protocolo dependerem de autorização
+operacional.
+
 ## Estrutura
 
     handoffs/
@@ -62,7 +67,7 @@ remota, alteração de secrets ou release surface. Se alterações preexistentes
 não puderem ser separadas com segurança, registrar `OWNER_DECISION_REQUIRED` e
 interromper.
 
-## Fila canônica de trabalho — 2026-08-20
+## Fila canônica de trabalho — ciclo prolongado 2026-08-21
 
 O proprietário autorizou a execução sequencial desta fila. Esta tabela é a fila
 canônica, mantida neste README para não criar um segundo sistema operacional.
@@ -81,10 +86,32 @@ PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
 | 4 | DEV-CONTROL-MVP | ConfiOne / Engineering | Development Control Plane MVP read-only | P0 | DONE | APPROVED | R-03 | Owner request 2026-08-20 | Aprovado no ciclo 5; handoff arquivado para integração aplicável. |
 | 5 | R-11 | ConfiOne | Scripts npm que apontam para arquivos inexistentes | P1 | DONE | APPROVED | DEV-CONTROL-MVP | Owner queue 2026-08-20 | Aprovado no ciclo 2 e integrado em checkpoint local; handoff arquivado. |
 | 6 | R-14 | ConfiOne | Deny-all intencional para tabelas RLS sem policy | P1 | DONE | APPROVED | R-11 | Owner queue 2026-08-20 | APPROVED; checkpoint local exclusivo `6eec6d7` e arquivamento executados por FINALIZE_LOCAL. |
+| 7 | CONTROL-PLANE-BACKLOG-2026-08-21 | ConfiOne / Engineering | Materializar backlog prolongado e estados de elegibilidade | P0 | ACTIVE | APPROVED | R-14 | Owner mission 2026-08-21 | Registrar a decomposição normativa sem tocar no produto e preparar a primeira task do ciclo. |
+| 8 | DATA-OPERATION-SCOPE-2026-08-21 | ConfiOne / Analytics | Auditar e fechar o filtro de Operação ponta a ponta | P1 | BACKLOG | APPROVED | CONTROL-PLANE-BACKLOG-2026-08-21 | Owner mission 2026-08-21 | KPIs, gráficos, tabelas, pipeline, responsáveis, totais e comparativos devem respeitar o escopo válido. |
+| 9 | DATA-PIPELINE-STAGE-SCOPE-2026-08-21 | ConfiOne / Analytics | Formalizar compatibilidade Operação → Pipeline → Stage | P1 | BACKLOG | APPROVED | DATA-OPERATION-SCOPE-2026-08-21 | Owner mission 2026-08-21 | Dropdowns e contratos devem impedir combinações incompatíveis sem regra local inventada. |
+| 10 | DATA-TEMPORAL-SEMANTICS-2026-08-21 | ConfiOne / Analytics | Separar criado no período de existente no período | P1 | BACKLOG | APPROVED | DATA-OPERATION-SCOPE-2026-08-21 | Owner mission 2026-08-21 | Definir janelas, coortes, timezone, nulos e estoque versus movimento na camada de dados. |
+| 11 | COMMERCIAL-RECONCILIATION-2026-08-21 | ConfiOne / Comercial | Reconciliar totais, perdidos e fechados | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Investigar 208 versus 206 e o valor de perdidos sem hardcode ou ajuste cosmético. |
+| 12 | COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21 | ConfiOne / Comercial | Formalizar cálculo de conversão e impedir percentuais impossíveis | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Definir universo, denominador, período e tratamento de ganhos, perdas e reaberturas. |
+| 13 | COMMERCIAL-OWNER-STAGE-2026-08-21 | ConfiOne / Comercial | Corrigir filtro de estágio por responsável | P1 | BACKLOG | APPROVED | DATA-PIPELINE-STAGE-SCOPE-2026-08-21 | Owner mission 2026-08-21 | Investigar por que stages relevantes desaparecem ao selecionar responsável. |
+| 14 | OVERVIEW-SNAPSHOT-FLOW-2026-08-21 | ConfiOne / Dashboard | Separar Agora de No período | P1 | BACKLOG | APPROVED | DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Snapshot atual não pode mudar com período histórico, mas deve respeitar dimensões aplicáveis. |
+| 15 | OVERVIEW-QUEUE-SEMANTICS-2026-08-21 | ConfiOne / Dashboard | Resolver a duplicidade de Fila atual | P1 | BACKLOG | APPROVED | DATA-OPERATION-SCOPE-2026-08-21, DATA-TEMPORAL-SEMANTICS-2026-08-21 | Owner mission 2026-08-21 | Distinguir conceito, fonte, filtro ou erro antes de corrigir nomenclatura. |
+| 16 | KPI-REGISTRY-2026-08-21 | ConfiOne / Analytics | Consolidar registro canônico de KPIs | P1 | BACKLOG | APPROVED | COMMERCIAL-RECONCILIATION-2026-08-21, COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21, OVERVIEW-SNAPSHOT-FLOW-2026-08-21 | Owner mission 2026-08-21 | Registrar definição, fonte, fórmula, período, filtros, timezone, nulos e exclusões. |
+| 17 | COMMERCIAL-EVOLUTION-2026-08-21 | ConfiOne / Comercial | Estruturar evolução e comparação temporal | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21 | Owner mission 2026-08-21 | Comparar período atual, anterior, delta absoluto, delta percentual, tendência e aging. |
+| 18 | COMMERCIAL-GOALS-MRR-2026-08-21 | ConfiOne / Comercial | Criar fundação de metas financeiras/MRR | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21, COMMERCIAL-EVOLUTION-2026-08-21 | Owner mission 2026-08-21 | Separar período da meta de janela histórica e validar dados antes de propor distribuição. |
+| 19 | COMMERCIAL-PREDICTION-2026-08-21 | ConfiOne / Comercial | Criar Predição explicável baseada em dados | P2 | BACKLOG | APPROVED | COMMERCIAL-GOALS-MRR-2026-08-21, COMMERCIAL-RECONCILIATION-2026-08-21 | Owner mission 2026-08-21 | Usar pipeline, conversão, lead time e ticket; não usar IA generativa para matemática. |
+| 20 | CONTRACT-EXPIRY-2026-08-21 | ConfiOne / Customer Success | Investigar contratos próximos do vencimento | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21 | Owner mission 2026-08-21 | Confirmar fonte confiável, responsabilidade por renovação e MRR em risco antes da UI. |
+| 21 | CS-DOMAIN-AUDIT-2026-08-21 | ConfiOne / Customer Success | Auditar carteira, risco, churn, expansão e renovação | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21, CONTRACT-EXPIRY-2026-08-21 | Owner mission 2026-08-21 | Diferenciar dados existentes de health score ainda não definido. |
+| 22 | SUPPORT-DOMAIN-AUDIT-2026-08-21 | ConfiOne / Support | Auditar fila, SLA, aging, prioridade e operação | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21 | Owner mission 2026-08-21 | Distinguir tickets, conversas e chat com contratos reais. |
+| 23 | FINANCE-DOMAIN-AUDIT-2026-08-21 | ConfiOne / Financeiro | Auditar recebido, a receber, vencido e aging | P2 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21, CONTRACT-EXPIRY-2026-08-21 | Owner mission 2026-08-21 | Ausência de dados deve ser explícita e não virar zero. |
+| 24 | PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21 | ConfiOne / Produto | Auditar indicadores de Produto e Desenvolvimento | P3 | BACKLOG | APPROVED | KPI-REGISTRY-2026-08-21 | Owner mission 2026-08-21 | Manter somente indicadores ligados a decisões operacionais reais. |
+| 25 | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21 | ConfiOne / Dashboard | Reorganizar Atenção, Governança e cobertura | P2 | BACKLOG | APPROVED | CS-DOMAIN-AUDIT-2026-08-21, SUPPORT-DOMAIN-AUDIT-2026-08-21, FINANCE-DOMAIN-AUDIT-2026-08-21, PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21 | Owner mission 2026-08-21 | Retirar ruído técnico da Visão Geral e preservar sinais gerenciais acionáveis. |
+| 26 | DASHBOARD-UX-DENSITY-2026-08-21 | ConfiOne / Dashboard | Refinar densidade e qualidade de decisão | P3 | BACKLOG | APPROVED | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21, COMMERCIAL-EVOLUTION-2026-08-21 | Owner mission 2026-08-21 | Validar desktop 1920×1080 sem redesenho gratuito ou preenchimento decorativo. |
 
 Regras da fila:
 
 - somente um item pode estar `ACTIVE` por vez;
+- `BACKLOG` representa item decomposto aguardando dependência ou seleção;
+- `READY` representa item elegível para abertura da próxima TASK;
 - o próximo item só pode ser aberto depois de `APPROVED` no item anterior, suas
   dependências satisfeitas e o retorno de `handoffs/current/` para `IDLE`;
 - `Approval` é autorização do proprietário; `State` controla elegibilidade e
