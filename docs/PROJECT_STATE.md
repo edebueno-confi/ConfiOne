@@ -18,6 +18,18 @@
 - A escala corrente de findings é `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` e `INFO`, com mapa de compatibilidade para os termos históricos `BLOCKER`, `MAJOR`, `MINOR` e `NIT`.
 - Os vereditos correntes são `APPROVED`, `REQUEST_CHANGES` e `BLOCKED`. D-01 classifica o trabalho de produto preexistente como `BASELINE_LEGACY / PREEXISTING_WORK`, fora da máquina de estados de uma TASK retroativa. D-02 estabelece `IMPLEMENTED != RELEASE_AUTHORIZED`: `/inicio`, `/admin/tenants` e mudanças de landing/release surface exigem TASK e autorização explícita próprias.
 
+## Fundação de metas financeiras e MRR — 2026-08-21
+
+- O Analytics publica MRR como posição atual de Customer Success por
+  `company_recurring_revenue_now`, condicionado a `mrr_source`, regra de
+  cliente ativo e cobertura. Não há contrato publicado de meta financeira,
+  quota, forecast, atingimento, gap ou distribuição de MRR.
+- O lote documental separa período da meta, janela histórica e data de corte
+  (`as_of`) e impede usar `mrr_total`, `won_amount`, OMIE ou planilhas como meta
+  implícita. A ausência de fonte permanece `unavailable`/`PROPOSED`, não zero.
+- Fonte de continuidade: `docs/ANALYTICS_MRR_GOALS_FOUNDATION_V1.md`. Nenhum
+  código, SQL, migration, RPC, UI ou serviço externo foi alterado neste lote.
+
 ## Protocolo de revisão por agente revisor — 2026-08-19
 
 - O repositório passou a ter um contrato explícito de revisão entre agente implementador e agente revisor em `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho versionada em `.review/`.

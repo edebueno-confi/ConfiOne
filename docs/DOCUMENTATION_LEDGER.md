@@ -1,5 +1,26 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Fundação de metas financeiras e MRR — 2026-08-21
+
+- **Tipo:** fundação documental de contrato futuro; sem mudança de runtime,
+  banco, contrato executável, permissão ou release surface.
+- **Fonte canônica:** `rpc_analytics_customer_success_kpis_v2()`,
+  `vw_analytics_customer_base`, `analytics_kpi_settings`,
+  `rpc_analytics_kpi_settings()` e `docs/ANALYTICS_KPI_REGISTRY_V1.md`.
+- **Registro:** MRR atual é posição observada, enquanto meta, quota, forecast,
+  atingimento, gap e distribuição continuam não publicados. O documento novo
+  separa período da meta, janela histórica, data de corte e estados de cobertura.
+- **Docs alterados:** `docs/ANALYTICS_MRR_GOALS_FOUNDATION_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas afetadas:** nenhuma.
+- **Views/RPCs afetadas:** nenhuma; somente leitura e reconciliação documental.
+- **Validação:** busca de contratos/migrations/read models, validação
+  documental e `git diff --check` no fechamento do lote.
+- **Riscos restantes:** não existe fonte autorizada para valor de meta ou série
+  temporal de MRR; um próximo lote precisará de decisão e contrato server-side.
+- **Impacto futuro na FAQ:** documentar a origem e a data considerada de cada
+  realizado quando a interface de metodologia for criada.
+
 ## Semântica de conversão comercial — 2026-08-21
 
 - **Tipo:** correção de contrato de métrica, coortes e apresentação; sem release
