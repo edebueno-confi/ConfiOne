@@ -29,6 +29,8 @@ import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDom
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
+import { AnalyticsCommercialComparison } from './AnalyticsCommercialComparison';
+import { resolvePreviousComparablePeriod } from './analytics-commercial-comparison.mjs';
 import { buildCommercialStageQueryPlan, composeCommercialStageView, hasCompatibleAnalyticsStage, selectedAnalyticsPipelineIds } from './analytics-stage-scope.mjs';
 
 // Indicadores com coorte declarada, publicados pelo read model de KPI.
@@ -87,6 +89,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sh
   const [groupCompany, setGroupCompany] = useState(sharedOperation ?? '');
   const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
+  const [previousKpiPayload, setPreviousKpiPayload] = useState<unknown>(null);
+  const [comparisonPhase, setComparisonPhase] = useState<'loading' | 'ready' | 'error' | 'unavailable'>('loading');
   const [subTab, setSubTab] = useState('posicao');
 
   useEffect(() => {
@@ -105,10 +109,28 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sh
   useEffect(() => {
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
+    setKpiPayload(null);
+    setPreviousKpiPayload(null);
 
     void getCommercialKpisV2(filters, groupCompany || null)
       .then((payload) => { if (!cancelled) setKpiPayload(payload); })
       .catch(() => { if (!cancelled) setKpiPayload(null); });
+
+    const previousPeriod = resolvePreviousComparablePeriod(filters);
+    if (!previousPeriod) {
+      setComparisonPhase('unavailable');
+    } else {
+      setComparisonPhase('loading');
+      void getCommercialKpisV2({ ...filters, ...previousPeriod }, groupCompany || null)
+        .then((payload) => {
+          if (cancelled) return;
+          setPreviousKpiPayload(payload);
+          setComparisonPhase('ready');
+        })
+        .catch(() => {
+          if (!cancelled) setComparisonPhase('error');
+        });
+    }
 
     const queryPlan = buildCommercialStageQueryPlan(filters, excludedPipelineIds, groupCompany || null);
     Promise.all([
@@ -175,6 +197,13 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sh
             <>
               <AnalyticsKpiBoard payload={kpiPayload} bands={COMMERCIAL_BANDS} />
               <AnalyticsBoardLimitations payload={kpiPayload} />
+              <AnalyticsCommercialComparison
+                currentPayload={kpiPayload}
+                previousPayload={previousKpiPayload}
+                currentPeriod={filters}
+                previousPeriod={resolvePreviousComparablePeriod(filters)}
+                phase={comparisonPhase}
+              />
             </>
           ) : null}
           {dataState?.status !== 'empty' ? (
