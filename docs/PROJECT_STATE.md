@@ -30,6 +30,17 @@
 - Fonte de continuidade: `docs/ANALYTICS_MRR_GOALS_FOUNDATION_V1.md`. Nenhum
   código, SQL, migration, RPC, UI ou serviço externo foi alterado neste lote.
 
+## Fundação de predição comercial explicável — 2026-08-21
+
+- O backend já publica pipeline ponderado, conversão, ticket e ciclo com
+  semânticas diferentes. Esses sinais descrevem estado atual ou coortes
+  observadas; não são um forecast dedicado.
+- Histórico de transição de etapa, data prevista, probabilidade calibrada e
+  intervalo de confiança não estão publicados. O frontend não deve combinar os
+  sinais localmente para criar uma regra de predição.
+- Fonte de continuidade: `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`. O lote
+  permanece documental até existir contrato server-side e método validado.
+
 ## Protocolo de revisão por agente revisor — 2026-08-19
 
 - O repositório passou a ter um contrato explícito de revisão entre agente implementador e agente revisor em `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho versionada em `.review/`.

@@ -21,6 +21,22 @@
 - **Impacto futuro na FAQ:** documentar a origem e a data considerada de cada
   realizado quando a interface de metodologia for criada.
 
+## Fundação de predição comercial explicável — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  permissão ou release surface.
+- **Fontes canônicas:** `rpc_analytics_commercial_kpis_by_operation`,
+  `rpc_analytics_commercial_kpis_v2`, read models comerciais e
+  `docs/ANALYTICS_KPI_REGISTRY_V1.md`.
+- **Regra:** `weighted_pipeline_amount` é sinal ponderado da posição aberta;
+  conversão, ticket e ciclo são observados na coorte fechada. Não há forecast
+  dedicado, histórico suficiente de transições ou cálculo local permitido.
+- **Docs alterados:** `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas e objetos executáveis:** nenhum.
+- **Riscos restantes:** sem contrato server-side e método validado, data,
+  probabilidade, receita futura e confiança permanecem indisponíveis.
+
 ## Semântica de conversão comercial — 2026-08-21
 
 - **Tipo:** correção de contrato de métrica, coortes e apresentação; sem release

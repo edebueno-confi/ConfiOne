@@ -10,7 +10,7 @@ Criar Predição explicável baseada em dados
 
 ## Estado
 
-READY_FOR_IMPLEMENTATION
+READY_FOR_REVIEW
 
 ## Objetivo
 
