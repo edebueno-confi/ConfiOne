@@ -204,6 +204,12 @@ Ao implementar:
   previamente autorizada na fila. O heartbeat pode executar essa integração sem
   nova autorização conversacional, desde que preserve o escopo e mantenha push,
   merge, deploy e release surface proibidos;
+- trate `APPROVED` em item elegível como ação `FINALIZE_LOCAL`: execute gates
+  finais, valide allowlist e diff, faça stage seletivo, crie commit local
+  exclusivo, registre SHA, arquive o handoff e normalize current/ para `IDLE`;
+- não use `git add .` na finalização. Se houver contaminação que não possa ser
+  separada deterministicamente, preserve o worktree e registre
+  `OWNER_DECISION_REQUIRED`;
 - nunca altere REVIEW.md para remover ou suavizar finding do Claude;
 - nunca autodeclare APPROVED.
 
@@ -212,10 +218,24 @@ Ao entregar para review, `IMPLEMENTATION.md` é o pedido canônico. Rode
 técnico, o JSON em `.review/inbox/<lote>.json` é apenas complemento alinhado ao
 handoff.
 
+### Exceção temporária de agente único
+
+Por decisão explícita do proprietário, Codex pode alternar entre executor e
+revisor enquanto Claude estiver indisponível. O handoff deve registrar
+`Review mode: OWNER_AUTHORIZED_SELF_REVIEW` e `Role: EXECUTOR` ou
+`Role: REVIEWER` em STATUS.md. Em `Role: REVIEWER`, Codex não modifica código,
+migrations, testes de produto, contratos ou configuração executável; apenas lê,
+executa validações não destrutivas e escreve REVIEW.md/STATUS.md. O REVIEW.md
+deve declarar que a revisão foi feita pelo `Codex (Reviewer mode)` e não é
+independente. A auto-revisão pode produzir APPROVED, REQUEST_CHANGES ou BLOCKED
+para continuidade interna, mas não autoriza push, merge, deploy, release
+surface ou escrita remota.
+
 Durante revisão:
 
-- Claude lê código, diff, TASK, IMPLEMENTATION, contratos e evidências;
-- Claude escreve REVIEW.md e STATUS.md, mas não altera código de produto,
+- o reviewer designado em STATUS.md lê código, diff, TASK, IMPLEMENTATION,
+  contratos e evidências;
+- o reviewer escreve REVIEW.md e STATUS.md, mas não altera código de produto,
   migrations, testes de produto, contratos ou configuração executável;
 - resultados válidos são APPROVED, REQUEST_CHANGES e BLOCKED;
 - findings precisam de evidência concreta, requisito, impacto e correção esperada;

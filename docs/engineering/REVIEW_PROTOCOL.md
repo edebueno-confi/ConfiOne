@@ -45,6 +45,25 @@ implementação e mover o estado para `READY_FOR_REVIEW`. Claude atualiza `Owner
 `Codex` ao solicitar correções e para o próximo responsável definido pelo processo
 quando aprovar ou bloquear. `STATUS.md` é a fonte canônica desse campo.
 
+### Modo excepcional de agente único
+
+Por decisão explícita do proprietário, o mesmo agente pode alternar entre os
+papéis de executor e revisor quando Claude estiver temporariamente indisponível.
+Essa exceção é denominada `OWNER_AUTHORIZED_SELF_REVIEW` e deve ser registrada
+em `STATUS.md` com `Role: EXECUTOR` ou `Role: REVIEWER`.
+
+O modo não transforma uma auto-revisão em revisão independente. O `REVIEW.md`
+deve identificar o reviewer como `Codex (Reviewer mode)` e declarar a exceção.
+O agente deve reler TASK, IMPLEMENTATION, diff, contratos e evidências como
+revisor, tratando a própria implementação como não confiável. Durante
+`Role: REVIEWER`, não pode alterar código de produto, migrations, testes de
+produto, contratos ou configuração executável.
+
+O resultado pode ser `APPROVED`, `REQUEST_CHANGES` ou `BLOCKED` para permitir a
+continuidade operacional autorizada pelo proprietário. `APPROVED` nesse modo é
+um aceite interno de continuidade, não uma aprovação independente de Claude e
+não autoriza push, merge, deploy, release surface ou alteração remota.
+
 ## Precedência das fontes
 
 1. especificação explícita da tarefa;
@@ -67,32 +86,51 @@ conflito e não escolhe silenciosamente.
 Os estados permitidos são:
 
 IDLE, READY_FOR_IMPLEMENTATION, IMPLEMENTING, READY_FOR_REVIEW, REVIEWING,
-CHANGES_REQUESTED, FIXING, APPROVED, BLOCKED, DONE.
+CHANGES_REQUESTED, FIXING, VALIDATING, APPROVED, FINALIZING_LOCAL,
+COMPLETED, BLOCKED, DONE.
 
 Fluxo normal:
 
 READY_FOR_IMPLEMENTATION -> Codex
-IMPLEMENTING -> Codex trabalha e valida
+IMPLEMENTING -> Codex trabalha
+VALIDATING -> Codex executa os gates finais aplicáveis
 READY_FOR_REVIEW -> Codex preenche IMPLEMENTATION.md
 REVIEWING -> Claude lê TASK, IMPLEMENTATION, diff e evidências
-APPROVED -> tarefa pode seguir o processo de merge/release autorizado
+APPROVED -> ação automática FINALIZE_LOCAL para lote elegível
+FINALIZING_LOCAL -> Codex verifica escopo, cria checkpoint local e arquiva
+COMPLETED -> checkpoint local registrado; normalizar current/ para IDLE
 REQUEST_CHANGES -> CHANGES_REQUESTED -> Codex corrige findings
 CHANGES_REQUESTED -> FIXING -> READY_FOR_REVIEW
 BLOCKED -> intervenção do proprietário
 APPROVED -> DONE somente após o processo de integração aplicável
 
+Para um lote com `Approval = APPROVED` na fila, o heartbeat deve tratar
+`APPROVED` como a ação `FINALIZE_LOCAL`, sem aguardar nova intervenção humana:
+
+`IMPLEMENTING -> VALIDATING -> APPROVED -> FINALIZING_LOCAL -> COMPLETED -> IDLE`
+
+Durante `FINALIZING_LOCAL`, o Codex relê TASK, IMPLEMENTATION e REVIEW, confirma
+o veredito APPROVED, executa os gates finais e `git diff --check`, verifica a
+allowlist do lote contra o diff, faz stage somente dos caminhos pertencentes ao
+lote, cria um commit local exclusivo, registra o SHA nos artefatos de conclusão,
+arquiva o handoff e normaliza `handoffs/current/` para `IDLE`. Só depois disso
+promove a próxima tarefa elegível da fila. Se a separação determinística falhar,
+preserva todo o worktree e registra `OWNER_DECISION_REQUIRED`.
+
 Após `APPROVED`, uma tarefa previamente autorizada na fila possui autorização
-persistente para checkpoint local. O Codex pode criar o commit local exclusivo
-do lote, arquivar o handoff e promover o próximo item elegível sem nova
-autorização conversacional. Essa autorização não inclui push, force push, merge,
-deploy, migration remota, alteração de secrets ou alteração da release surface.
-Se o escopo do commit não puder ser separado com segurança das alterações
-preexistentes, o Codex deve parar e registrar `OWNER_DECISION_REQUIRED`.
+persistente para o ciclo `FINALIZE_LOCAL`. O Codex pode criar o commit local
+exclusivo do lote, arquivar o handoff e promover o próximo item elegível sem nova
+autorização conversacional. Essa autorização não inclui `git add .`, push, force
+push, merge, pull request, deploy, migration remota, alteração de secrets,
+produção ou alteração da release surface. Se o escopo do commit não puder ser
+separado com segurança das alterações preexistentes, o Codex deve parar e
+registrar `OWNER_DECISION_REQUIRED`.
 
 Em `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
 Owner esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, o Owner esperado é
-Claude. A transição deve ser registrada em `STATUS.md` pelo agente que entrega o
-próximo passo.
+Claude, salvo `OWNER_AUTHORIZED_SELF_REVIEW`, quando o Owner permanece Codex e
+`Role: REVIEWER`. A transição deve ser registrada em `STATUS.md` pelo agente
+que entrega o próximo passo.
 
 Nenhum agente deve editar código do produto enquanto o outro estiver em
 IMPLEMENTING, FIXING ou REVIEWING na mesma working tree. Worktrees paralelos
