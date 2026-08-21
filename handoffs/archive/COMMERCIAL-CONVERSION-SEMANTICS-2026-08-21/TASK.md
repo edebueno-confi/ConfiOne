@@ -1,7 +1,5 @@
 # Task
 
-Não há task ativa. `current/` está normalizado em `IDLE`.
-
 ## Task ID
 
 COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21

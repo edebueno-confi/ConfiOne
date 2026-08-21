@@ -1,5 +1,27 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Semântica de conversão comercial — 2026-08-21
+
+- **Tipo:** correção de contrato de métrica, coortes e apresentação; sem release
+  surface, integração externa ou migration remota.
+- **Fonte canônica:** `rpc_analytics_commercial_kpis_v2`,
+  `rpc_analytics_commercial_snapshot`, `vw_analytics_commercial_kpis` e
+  `rpc_analytics_ceo_snapshot_legacy`, além de
+  `docs/ANALYTICS_METRIC_CATALOG_V1.md`.
+- **Regra:** ganhos divididos por negócios fechados na mesma coorte de
+  `hs_closed_at`, em pontos percentuais de 0 a 100. Negócios criados, posição
+  aberta, reabertos e fechados sem data não entram silenciosamente no
+  denominador.
+- **Arquivos técnicos:** migration
+  `supabase/migrations/20260821150000_analytics_commercial_conversion_semantics_v1.sql`,
+  teste `supabase/tests/123_analytics_conversion_semantics.sql`, mapeadores e
+  exportação do Analytics.
+- **Validação:** pgTAP focado 83/83 e suíte completa 1920/1920; typecheck web
+  e contratos, build web e lint passaram; `review:gates` teve 0 regressões;
+  `docs:validate` teve 0 bloqueios; `git diff --check` passou. A suíte Node
+  ampla ficou em 576/577 por um teste de governança preexistente que ainda não
+  aceita o nome operacional Forge.
+
 ## Handoff multiagente — reconciliação do protocolo — 2026-08-20
 
 - **Tipo:** governança de engenharia e reconciliação documental; nenhuma mudança de produto, banco, contrato, permissão ou release surface.
@@ -11,6 +33,20 @@
 - **Telas afetadas:** nenhuma.
 - **Views/RPCs afetadas:** nenhuma.
 - **Impacto futuro na FAQ:** nenhum.
+
+## Handoff de migração Genius e After Sale V1 → V2 — 2026-08-20
+
+- **Tipo:** documentação operacional e handoff de conhecimento; nenhuma mudança de produto, banco, contrato, permissão, integração externa ou release surface.
+- **Fonte canônica:** `docs/AFTER_SALE_V1_V2_GENIUS_MIGRATION_HANDOFF.md`, complementada pelo pacote `handoffs/after-sale-migration-claude/` e pelo contrato `docs/CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`.
+- **Conteúdo:** separação entre After Sale V1 → V2 e Genius → V2; precedência de evidências; controle de cliente, loja e origem; de-para de motivos, status, e-mails, integrações e lojas; critérios de validação; mapa de fontes para leitura pelo Cloud.
+- **Decisão registrada:** Genius é uma origem distinta. Não herdar automaticamente o mapa de Melissa, Melissa App ou outro cliente. A primeira frente Genius exige aula humana, descoberta somente leitura, Central de Ajuda Genius fornecida pelo responsável e de-para próprio por cliente.
+- **Segurança:** não registrar secrets; não alterar origem, Boss ou código durante descoberta; não considerar defaults da V2 ou liberação do Boss como prova de uso; nenhuma escrita externa foi executada.
+- **Docs alterados:** `docs/AFTER_SALE_V1_V2_GENIUS_MIGRATION_HANDOFF.md`, `docs/README.md`, `handoffs/after-sale-migration-claude/README.md`, este ledger.
+- **Telas afetadas:** nenhuma.
+- **Views/RPCs afetadas:** nenhuma.
+- **Validação:** revisão de fontes locais, `git diff --check` e verificação de links relativos do novo documento; nenhuma validação de painel externo ou integração real.
+- **Riscos restantes:** URL e acesso à Central Genius ainda ausentes; valores históricos exigem reextração ao vivo; o executor externo não está implementado no ConfiOne; o worktree contém alterações preexistentes não relacionadas.
+- **Impacto futuro na FAQ:** o novo documento pode ser usado como ponto de entrada para treinamento e handoff, mas não como prova de configuração de cliente.
 
 ## Code Review Protocol V1 — infraestrutura de revisão por agente — 2026-08-19
 

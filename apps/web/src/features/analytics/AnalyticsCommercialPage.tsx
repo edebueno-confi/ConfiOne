@@ -3,6 +3,7 @@ import { MinimalState } from '../../components/minimal-states';
 import { getCommercialKpisV2, getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
 import {
   formatCurrencyBRL,
+  formatCommercialWinRate,
   type CommercialByOwner,
   type CommercialFunnelStage,
   type CommercialKpis,
@@ -294,7 +295,7 @@ function formatCommercialCloseDate(value: string): string {
 }
 
 function formatOwnerRate(value: number | null): string {
-  return value === null ? 'Indisponível' : `${Math.round(value * 100).toLocaleString('pt-BR')}%`;
+  return formatCommercialWinRate(value);
 }
 
 function applyConfiguredPipelineLabels(snapshot: CommercialSnapshot, configs: AnalyticsSourceConfig[]): CommercialSnapshot {

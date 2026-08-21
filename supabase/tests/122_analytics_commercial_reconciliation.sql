@@ -71,8 +71,8 @@ select is(
     '2100-01-01', '2100-01-31', null, null,
     (select coalesce(array_agg(hubspot_pipeline_id), '{}'::text[]) from public.analytics_source_config where object_type = 'deal' and is_active and hubspot_pipeline_id <> 'commercial-reconciliation-fixture')
   ) -> 'kpis' ->> 'conversion_rate')::numeric,
-  '0.5',
-  'conversion_rate tem denominador explicito de fechados no periodo'
+  '50',
+  'conversion_rate e percentual de ganhos sobre fechados no periodo'
 );
 
 select is(

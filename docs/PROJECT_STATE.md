@@ -3,6 +3,18 @@
 ## Handoff multiagente — reconciliação do protocolo — 2026-08-20
 
 - `handoffs/current/IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md` são a interface canônica do ciclo entre Codex e Claude. `.review/` permanece complemento técnico opcional; `.review/state.json` contém somente metadados de automação.
+
+## Semântica de conversão comercial — 2026-08-21
+
+- `rpc_analytics_commercial_kpis_v2`, `rpc_analytics_commercial_snapshot` e a
+  view legada de KPIs comerciais publicam a conversão em pontos percentuais
+  (0 a 100), com ganhos sobre negócios fechados no período.
+- Denominador zero, datas de fechamento ausentes, negócios reabertos e entradas
+  aritmeticamente inválidas não produzem zero ou percentual impossível; o valor
+  fica nulo/indisponível. A regra está coberta pelo teste pgTAP 123.
+- O frontend converte a unidade somente na fronteira de apresentação legada;
+  a tabela por responsável renderiza diretamente os pontos percentuais do read
+  model para evitar multiplicação dupla.
 - A escala corrente de findings é `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` e `INFO`, com mapa de compatibilidade para os termos históricos `BLOCKER`, `MAJOR`, `MINOR` e `NIT`.
 - Os vereditos correntes são `APPROVED`, `REQUEST_CHANGES` e `BLOCKED`. D-01 classifica o trabalho de produto preexistente como `BASELINE_LEGACY / PREEXISTING_WORK`, fora da máquina de estados de uma TASK retroativa. D-02 estabelece `IMPLEMENTED != RELEASE_AUTHORIZED`: `/inicio`, `/admin/tenants` e mudanças de landing/release surface exigem TASK e autorização explícita próprias.
 

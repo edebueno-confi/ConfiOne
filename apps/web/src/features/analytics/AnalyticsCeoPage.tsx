@@ -240,13 +240,17 @@ export function AnalyticsCeoPage({
             history.previous.commercial.wonDeals,
             "count",
           ),
-          conversion: buildPercentagePointDelta(
-            data.commercial.conversionRate,
-            history.previous.commercial.conversionRate,
-            data.commercial.wonDeals + data.commercial.lostDeals,
-            history.previous.commercial.wonDeals +
-              history.previous.commercial.lostDeals,
-          ),
+          conversion:
+            data.commercial.conversionRate === null ||
+            history.previous.commercial.conversionRate === null
+              ? null
+              : buildPercentagePointDelta(
+                  data.commercial.conversionRate,
+                  history.previous.commercial.conversionRate,
+                  data.commercial.wonDeals + data.commercial.lostDeals,
+                  history.previous.commercial.wonDeals +
+                    history.previous.commercial.lostDeals,
+                ),
           tickets: buildDelta(
             data.support.createdTickets,
             history.previous.support.createdTickets,
@@ -330,6 +334,7 @@ function maskUnscopedOperationKpis(payload: unknown): unknown {
 }
 
 function applyOperationScope(data: CeoSnapshot, scoped: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot }): CeoSnapshot {
+  const scopedWinRate = publishedKpiValue(scoped.commercial, 'win_rate');
   const commercial = {
     ...data.commercial,
     openPipelineValue: publishedKpiValue(scoped.commercial, 'open_pipeline_amount') ?? data.commercial.openPipelineValue,
@@ -337,7 +342,9 @@ function applyOperationScope(data: CeoSnapshot, scoped: { commercial: unknown; s
     wonDeals: publishedKpiValue(scoped.commercial, 'won_deals') ?? data.commercial.wonDeals,
     lostDeals: publishedKpiValue(scoped.commercial, 'lost_deals') ?? data.commercial.lostDeals,
     wonRevenue: publishedKpiValue(scoped.commercial, 'won_amount') ?? data.commercial.wonRevenue,
-    conversionRate: publishedKpiValue(scoped.commercial, 'win_rate') ?? data.commercial.conversionRate,
+    conversionRate: scopedWinRate === null
+      ? data.commercial.conversionRate
+      : scopedWinRate / 100,
   };
   const support = {
     ...data.support,
@@ -629,6 +636,7 @@ function ExecutiveHdCanvas({
             label="Conversão"
             value={
               unavailable ||
+              data.commercial.conversionRate === null ||
               data.commercial.wonDeals + data.commercial.lostDeals === 0
                 ? "Indisponível"
                 : formatPercent(data.commercial.conversionRate)

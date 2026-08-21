@@ -1,5 +1,6 @@
 import {
   formatCurrencyBRL,
+  formatCommercialConversionRate,
   formatPercent,
   type CeoSnapshot,
   type CommercialSnapshot,
@@ -64,11 +65,11 @@ function reportSections(data: AnalyticsReportData) {
     const c = data.ceo.commercial;
     const f = data.ceo.finance;
     const s = data.ceo.support;
-    sections.push(`<section><h2>Visão executiva</h2><div class="grid"><div><b>Receita ganha</b><strong>${escapeHtml(formatCurrencyBRL(c.wonRevenue))}</strong></div><div><b>Conversão</b><strong>${escapeHtml(formatPercent(c.conversionRate))}</strong></div><div><b>Saldo vencido</b><strong>${escapeHtml(formatCurrencyBRL(f.overdueBalance))}</strong></div><div><b>Tickets abertos</b><strong>${s.openTickets.toLocaleString('pt-BR')}</strong></div></div></section>`);
+    sections.push(`<section><h2>Visão executiva</h2><div class="grid"><div><b>Receita ganha</b><strong>${escapeHtml(formatCurrencyBRL(c.wonRevenue))}</strong></div><div><b>Conversão</b><strong>${escapeHtml(formatCommercialConversionRate(c.conversionRate))}</strong></div><div><b>Saldo vencido</b><strong>${escapeHtml(formatCurrencyBRL(f.overdueBalance))}</strong></div><div><b>Tickets abertos</b><strong>${s.openTickets.toLocaleString('pt-BR')}</strong></div></div></section>`);
   }
   if (data.selected.includes('commercial') && data.commercial) {
     const k = data.commercial.kpis;
-    sections.push(`<section><h2>Comercial</h2><div class="grid"><div><b>Deals totais</b><strong>${k.totalDeals.toLocaleString('pt-BR')}</strong></div><div><b>Deals abertos</b><strong>${k.openDeals.toLocaleString('pt-BR')}</strong></div><div><b>Receita ganha</b><strong>${escapeHtml(formatCurrencyBRL(k.wonRevenue))}</strong></div><div><b>Conversão</b><strong>${escapeHtml(formatPercent(k.conversionRate))}</strong></div><div><b>Ticket médio</b><strong>${escapeHtml(formatCurrencyBRL(k.avgTicket))}</strong></div></div></section>`);
+    sections.push(`<section><h2>Comercial</h2><div class="grid"><div><b>Deals totais</b><strong>${k.totalDeals.toLocaleString('pt-BR')}</strong></div><div><b>Deals abertos</b><strong>${k.openDeals.toLocaleString('pt-BR')}</strong></div><div><b>Receita ganha</b><strong>${escapeHtml(formatCurrencyBRL(k.wonRevenue))}</strong></div><div><b>Conversão</b><strong>${escapeHtml(formatCommercialConversionRate(k.conversionRate))}</strong></div><div><b>Ticket médio</b><strong>${escapeHtml(formatCurrencyBRL(k.avgTicket))}</strong></div></div></section>`);
   }
   if (data.selected.includes('cs') && data.cs) {
     const k = data.cs.kpis;
@@ -109,8 +110,8 @@ export function printAnalyticsReport(data: AnalyticsReportData) {
 
 function reportLines(data: AnalyticsReportData) {
   const lines = [`Genius Support OS - Relatorio Gerencial`, `Periodo: ${periodLabel(data)}`, ''];
-  if (data.selected.includes('ceo') && data.ceo) lines.push('VISÃO EXECUTIVA', `Receita ganha: ${formatCurrencyBRL(data.ceo.commercial.wonRevenue)}`, `Conversão: ${formatPercent(data.ceo.commercial.conversionRate)}`, `Saldo vencido: ${formatCurrencyBRL(data.ceo.finance.overdueBalance)}`, '');
-  if (data.selected.includes('commercial') && data.commercial) lines.push('COMERCIAL', `Deals: ${data.commercial.kpis.totalDeals}`, `Receita ganha: ${formatCurrencyBRL(data.commercial.kpis.wonRevenue)}`, `Conversão: ${formatPercent(data.commercial.kpis.conversionRate)}`, '');
+  if (data.selected.includes('ceo') && data.ceo) lines.push('VISÃO EXECUTIVA', `Receita ganha: ${formatCurrencyBRL(data.ceo.commercial.wonRevenue)}`, `Conversão: ${formatCommercialConversionRate(data.ceo.commercial.conversionRate)}`, `Saldo vencido: ${formatCurrencyBRL(data.ceo.finance.overdueBalance)}`, '');
+  if (data.selected.includes('commercial') && data.commercial) lines.push('COMERCIAL', `Deals: ${data.commercial.kpis.totalDeals}`, `Receita ganha: ${formatCurrencyBRL(data.commercial.kpis.wonRevenue)}`, `Conversão: ${formatCommercialConversionRate(data.commercial.kpis.conversionRate)}`, '');
   if (data.selected.includes('cs') && data.cs) lines.push('CS / SUPORTE', `Tickets: ${data.cs.kpis.totalTickets}`, `Abertos: ${data.cs.kpis.openTickets}`, `Encerrados: ${data.cs.kpis.closedTickets}`, '');
   if (data.selected.includes('finance') && data.finance) lines.push('FINANCEIRO', `Titulos: ${data.finance.kpis.totalTitles}`, `Saldo aberto: ${formatCurrencyBRL(data.finance.kpis.balance)}`, `Saldo vencido: ${formatCurrencyBRL(data.finance.kpis.overdueBalance)}`);
   return lines;

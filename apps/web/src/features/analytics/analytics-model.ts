@@ -28,7 +28,8 @@ export interface CommercialKpis {
   wonDeals: number;
   lostDeals: number;
   wonRevenue: number;
-  conversionRate: number;
+  /** Fração local para formatPercent; a API entrega pontos percentuais (0 a 100). */
+  conversionRate: number | null;
   avgTicket: number;
 }
 
@@ -419,7 +420,7 @@ export interface OmieSyncRun {
 }
 
 export interface CeoSnapshot {
-  commercial: { totalDeals: number; openDeals: number; wonDeals: number; lostDeals: number; openPipelineValue: number; wonRevenue: number; conversionRate: number; avgTicket: number; avgSalesCycleDays: number; unassignedDeals: number };
+  commercial: { totalDeals: number; openDeals: number; wonDeals: number; lostDeals: number; openPipelineValue: number; wonRevenue: number; conversionRate: number | null; avgTicket: number; avgSalesCycleDays: number; unassignedDeals: number };
   customerSuccess: { activeCustomers: number; assignedCustomers: number; customersWithoutOwner: number; healthAvailable: number; riskCustomers: number; source: string; state: AnalyticsBlockState };
   support: { totalTickets: number; createdTickets: number; openTickets: number; closedTickets: number; closedRate: number; highPriorityOpen: number; firstResponseSlaTracked: number; closeSlaTracked: number; sourceFilled: number; bySource: CsSourcePoint[]; byPipeline: CsPipelinePoint[]; byOwner: CsOwnerPoint[]; latestTicketCreatedAt: string | null };
   finance: { titles: number; netAmount: number; balance: number; overdueTitles: number; overdueBalance: number; matchedTitles: number; unmatchedTitles: number };
@@ -581,6 +582,9 @@ export interface AnalyticsSharedPeriod {
 export interface AnalyticsPageProps {
   sharedPeriod?: AnalyticsSharedPeriod;
   onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
+  /** Recorte de operação compartilhado entre todas as abas do Dashboard. */
+  sharedOperation?: string;
+  onSharedOperationChange?: (operation: string) => void;
   onRetry?: () => void;
   isDashboardViewer?: boolean;
   sourceStatus?: AnalyticsSourceStatusPayload;
@@ -595,7 +599,7 @@ export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {
   wonDeals: 0,
   lostDeals: 0,
   wonRevenue: 0,
-  conversionRate: 0,
+  conversionRate: null,
   avgTicket: 0,
 };
 
@@ -748,8 +752,9 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
   const financialAlerts = Array.isArray(data.financial_alerts) ? data.financial_alerts : [];
   const quality = section('data_quality');
   const received = toNumber(c.total_deals) + toNumber(s.total_tickets) + toNumber(f.titles);
+  const conversionRate = toNullableNumber(c.conversion_rate);
   return {
-    commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: toNumber(c.conversion_rate), avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
+    commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: conversionRate === null ? null : conversionRate / 100, avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
     customerSuccess: {
       activeCustomers: toNumber(cs.active_customers),
       assignedCustomers: toNumber(cs.assigned_customers),
@@ -924,13 +929,14 @@ function mapFinanceBreakdown(row: Record<string, unknown>, key: string): Finance
 
 export function mapCommercialKpis(row: Record<string, unknown> | null): CommercialKpis {
   if (!row) return EMPTY_COMMERCIAL_KPIS;
+  const conversionRate = toNullableNumber(row.conversion_rate);
   return {
     totalDeals: toNumber(row.total_deals),
     openDeals: toNumber(row.open_deals),
     wonDeals: toNumber(row.won_deals),
     lostDeals: toNumber(row.lost_deals),
     wonRevenue: toNumber(row.won_revenue),
-    conversionRate: toNumber(row.conversion_rate),
+    conversionRate: conversionRate === null ? null : conversionRate / 100,
     avgTicket: toNumber(row.avg_ticket),
   };
 }
@@ -1090,6 +1096,17 @@ export function formatPercent(ratio: number): string {
     style: 'percent',
     maximumFractionDigits: 1,
   }).format(ratio);
+}
+
+export function formatCommercialConversionRate(value: number | null): string {
+  return value === null ? 'Indisponível' : formatPercent(value);
+}
+
+/** O read model de KPI entrega win_rate em pontos percentuais, não em fração. */
+export function formatCommercialWinRate(value: number | null): string {
+  return value === null
+    ? 'Indisponível'
+    : `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
 }
 
 export function formatMonthLabel(monthStart: string): string {

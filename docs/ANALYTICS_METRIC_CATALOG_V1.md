@@ -95,7 +95,7 @@ idempotentes por planilha/aba/linha. O teste está em
 | Deals ganhos | `won_deals` | Deals em estágio marcado `is_won` | deal | disponível após stages |
 | Deals perdidos | `lost_deals` | Deals fechados e não ganhos | deal | disponível após stages |
 | Receita ganha | `won_revenue` | Soma de `amount_in_home_currency` nos ganhos | deal | depende de valor/currency confiável |
-| Conversão | `conversion_rate` | Ganhos / deals fechados | deal fechado | disponível; equivalente a ganho/(ganho+perdido) se estados forem completos |
+| Conversão | `conversion_rate` / `win_rate` | Ganhos / negócios fechados na mesma coorte | deal fechado | percentual de 0 a 100; nulo/indisponível sem denominador |
 | Ticket médio | `avg_ticket` | Receita ganha / deals ganhos | deal ganho | disponível; não é média de todos os deals |
 | Funil por estágio | `vw_analytics_commercial_funnel` | Contagem e receita por estágio, inclusive estágio vazio | estágio | disponível após stages |
 | Deals por responsável | `vw_analytics_commercial_by_owner` | Deals, ganhos e receita por `owner_id` resolvido | owner | disponível; owner ausente vira “Sem responsável” |
@@ -104,6 +104,13 @@ idempotentes por planilha/aba/linha. O teste está em
 ### Caveats comerciais
 
 - A view atual usa o pipeline ativo configurado em `analytics_source_config`.
+- Conversão é calculada como `ganhos / (ganhos + perdidos)` sobre negócios com
+  estágio fechado e `hs_closed_at` dentro do período, publicada em pontos
+  percentuais (0 a 100). O read model `win_rate` e o snapshot
+  `conversion_rate` usam essa mesma coorte e unidade.
+- Negócio reaberto é posição aberta e não entra no denominador. Negócio fechado
+  sem `hs_closed_at` não pode ser atribuído ao período e fica fora da coorte.
+  Sem fechamentos, o valor é nulo/indisponível, nunca zero artificial.
 - No snapshot filtrado, `total_deals` usa a coorte de `created_at`,
   `open_deals` representa a posição atual pelo estágio, e ganhos/perdidos,
   receita e conversão usam a coorte de `closed_at`. Esses números não devem
