@@ -6,7 +6,7 @@ Owner: Codex
 Role: EXECUTOR
 Review mode: CLAUDE_REQUIRED
 Base SHA: bdc1ea6404928e1ca4e8c7ccf9213d6a3090b6f9
-Current SHA: 4219a0c7baf0b6cdbd4ff59494076acb3212bb3c
+Current SHA: 4219a0cd26a70c74fb11e5bcaea11db16b4ae14c
 Last reviewer: Claude
 Last review: 2026-08-21 — APPROVED, ciclo 2; DOS-F01 resolvido
 Updated at: 2026-08-21
@@ -41,5 +41,5 @@ Updated at: 2026-08-21
   `DATA-PIPELINE-STAGE-SCOPE-2026-08-21`.
 - A aprovação não autoriza push, merge, pull request, deploy nem release
   surface, conforme `OD-001`.
-- Checkpoint local exclusivo: `4219a0c7baf0b6cdbd4ff59494076acb3212bb3c`.
+- Checkpoint local exclusivo: `4219a0cd26a70c74fb11e5bcaea11db16b4ae14c`.
 - Nenhuma alteração preexistente fora da allowlist foi incluída.
