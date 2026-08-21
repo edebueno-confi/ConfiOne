@@ -10,12 +10,13 @@ Forge (Codex)
 
 ## Estado do handoff
 
-READY_FOR_REVIEW. Correção do F-STAGE-001 implementada e validada; lote reenviado ao Sentinel.
+COMPLETED. Correção do F-STAGE-001 aprovada pelo Sentinel e integrada localmente.
 
 ## Base e SHAs
 
 - Base SHA: `63efe05f566dd63a2a74e7d4089abf14fa381373`.
-- Implementation SHA: `UNCOMMITTED_WORKTREE`.
+- Implementation SHA: `19648adf0fda2b82fe7481bba7c98651084b5d8a`.
+- Integration commit: `19648adf0fda2b82fe7481bba7c98651084b5d8a`.
 - Branch: `main`.
 
 ## Investigação e decisão
