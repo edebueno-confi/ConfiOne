@@ -31,23 +31,36 @@ nem tratados como estado corrente sem leitura e classificação.
 1. O proprietário ou Codex preenche current/TASK.md.
 2. STATUS.md passa a READY_FOR_IMPLEMENTATION.
 3. Codex muda para IMPLEMENTING, executa o lote e atualiza IMPLEMENTATION.md.
-4. Codex executa as validações reais e muda para READY_FOR_REVIEW.
+4. Codex executa as validações reais e muda para READY_FOR_REVIEW. Quando o
+   lote já estiver autorizado para auto-revisão, pode usar `VALIDATING` para
+   registrar os gates finais antes do veredito.
 5. Claude lê TASK, IMPLEMENTATION, diff, contratos e evidências, muda para
-   REVIEWING e escreve REVIEW.md.
-6. Claude registra APPROVED, REQUEST_CHANGES ou BLOCKED.
+   REVIEWING e escreve REVIEW.md. Se o proprietário tiver ativado
+   `OWNER_AUTHORIZED_SELF_REVIEW`, Codex assume `Role: REVIEWER` em uma rodada
+   separada e registra essa limitação no REVIEW.md.
+6. O reviewer designado em STATUS.md registra APPROVED, REQUEST_CHANGES ou
+   BLOCKED.
 7. REQUEST_CHANGES devolve o lote a Codex, que usa findings válidos e muda para
    FIXING.
 8. Depois da correção, Codex atualiza IMPLEMENTATION, preserva REVIEW histórico
    dentro do ciclo e retorna a READY_FOR_REVIEW.
-9. Somente APPROVED permite seguir para merge ou release conforme autorização
-   humana. DONE é usado após o processo de integração aplicável.
+9. Em lote com `Approval = APPROVED`, `APPROVED` aciona automaticamente
+   `FINALIZE_LOCAL`: validar escopo e gates, criar commit local exclusivo,
+   registrar SHA, arquivar o handoff e normalizar current/ para `IDLE`.
+10. O fluxo operacional completo é `IMPLEMENTING -> VALIDATING -> APPROVED ->
+    FINALIZING_LOCAL -> COMPLETED -> IDLE -> próxima tarefa elegível`.
+11. Push, merge, pull request, deploy, migration remota, produção, secrets e
+    release surface continuam bloqueados. `DONE` permanece como classificação
+    da fila após o checkpoint local concluído.
 
-Para lotes previamente autorizados na fila, `APPROVED` também autoriza o Codex
-a criar o checkpoint Git local exclusivo do lote, arquivar o handoff e promover
-o próximo item elegível sem nova autorização conversacional. Essa autorização
-não inclui push, force push, merge, deploy, migration remota, alteração de
-secrets ou release surface. Se alterações preexistentes não puderem ser
-separadas com segurança, registrar `OWNER_DECISION_REQUIRED` e interromper.
+Para lotes previamente autorizados na fila, `APPROVED` autoriza o Codex a
+executar `FINALIZE_LOCAL`, criar o checkpoint Git local exclusivo do lote,
+arquivar o handoff e promover o próximo item elegível sem nova autorização
+conversacional. O stage deve ser seletivo e baseado na allowlist do lote. Essa
+autorização não inclui push, force push, merge, pull request, deploy, migration
+remota, alteração de secrets ou release surface. Se alterações preexistentes
+não puderem ser separadas com segurança, registrar `OWNER_DECISION_REQUIRED` e
+interromper.
 
 ## Fila canônica de trabalho — 2026-08-20
 
@@ -67,7 +80,7 @@ PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
 | 3 | R-03 | ConfiOne | Feedback de erro no Support Workspace | P1 | DONE | APPROVED | R-01 / R01-B | Owner queue 2026-08-20 | Falhas auxiliares visíveis; integrado em `1ea22b2`. |
 | 4 | DEV-CONTROL-MVP | ConfiOne / Engineering | Development Control Plane MVP read-only | P0 | DONE | APPROVED | R-03 | Owner request 2026-08-20 | Aprovado no ciclo 5; handoff arquivado para integração aplicável. |
 | 5 | R-11 | ConfiOne | Scripts npm que apontam para arquivos inexistentes | P1 | DONE | APPROVED | DEV-CONTROL-MVP | Owner queue 2026-08-20 | Aprovado no ciclo 2 e integrado em checkpoint local; handoff arquivado. |
-| 6 | R-14 | ConfiOne | Deny-all intencional para tabelas RLS sem policy | P1 | ACTIVE | APPROVED | R-11 | Owner queue 2026-08-20 | Lote aberto após integração do R-11; formalizar intenção sem enfraquecer isolamento. |
+| 6 | R-14 | ConfiOne | Deny-all intencional para tabelas RLS sem policy | P1 | DONE | APPROVED | R-11 | Owner queue 2026-08-20 | APPROVED; checkpoint local exclusivo `6eec6d7` e arquivamento executados por FINALIZE_LOCAL. |
 
 Regras da fila:
 
@@ -86,16 +99,34 @@ Regras da fila:
   a fila e exigem retorno ao proprietário;
 - push, merge e deploy permanecem fora da autorização desta fila.
 - commit local de lote `APPROVED` e previamente autorizado na fila não exige
-  nova autorização conversacional, desde que seja exclusivo e verificável.
+  nova autorização conversacional, desde que seja exclusivo e verificável;
+  `FINALIZE_LOCAL` não pode usar `git add .`.
 
 `Owner` identifica o agente responsável pelo próximo passo do estado atual. Em
 `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
-responsável esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, é Claude.
+responsável esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, é Claude,
+salvo `OWNER_AUTHORIZED_SELF_REVIEW`, quando Codex assume `Role: REVIEWER`.
+
+## Exceção temporária de agente único
+
+Quando autorizada explicitamente pelo proprietário, a ausência temporária do
+Claude pode ser coberta pelo mesmo Codex em rodadas alternadas:
+
+- `Role: EXECUTOR`: Codex implementa, testa e escreve IMPLEMENTATION.md;
+- `Role: REVIEWER`: Codex não altera código executável e revisa o lote contra
+  TASK, diff, contratos e evidências;
+- `Review mode: OWNER_AUTHORIZED_SELF_REVIEW` deve constar em STATUS.md;
+- o REVIEW.md deve identificar que a revisão não é independente;
+- a exceção não autoriza push, merge, deploy, release surface ou escrita remota.
+
+O próximo passo só pode ser executado pelo papel indicado em STATUS.md. A
+alternância permanece ativa até decisão contrária do proprietário e não cria
+um segundo sistema de fila.
 
 ## Concorrência
 
 Não editar código do produto simultaneamente na mesma working tree. Durante
-REVIEWING, Claude somente lê o produto e escreve artefatos de revisão. Durante
+REVIEWING, o reviewer designado somente lê o produto e escreve artefatos de revisão. Durante
 IMPLEMENTING ou FIXING, Codex é o único agente autorizado a alterar produto.
 
 ## Relação com .review
