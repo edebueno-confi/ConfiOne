@@ -1,83 +1,49 @@
-# Task
+# TASK: FINANCE-DOMAIN-AUDIT-2026-08-21
 
-## Task ID
+## Estado de abertura
 
-SUPPORT-DOMAIN-AUDIT-2026-08-21
-
-## Título
-
-Auditar fila, SLA, aging, prioridade e operação
-
-## Estado
-
-READY_FOR_REVIEW
+- State: READY_FOR_IMPLEMENTATION
+- Owner: Forge
+- Role: EXECUTOR
+- Reviewer active: Sentinel
+- Review mode: SENTINEL_REQUIRED
+- Approval: APPROVED
+- Base SHA: `55c097e18016ecdcf8d561a8b46980f771e6acf2`
+- Current SHA: `55c097e18016ecdcf8d561a8b46980f771e6acf2`
 
 ## Objetivo
 
-Auditar, com evidência local, as fontes e os contratos existentes para fila de
-suporte, tickets, conversas, chat, SLA, aging, prioridade e operação. O lote
-deve separar objetos e semânticas distintas e deixar explícito quando uma
-capacidade não possui contrato canônico.
+Auditar e documentar a semântica do domínio Financeiro no ConfiOne, com foco em
+recebido, a receber, vencido e aging. O documento deve distinguir posição
+atual, histórico, metas e ausência de dados, deixando explícitos fonte,
+proveniência, tenant, datas consideradas, timezone, frescor e permissões.
 
-## Escopo
+## Escopo autorizado
 
-- localizar tabelas, views, RPCs, contratos, read models, componentes e
-  documentos vigentes relacionados a suporte;
-- confirmar campos, filtros temporais, `created_at`, `closed_at`,
-  `updated_at`, tenant, permissões, proveniência, frescor e estados de
-  ausência;
-- distinguir tickets, conversas, chat, reuniões e atividades quando as fontes
-  reais não forem equivalentes;
-- auditar SLA, aging, prioridade, status, fila, responsável e associações sem
-  transformar ausência de dado em zero;
-- separar fato observado, hipótese, lacuna e proposta do menor lote seguinte;
-- materializar somente documentação e handoff quando não houver fonte
-  publicável suficiente.
+1. Criar `docs/ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md`.
+2. Atualizar, somente se necessário para refletir esta auditoria,
+   `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+3. Atualizar os quatro artefatos deste handoff e a linha correspondente da
+   fila em `handoffs/README.md`.
+4. Auditar contratos, especificações e código local para registrar fatos,
+   hipóteses, limitações, estados de ausência e o menor próximo lote.
 
 ## Fora de escopo
 
-- criar cálculo local de SLA, aging, prioridade ou produtividade sem contrato;
-- criar UI, dashboard, alerta, mutation ou contrato backend sem evidência;
-- alterar migrations, RPCs, views, RLS, integrações, secrets ou release;
-- executar escrita remota ou publicar superfície parcial.
+- Código de produto, SQL, RPC, view, migration, RLS, integração, ingestão ou
+  alteração de contratos executáveis.
+- UI, dashboard, cálculo local, escrita em HubSpot/Omie ou qualquer fonte
+  externa.
+- Push, merge, deploy, migration remota, secrets e release surface.
 
-## Critérios de aceitação
+## Critérios de aceite
 
-1. Fontes, campos e ausência de fontes são rastreáveis por caminho e contrato.
-2. Tickets, conversas e chat ficam semanticamente separados quando aplicável.
-3. Campo de data, período, timezone, tenant, permissão, frescor e estados de
-   indisponibilidade são explícitos.
-4. SLA, aging, prioridade, status, fila e responsável não são inferidos como
-   equivalentes sem evidência.
-5. O menor lote seguinte é documentado sem alterar comportamento não
-   sustentado.
-6. Gates documentais e de regressão aplicáveis passam sem alterar o baseline.
-
-## Dependências e autorização
-
-- Base SHA: `8c3eff708811bcb19e28e56dbafda6131d89ea35`.
-- Branch: `main`.
-- Owner: Forge para implementação.
-- Reviewer active: Sentinel.
-- Review mode: `SENTINEL_REQUIRED`.
-- Approval: `APPROVED` na fila canônica.
-- Dependência satisfeita: `KPI-REGISTRY-2026-08-21`.
-
-## Allowlist inicial
-
-1. `docs/ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md`
-2. `docs/PROJECT_STATE.md`
-3. `docs/DOCUMENTATION_LEDGER.md`
-4. `docs/README.md`
-5. `handoffs/README.md`
-6. `handoffs/current/TASK.md`
-7. `handoffs/current/IMPLEMENTATION.md`
-8. `handoffs/current/REVIEW.md`
-9. `handoffs/current/STATUS.md`
-
-A expansão da allowlist exige evidência objetiva durante a investigação.
-
-## Limites operacionais
-
-Push, merge, deploy, migrations remotas, secrets e release surface continuam
-proibidos.
+- Cada métrica documentada possui fonte, campo, recorte temporal, timezone,
+  tenant, proveniência, cobertura, frescor e estado de ausência explicitados.
+- `received`, `receivable`, `overdue` e `aging` não são tratados como
+  equivalentes e ausência não é convertida em zero.
+- A documentação distingue contrato executável, snapshot histórico, hipótese
+  e capacidade que depende de nova ingestão, escopo ou decisão de produto.
+- A menor próxima task autorizada para validação/ingestão fica registrada sem
+  implementar trabalho fora deste lote.
+- `docs:validate`, `review:gates` quando aplicável e `git diff --check` passam.
