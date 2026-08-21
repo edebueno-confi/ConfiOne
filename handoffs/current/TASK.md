@@ -2,82 +2,69 @@
 
 ## Task ID
 
-COMMERCIAL-PREDICTION-2026-08-21
+CONTRACT-EXPIRY-2026-08-21
 
 ## Título
 
-Criar Predição explicável baseada em dados
+Investigar contratos próximos do vencimento
 
 ## Estado
 
-READY_FOR_REVIEW
+READY_FOR_IMPLEMENTATION
 
 ## Objetivo
 
-Investigar e materializar uma predição comercial explicável usando somente
-dados e contratos reais de pipeline, conversão, lead time e ticket, sem usar IA
-generativa para matemática nem apresentar inferência como fato.
+Investigar, com evidência local, se o ConfiOne possui fonte confiável para
+contratos próximos do vencimento, responsável pela renovação e MRR em risco,
+sem inventar dados ou publicar uma UI sem contrato backend.
 
 ## Escopo
 
-- mapear as fontes reais e os contratos publicados para pipeline, conversão,
-  lead time e ticket;
-- separar observado, derivado, projetado e indisponível;
-- definir a semântica temporal, coortes, filtros, timezone e cobertura antes de
-  qualquer cálculo;
-- implementar somente comportamento sustentado por contrato backend existente,
-  ou registrar a fundação documental se faltar fonte publicável;
-- preservar estados de ausência e cobertura insuficiente sem convertê-los em
-  previsão ou zero silencioso;
-- adicionar testes e documentação proporcionais à mudança comprovada.
+- localizar fontes, views, RPCs, contratos e estados existentes relacionados a
+  vencimento, renovação, responsável, assinatura e MRR;
+- separar dados observados, campos ausentes, hipóteses e lacunas de contrato;
+- confirmar tenant, permissões, filtros temporais, timezone e proveniência;
+- materializar somente documentação e handoff quando não houver fonte
+  publicável suficiente;
+- registrar o menor próximo lote implementável, se houver.
 
 ## Fora de escopo
 
-- usar IA generativa para calcular valores, probabilidades ou totais;
-- inventar fonte, fórmula, lead time, ticket, baseline, forecast ou dado;
-- criar UI parcial sem contrato backend correspondente;
-- alterar integrações externas, secrets, migrations remotas ou release;
-- publicar previsão como fato quando a fonte ou cobertura forem insuficientes.
+- criar UI, cálculo local, forecast ou MRR em risco sem contrato backend;
+- inventar datas de vencimento, responsável, probabilidade de renovação ou
+  valor financeiro;
+- alterar migrations, RPCs, views, RLS, integrações, secrets ou release;
+- executar escrita remota ou publicar uma superfície parcial.
 
 ## Critérios de aceitação
 
-1. Fontes, campos, fórmulas e semântica temporal ficam rastreáveis.
-2. A predição distingue dado observado, cálculo derivado, projeção e
-   indisponibilidade.
-3. Ausência, nulo ou cobertura insuficiente não vira zero nem confiança
-   artificial.
-4. O backend permanece a fonte da verdade e os gates aplicáveis passam sem
-   alterar o baseline.
-5. Lacunas não resolvidas são registradas como `PROPOSED` ou
-   `OWNER_DECISION_REQUIRED`, nunca como comportamento inventado.
+1. Fontes e ausência de fontes são rastreáveis por caminho e contrato.
+2. Vencimento, renovação e MRR em risco ficam separados de inferências.
+3. Permissões, tenant, período, timezone e estados de indisponibilidade são
+   explicitados quando aplicáveis.
+4. O menor lote seguinte é documentado sem alterar comportamento não sustentado.
+5. Gates documentais e de regressão aplicáveis passam sem alterar o baseline.
 
 ## Dependências e autorização
 
-- Base SHA: `158069d34d6ab191177cfab32d77fa5349ba9d91`.
+- Base SHA: `fd2a0407601b77004baf75c227cf057c2740b6da`.
 - Branch: `main`.
 - Owner: Forge.
 - Reviewer active: Sentinel.
 - Review mode: `SENTINEL_REQUIRED`.
 - Approval: `APPROVED` na fila canônica.
-- Dependências satisfeitas: `COMMERCIAL-GOALS-MRR-2026-08-21` e
-  `COMMERCIAL-RECONCILIATION-2026-08-21`.
+- Dependência satisfeita: `KPI-REGISTRY-2026-08-21`.
 
 ## Allowlist inicial
 
-1. `apps/web/src/features/analytics/analytics-api.ts`
-2. `apps/web/src/features/analytics/analytics-model.ts`
-3. `apps/web/src/features/analytics/analytics-kpi-contract.mjs`
-4. `apps/web/src/features/analytics/AnalyticsCommercialPage.tsx`
-5. `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`
-6. `docs/PROJECT_STATE.md`
-7. `docs/DOCUMENTATION_LEDGER.md`
-8. `docs/README.md`
-9. `handoffs/README.md`
-10. `handoffs/current/TASK.md`
-11. `handoffs/current/IMPLEMENTATION.md`
-12. `handoffs/current/REVIEW.md`
-13. `handoffs/current/STATUS.md`
+1. `docs/ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md`
+2. `docs/PROJECT_STATE.md`
+3. `docs/DOCUMENTATION_LEDGER.md`
+4. `docs/README.md`
+5. `handoffs/README.md`
+6. `handoffs/current/TASK.md`
+7. `handoffs/current/IMPLEMENTATION.md`
+8. `handoffs/current/REVIEW.md`
+9. `handoffs/current/STATUS.md`
 
-A expansão da allowlist executável exige evidência objetiva durante a
-investigação. Não alterar SQL, migrations, RPCs, contratos ou UI fora do
-escopo demonstrado por fontes reais.
+A expansão da allowlist exige evidência objetiva durante a investigação.
