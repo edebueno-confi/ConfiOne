@@ -7397,3 +7397,16 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   Control V2.
 - **Risco restante:** QA visual autenticado ainda depende da sessão local; não
   houve alteração de banco, contrato, secret, push, deploy ou migration remota.
+
+## KPI Registry V1 — registro canônico de métricas publicadas — 2026-08-21
+
+- **Tipo:** consolidação documental e reconciliação de contratos; nenhuma mudança de produto, banco, fórmula, permissão ou release surface.
+- **Fonte canônica:** `docs/ANALYTICS_KPI_REGISTRY_V1.md`, reconciliado com os read models, RPCs, migrations e contratos de apresentação do Analytics.
+- **Conteúdo:** definição de negócio, fonte, grão, coorte, campo de data, posição atual, período, timezone, filtros, unidade, fórmula, tratamento de nulos, estados de cobertura e exclusões para Visão Geral, Comercial, Suporte e Customer Success.
+- **Decisão:** `created_at`/`createdate` e `closed_at`/`closedate` são semânticas distintas. Posição atual não é coorte do período. Métricas PROPOSED de metodologia e contexto na UI continuam fora deste lote.
+- **Docs alterados:** `docs/ANALYTICS_KPI_REGISTRY_V1.md`, `docs/README.md` e este ledger.
+- **Telas afetadas:** nenhuma.
+- **Views/RPCs afetadas:** nenhuma; apenas referenciadas para rastreabilidade.
+- **Validação:** `npm run docs:validate`, auditoria documental da skill, `git diff --check` e inspeção do diff; nenhum arquivo de produto foi incluído.
+- **Riscos restantes:** a metodologia ainda não está exposta na interface; a fila mantém `ANALYTICS-METRIC-METHODOLOGY-2026-08-21` e `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21` como `PROPOSED`.
+- **Impacto futuro na FAQ:** o registro é a base para uma explicação de usuário por indicador, sem substituir a futura superfície de contexto na UI.
