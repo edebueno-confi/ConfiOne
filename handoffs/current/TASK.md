@@ -1,56 +1,57 @@
 # TASK
 
-- Task ID: `OVERVIEW-GOVERNANCE-DENSITY-2026-08-21`
-- State: `READY_FOR_REVIEW`
-- Owner: `Sentinel`
-- Role: `REVIEWER`
+- Task ID: `DASHBOARD-UX-DENSITY-2026-08-21`
+- State: `READY_FOR_IMPLEMENTATION`
+- Owner: `Forge`
+- Role: `EXECUTOR`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Approval: `APPROVED`
-- Base SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
+- Base SHA: `60bff9577de1bb4477d096e2989dae3d392df782`
 - Current SHA: `UNCOMMITTED_WORKTREE`
 
 ## Objetivo
 
-Reorganizar a Visão Geral para que Atenção, governança/cobertura e sinais
-gerenciais tenham hierarquia clara, removendo ruído técnico sem eliminar
-informação operacional acionável.
+Refinar a densidade visual e a qualidade de decisão do Dashboard Gerencial,
+partindo da hierarquia aprovada da Visão Geral e mantendo leitura clara em
+desktop Full HD, sem redesign gratuito, preenchimento decorativo ou perda de
+contexto operacional.
 
 ## Escopo autorizado
 
-- Auditar a composição atual de `AnalyticsCeoPage` e seus testes de contrato.
-- Ajustar a hierarquia e os rótulos da superfície executiva dentro do padrão
-  visual existente.
-- Manter a separação entre posição atual e desempenho no período.
-- Manter as fontes, read models, fórmulas, filtros, estados de ausência,
-  cobertura, permissões e links existentes.
-- Atualizar testes focados somente quando a estrutura ou o texto aprovado da
-  Visão Geral mudar.
-- Registrar no `IMPLEMENTATION.md` a evidência de que nenhum KPI foi
-  recalculado no frontend.
+- Auditar a composição atual das superfícies analíticas e seus testes
+  estruturais, com referência prioritária a 1920×1080.
+- Ajustar somente espaçamento, composição, agrupamento visual e tipografia
+  necessários para reduzir ruído e destacar a decisão principal.
+- Preservar a hierarquia `Atenção executiva`, `Governança e cobertura`,
+  `Atenção operacional` e `Fila operacional` aprovada no lote anterior.
+- Preservar estados `Indisponível`, `parcial`, `sem registros`, cobertura,
+  fontes, read models, fórmulas, filtros, permissões e links existentes.
+- Atualizar testes focados somente para proteger a estrutura ou o layout
+  realmente alterado.
+- Registrar em `IMPLEMENTATION.md` qualquer limitação entre validação estática,
+  build e renderização autenticada.
 
 ## Fora de escopo
 
-- Alterar RPCs, views, migrations, RLS, contratos de dados ou integrações.
-- Criar métricas, fontes, cálculos locais ou dados de preenchimento.
-- Implementar Produto/Desenvolvimento, GitHub, releases, deploys ou ambientes.
-- Redesenhar o shell global, navegação, outras áreas ou blueprints aprovados.
-- Alterar secrets, fazer push, merge, deploy, publicação ou escrita externa.
+- Alterar RPCs, views, migrations, RLS, contratos, integrações ou dados.
+- Criar métricas, cálculos locais, fontes, mock data ou estados artificiais.
+- Alterar a semântica dos KPIs, os rótulos aprovados ou o shell global.
+- Implementar a documentação metodológica dos KPIs ou a exposição de contexto
+  na interface; essas são tasks posteriores da fila.
+- Fazer push, merge, deploy, publicação, alteração de secrets ou escrita externa.
 
 ## Critérios de aceitação
 
-1. A Visão Geral distingue visualmente posição atual, desempenho do período,
-   Atenção e governança/cobertura.
-2. Sinais gerenciais acionáveis permanecem acessíveis e não são confundidos
-   com diagnóstico técnico de fonte.
-3. O ranking ou detalhe técnico que não for necessário à decisão executiva é
-   removido da hierarquia principal ou explicitamente rebaixado, sem apagar a
-   fonte operacional correspondente.
-4. Estados `Indisponível`, `parcial`, `sem registros` e cobertura continuam
-   explícitos; ausência nunca vira zero.
-5. Filtros continuam precedendo os indicadores que governam e os testes
-   focados, typecheck, build, lint aplicável, `review:gates` e
-   `git diff --check` são registrados.
+1. A composição da Visão Geral e das superfícies diretamente envolvidas mantém
+   a hierarquia aprovada e melhora a leitura da decisão principal em 1920×1080.
+2. O refinamento reduz espaçamento redundante ou ruído visual sem esconder
+   fonte, cobertura, ausência, recorte temporal ou ação operacional.
+3. A composição permanece responsiva nos breakpoints existentes e não cria
+   overflow horizontal intencional ou navegação duplicada.
+4. Nenhum KPI é recalculado no frontend e nenhum contrato de backend é alterado.
+5. Testes focados, typecheck, build, lint aplicável, `review:gates` e
+   `git diff --check` são executados e registrados.
 6. A entrega para Sentinel ocorre com `State = READY_FOR_REVIEW` e
    `Owner = Sentinel`.
 
