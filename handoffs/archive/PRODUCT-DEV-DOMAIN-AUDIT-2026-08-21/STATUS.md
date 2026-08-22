@@ -8,8 +8,8 @@
 - Review mode: `SENTINEL_REQUIRED`
 - Approval: `APPROVED`
 - Base SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
-- Implementation SHA: `UNCOMMITTED_WORKTREE`
-- Final commit SHA: `PENDING_LOCAL_COMMIT`
+- Implementation SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
+- Final commit SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
 - Finalização: `FINALIZE_LOCAL` autorizada após APPROVED formal do Sentinel.
 
 ## Resultado

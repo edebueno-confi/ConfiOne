@@ -1,49 +1,72 @@
-# TASK: PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21
+# TASK
 
-## Estado de abertura
-
-- State: READY_FOR_IMPLEMENTATION
-- Owner: Forge
-- Role: EXECUTOR
-- Reviewer active: Sentinel
-- Review mode: SENTINEL_REQUIRED
-- Approval: APPROVED
-- Base SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
-- Current SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
+- Task ID: `OVERVIEW-GOVERNANCE-DENSITY-2026-08-21`
+- State: `READY_FOR_IMPLEMENTATION`
+- Owner: `Forge`
+- Role: `EXECUTOR`
+- Reviewer active: `Sentinel`
+- Review mode: `SENTINEL_REQUIRED`
+- Approval: `APPROVED`
+- Base SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
+- Current SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
 
 ## Objetivo
 
-Auditar e documentar a semântica dos indicadores de Produto e Desenvolvimento
-no ConfiOne, mantendo somente sinais ligados a decisões operacionais reais.
-Cada indicador deve declarar fonte, campo de data, período, timezone,
-proveniência, cobertura, frescor, permissões, estados de ausência e limitações.
+Reorganizar a Visão Geral para que Atenção, governança/cobertura e sinais
+gerenciais tenham hierarquia clara, removendo ruído técnico sem eliminar
+informação operacional acionável.
 
 ## Escopo autorizado
 
-1. Criar `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`.
-2. Atualizar, somente se necessário, `docs/PROJECT_STATE.md`,
-   `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
-3. Atualizar os quatro artefatos deste handoff e a linha correspondente da fila
-   em `handoffs/README.md`.
-4. Auditar código, contratos, views/RPCs, migrations e testes locais para
-   separar capacidade existente, hipótese, ausência e próximo lote mínimo.
+- Auditar a composição atual de `AnalyticsCeoPage` e seus testes de contrato.
+- Ajustar a hierarquia e os rótulos da superfície executiva dentro do padrão
+  visual existente.
+- Manter a separação entre posição atual e desempenho no período.
+- Manter as fontes, read models, fórmulas, filtros, estados de ausência,
+  cobertura, permissões e links existentes.
+- Atualizar testes focados somente quando a estrutura ou o texto aprovado da
+  Visão Geral mudar.
+- Registrar no `IMPLEMENTATION.md` a evidência de que nenhum KPI foi
+  recalculado no frontend.
 
 ## Fora de escopo
 
-- Código de produto, SQL, RPC, view, migration, RLS, ingestão ou integração.
-- UI, dashboard, cálculo local, novos indicadores ou alteração de contratos
-  executáveis.
-- Escrita em serviços externos, push, merge, deploy, secrets e release surface.
+- Alterar RPCs, views, migrations, RLS, contratos de dados ou integrações.
+- Criar métricas, fontes, cálculos locais ou dados de preenchimento.
+- Implementar Produto/Desenvolvimento, GitHub, releases, deploys ou ambientes.
+- Redesenhar o shell global, navegação, outras áreas ou blueprints aprovados.
+- Alterar secrets, fazer push, merge, deploy, publicação ou escrita externa.
 
-## Critérios de aceite
+## Critérios de aceitação
 
-- Os indicadores documentados possuem fonte, regra, campo de data, timezone,
-  cobertura, frescor, permissão e estado de ausência explícitos.
-- Produto e Desenvolvimento não são usados como rótulo genérico para sinais sem
-  contrato ou como preenchimento decorativo do Dashboard.
-- A documentação distingue fonte executável, estado atual, histórico,
-  hipótese, nova ingestão, escopo pendente e limitação comprovada.
-- O menor próximo lote fica registrado sem implementar código ou UI fora desta
-  auditoria.
-- `docs:validate`, governance, `review:gates` quando aplicável e
-  `git diff --check` passam.
+1. A Visão Geral distingue visualmente posição atual, desempenho do período,
+   Atenção e governança/cobertura.
+2. Sinais gerenciais acionáveis permanecem acessíveis e não são confundidos
+   com diagnóstico técnico de fonte.
+3. O ranking ou detalhe técnico que não for necessário à decisão executiva é
+   removido da hierarquia principal ou explicitamente rebaixado, sem apagar a
+   fonte operacional correspondente.
+4. Estados `Indisponível`, `parcial`, `sem registros` e cobertura continuam
+   explícitos; ausência nunca vira zero.
+5. Filtros continuam precedendo os indicadores que governam e os testes
+   focados, typecheck, build, lint aplicável, `review:gates` e
+   `git diff --check` são registrados.
+6. A entrega para Sentinel ocorre com `State = READY_FOR_REVIEW` e
+   `Owner = Sentinel`.
+
+## Allowlist do lote
+
+- `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`
+- `apps/web/src/features/analytics/analytics-board.css`
+- `apps/web/src/features/analytics/high-density.css`
+- `tests/scripts/dashboard-02-executive.test.mjs`
+- `tests/scripts/mvp-ux-02-executive-integrated.test.mjs`
+- `tests/scripts/analytics-layout-structure.test.mjs`
+- `handoffs/current/TASK.md`
+- `handoffs/current/IMPLEMENTATION.md`
+- `handoffs/current/REVIEW.md`
+- `handoffs/current/STATUS.md`
+- `handoffs/README.md`
+
+Arquivos da allowlist só devem ser alterados se a evidência do lote exigir.
+Qualquer arquivo fora dela exige decisão de escopo antes de inclusão.

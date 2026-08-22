@@ -8,7 +8,9 @@
 - State: APPROVED
 - Base SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
 - Current SHA: `UNCOMMITTED_WORKTREE`
-- Implementation SHA: `UNCOMMITTED_WORKTREE`
+- Implementation SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
+
+- Final commit SHA: `a1265a80f98095c56a60355327f7f06dd1912cd9`
 - Allowlist: `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`, os documentos de
   estado/índice estritamente necessários, a fila e os quatro artefatos deste
   handoff.
