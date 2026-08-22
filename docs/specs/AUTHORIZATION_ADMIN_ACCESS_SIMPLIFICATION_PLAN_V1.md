@@ -231,6 +231,39 @@ Essas decisões não promovem `AUTH-SCREEN-REGISTRY` nem qualquer task seguinte.
   telas sem contrato são classificadas como pendência, não inventadas; áreas
   sugeridas pelo Owner só entram após confirmação factual.
 
+#### Auditoria documental do registry
+
+O mapa abaixo é factual e derivado do código local na base
+`56b8119`. Ele não é um registry executável e não autoriza alterar runtime.
+
+| Domínio/superfície | Screen key e rota observados | Publicação | Menu | Guard | Backend/capability | Classificação |
+| --- | --- | --- | --- | --- | --- | --- |
+| Recepção | `home` → `/inicio` | `FIRST_RELEASE_ROUTES` | `buildReleaseNavigation` | `canOpenInternalRoute`/ReceptionGate | contexto autenticado e permissões de recepção | NECESSÁRIA |
+| Analytics | `analytics` → `/admin/analytics` | primeiro release | seção Dashboard | `AdminGate` e predicado de rota | capability `analytics.view`; `dashboard_viewer` é papel global, não capability | NECESSÁRIA |
+| Conhecimento | `knowledge` → `/admin/knowledge` | primeiro release | Configurações | `AdminGate` | capability de conhecimento e RPCs protegidos | NECESSÁRIA |
+| Configurações | `settings` → `/admin/settings` e seções | primeiro release | `canOpenSettingsSection` | `AdminGate` | capacidades administrativas | NECESSÁRIA |
+| Acessos | `access` → `/admin/access` | primeiro release | Configurações | `AdminGate` | `access.view` e comandos administrativos | NECESSÁRIA |
+| Tenants | `tenants` → `/admin/tenants` | primeiro release | Configurações | `AdminGate` | `access.areas.manage` e RLS/RPC | NECESSÁRIA |
+| Customer Success | `cs_portfolio` → `/cs` | não publicado em `first-release` | não equivale ao menu admin | `ReleaseSurfaceGate` + `CsGate` quando publicado | `can_access_cs_customer_portfolio` | FUTURA/LACUNA_A_CONFIRMAR |
+| Support | famílias `/support/*` | não publicadas em `first-release` | navegação própria, sem publicação atual | `SupportGate` quando publicado | roles, screen keys e capabilities de suporte | FUTURA/LACUNA_A_CONFIRMAR |
+| Engenharia | `product`/área engineering → `/engineering` | rota interna não publicada em `first-release` | navegação mínima | predicado de engenharia quando publicado | capabilities de produto/engenharia | FUTURA/LACUNA_A_CONFIRMAR |
+| Portal customer | `portal` → `/portal` | superfície separada, fora do registry interno | fora do menu interno | gate de portal | contrato customer-facing | FORA_DO_REGISTRY_INTERNO |
+
+Fatos e lacunas: o manifesto é a fonte de publicação, o menu é apenas
+descoberta, os guards protegem a UX e o backend continua a fronteira final.
+`platform_admin` pode alcançar as rotas publicadas do primeiro release, mas
+rotas ocultas permanecem bloqueadas. Support, Engenharia e CS existem no
+router/guards, mas não são publicados no manifesto `first-release`. Não foi
+encontrado um contrato único que
+faça Support, CS, menu e backend consumirem a mesma tabela. Isso é uma lacuna
+documental/arquitetural, não motivo para inventar uma capability ou remover um
+guard.
+
+As áreas `logs`, `config` e outras rotas ocultas não foram promovidas ao
+registry publicado. Sua ausência é `FUTURA` ou `LACUNA_A_CONFIRMAR`, conforme a
+fonte, e não evidência de tela inexistente. O próximo passo técnico é definir
+uma referência canônica e testes de integridade, mediante task aprovada.
+
 ### AUTH-TARGET-ACCESS-CONTRACT-2026-08-21
 
 - **Título:** Especificar modelo simplificado de nível, área, tela e READ/WRITE

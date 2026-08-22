@@ -7,7 +7,7 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Última task: `AUTH-MODEL-AUDIT-2026-08-21`
+- Última task: `AUTH-SCREEN-REGISTRY-2026-08-21`
 - Último veredito: APPROVED por Sentinel
 - Próximo passo: aguardar promoção explícita da próxima task elegível.
 
