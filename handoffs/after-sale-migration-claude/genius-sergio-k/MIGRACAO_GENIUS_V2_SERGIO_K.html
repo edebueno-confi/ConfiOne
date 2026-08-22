@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Migração Genius para After Sale V2 | Sérgio K.</title>
+<style>
+:root{--ink:#1f2937;--muted:#64748b;--line:#dbe3ee;--blue:#2457a6;--blue-soft:#eef5ff;--green:#0f766e;--green-soft:#ecfdf5;--amber:#92400e;--amber-soft:#fff7ed;--red:#991b1b;--red-soft:#fef2f2}*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:var(--ink);font:15px/1.5 Arial,sans-serif}.page{max-width:1180px;margin:0 auto;padding:34px 28px 60px;background:#fff;min-height:100vh}h1{font-size:30px;line-height:1.2;margin:0 0 8px;color:#173b73}h2{margin:34px 0 12px;padding-bottom:7px;border-bottom:2px solid var(--line);font-size:22px;color:#173b73}h3{margin:22px 0 8px;color:#234b80}.sub{color:var(--muted);margin-bottom:20px}.note{padding:14px 16px;border-radius:8px;margin:14px 0;background:var(--blue-soft);border-left:4px solid var(--blue)}.ok{background:var(--green-soft);border-left-color:var(--green)}.warn{background:var(--amber-soft);border-left-color:#d97706}.block{background:var(--red-soft);border-left-color:#dc2626}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{border:1px solid var(--line);border-radius:9px;padding:16px}.card strong{display:block;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:14px}th,td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;text-align:left}th{background:#edf3fb;color:#173b73}tr:nth-child(even) td{background:#fafcff}.status{font-weight:700;white-space:nowrap}.migrado{color:var(--green)}.parcial{color:#a16207}.pendente{color:var(--red)}.info{color:var(--blue)}ul{margin:8px 0 12px 22px;padding:0}li{margin:5px 0}.small{font-size:13px;color:var(--muted)}.footer{margin-top:38px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:12px}@media(max-width:800px){.page{padding:22px 14px}.grid{grid-template-columns:1fr}table{font-size:12px;display:block;overflow-x:auto}h1{font-size:25px}}
+</style>
+</head>
+<body><main class="page">
+<h1>Migração da Genius para o After Sale V2</h1>
+<p class="sub">Sérgio K. | Configuração funcional para conferência da equipe responsável</p>
+
+<div class="note ok"><strong>Resultado geral</strong>A conta Sérgio K. foi identificada corretamente na Genius e na V2. Os seis motivos da Genius foram deixados ativos na V2 com a mesma finalidade. Três motivos padrão da V2, que não existem na Genius, foram desativados. Os métodos de retorno que não existem na origem também foram desativados. A integração VTEX existente foi mantida porque está válida.</div>
+
+<h2>1. Identificação</h2>
+<div class="grid"><div class="card"><strong>Origem</strong><p>SERGIO K, razão social SLKS COM. DE ARTIGOS DE MODA LTDA, CNPJ 09.028.217/0002-65.</p></div><div class="card"><strong>Destino</strong><p>E-commerce SergioK no After Sale V2. A tela exibiu somente esta conta durante a conferência.</p></div></div>
+
+<h2>2. De-para dos motivos</h2>
+<table><thead><tr><th>Motivo na Genius</th><th>Como ficou na V2</th><th>Resultado</th></tr></thead><tbody>
+<tr><td>Arrependimento</td><td>Arrependimento, ativo, disponível para devolução e troca, sem aprovação automática e sem submotivo.</td><td class="status migrado">Migrado</td></tr>
+<tr><td>Cor errada</td><td>Motivo criado na V2, ativo, disponível para devolução e troca, categoria Insatisfação do cliente.</td><td class="status migrado">Migrado</td></tr>
+<tr><td>Defeito de fabricação</td><td>O cadastro padrão Defeito foi atualizado para Defeito de fabricação, ativo, categoria Problema de qualidade.</td><td class="status migrado">Migrado com ajuste</td></tr>
+<tr><td>Produto em desacordo com o pedido</td><td>O cadastro padrão Produto Diferente do Pedido foi atualizado para o nome da Genius, ativo, categoria Divergência do produto.</td><td class="status migrado">Migrado com ajuste</td></tr>
+<tr><td>Produto ou Embalagem avariado</td><td>Motivo criado na V2, ativo, categoria Problema de qualidade.</td><td class="status migrado">Migrado</td></tr>
+<tr><td>Tamanho errado</td><td>Motivo criado na V2, ativo, categoria Divergência do produto.</td><td class="status migrado">Migrado</td></tr>
+</tbody></table>
+<p class="small">A Genius não apresentava submotivos, prazos específicos, fotos obrigatórias, comentários obrigatórios, aprovação automática ou devolução desnecessária para esses motivos. Essas opções permaneceram desligadas na V2.</p>
+
+<h3>Motivos padrão retirados da operação</h3>
+<table><thead><tr><th>Motivo que já existia na V2</th><th>Situação</th><th>Justificativa</th></tr></thead><tbody>
+<tr><td>Insatisfatório</td><td class="status migrado">Inativo</td><td>Não existe com esse nome na configuração da Genius.</td></tr>
+<tr><td>Produto Inutilizável</td><td class="status migrado">Inativo</td><td>Não existe com esse nome na configuração da Genius.</td></tr>
+<tr><td>Produto Fora do Prazo de Validade</td><td class="status migrado">Inativo</td><td>Não existe com esse nome na configuração da Genius.</td></tr>
+</tbody></table>
+
+<h2>3. Integrações e logística</h2>
+<table><thead><tr><th>Item na Genius</th><th>Situação na V2</th><th>Resultado</th></tr></thead><tbody>
+<tr><td>VTEX ativa, conta sergiok</td><td>VTEX aparece como única integração, com credenciais válidas e serviço disponível.</td><td class="status migrado">Conferido</td></tr>
+<tr><td>Correios ativos, postagem em agência</td><td>O método Postagem continua ativo. A configuração do conector dos Correios fica fora desta etapa.</td><td class="status info">Registrado</td></tr>
+<tr><td>Coleta domiciliar desativada</td><td>Método Coleta desativado na V2.</td><td class="status migrado">Migrado</td></tr>
+<tr><td>Sem ponto de devolução e sem loja física</td><td>Métodos Ponto de devolução e Loja Física desativados. Não há lojas físicas cadastradas na origem nem no destino.</td><td class="status migrado">Migrado</td></tr>
+</tbody></table>
+
+<h2>4. Outras configurações</h2>
+<table><thead><tr><th>Módulo da Genius</th><th>Resultado na V2</th></tr></thead><tbody>
+<tr><td>Vale 100%, validade 60 dias</td><td>Na Genius, corresponde à retenção pelo valor integral do produto. A V2 possui configuração própria de retenção; ela não foi alterada.</td></tr>
+<tr><td>Vale 110%, validade 60 dias</td><td>Na Genius, corresponde ao valor do produto mais 10%. Na V2, a referência equivalente é retenção de 10%, mas a ativação deve ser alinhada com o cliente.</td></tr>
+<tr><td>Prazo de 365 dias</td><td>Não foi tratado como prazo de estorno. A interpretação correta para esta conta é validade de vale ou cupom, devendo ser confirmada no fluxo de vale-compras caso essa opção exista na V2.</td></tr>
+<tr><td>Notificações, webhooks e troca direta</td><td>Não havia destinatários ou webhooks preenchidos. A troca direta não estava aceita/configurada. Nenhuma ação foi criada na V2.</td></tr>
+<tr><td>Score, VIP, lead time e travas específicas</td><td>Não foram encontrados parâmetros equivalentes ativos na Genius. Permaneceram sem ativação específica na V2.</td></tr>
+<tr><td>E-mails</td><td>Não foram transportados. A origem não apresentou destinatários preenchidos e a V2 possui editor próprio para personalização.</td></tr>
+</tbody></table>
+
+<h2>5. Pontos para conversa com o cliente</h2>
+<ol><li>Definir se a retenção será ativada na V2. Na Genius, 100% representa o valor integral e 110% representa o valor do produto mais 10%. Na V2, a referência é retenção de 10%.</li><li>Confirmar se a validade de 60 dias dos vales da Genius deve ser reproduzida em alguma configuração disponível na V2.</li><li>Validar em homologação uma solicitação com motivo de troca e uma com motivo de devolução. A Genius classifica os seis motivos como Devolução e Troca.</li></ol>
+
+<div class="note warn"><strong>Proteção de dados e escopo</strong>A Genius foi somente consultada. Nenhum salvamento foi realizado no ambiente de origem. Tokens, senhas, chaves, cookies e credenciais não foram expostos nem copiados. A integração VTEX da V2 não foi alterada.</div>
+<div class="footer">Documento para leitura humana. Fonte: cadastro Genius do Sérgio K. e painel After Sale V2. Conferência em 21/08/2026.</div>
+</main></body></html>

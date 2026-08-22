@@ -11,11 +11,11 @@ select has_function(
 
 insert into public.analytics_source_config (
   domain_key, object_type, hubspot_pipeline_id, label, group_company,
-  group_company_source, is_active
+  area_key, group_company_source, is_active
 )
 values
-  ('cs', 'ticket', 'operation-scope-neotrust', 'CS Neotrust', 'Neotrust', 'suggested', true),
-  ('cs', 'ticket', 'operation-scope-aftersale', 'CS Aftersale', 'Aftersale', 'suggested', true);
+  ('cs', 'ticket', 'operation-scope-neotrust', 'CS Neotrust', 'Neotrust', 'support', 'confirmed', true),
+  ('cs', 'ticket', 'operation-scope-aftersale', 'CS Aftersale', 'Aftersale', 'support', 'confirmed', true);
 
 insert into public.hubspot_pipeline_stages (
   object_type, pipeline_id, stage_id, label, display_order, is_closed, is_won, metadata

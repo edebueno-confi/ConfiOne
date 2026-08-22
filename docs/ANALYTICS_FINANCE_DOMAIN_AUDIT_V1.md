@@ -233,3 +233,17 @@ explicitamente OMIE-only, porém a semântica temporal de “recebido no períod
 o histórico `as_of`, a ingestão de movimentos e o isolamento tenant-aware ainda
 exigem decisões e lotes próprios. A fonte oficial de movimentos foi registrada,
 mas não há read model local e nenhuma capacidade foi marcada `API_LIMITATION`.
+
+## Vinculação ao roadmap vigente
+
+A falha atual de sincronização financeira deve ser investigada na task P1
+`R1-INTEGRATION-CALL-QUALITY-2026-08-21`, sem duplicar esta auditoria. O escopo
+deve separar credencial/configuração de endpoint, método, headers, payload,
+paginação, timeout, retry, resposta, normalização, persistência, `sync_run`,
+frescor e leitura do Dashboard. A mesma task deve verificar as chamadas de
+atualização dos painéis, incluindo parâmetros, filtros, invalidação,
+concorrência, duplicidade e estados loading/error/empty/stale.
+
+Essa vinculação é planejamento. Não constitui evidência de que a credencial
+atualizada esteja válida, que o sync tenha sido executado ou que o Dashboard
+tenha recebido dados novos.

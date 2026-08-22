@@ -1,12 +1,32 @@
 # Admin Tenants Blueprint Spec
 
+## Blueprints visuais oficiais da Central de Clientes V1
+
+Desde 2026-08-21, a direção visual aprovada para a Central de Clientes V1 é
+definida pelos dois arquivos abaixo:
+
+- [`CENTRAL_CLIENTES_HOME_V1.png`](../blueprints/central-clientes/CENTRAL_CLIENTES_HOME_V1.png) — visão da carteira, KPIs, filtros, segmentações, lista, alertas e navegação para o cliente.
+- [`CLIENTE_RESUMO_V1.png`](../blueprints/central-clientes/CLIENTE_RESUMO_V1.png) — workspace dedicado do cliente, header contextual, navegação interna, aba Resumo e blocos seletivos de situação, risco, financeiro, contratos e integrações.
+
+Esses arquivos prevalecem sobre a referência visual anterior de `Tenants.png`
+para a implementação da V1. A Central é uma superfície operacional B2B do
+ConfiOne, não um CRM genérico. A busca textual principal deve reutilizar a
+busca global do header. O cliente selecionado deve abrir em rota/workspace
+próprio; o slide-over não é o workspace principal. O Resumo não deve receber
+listas extensas, timeline completa, todos os contratos, todos os eventos ou
+uma tabela detalhada de integrações.
+
+Implementação e QA desses blueprints pertencem à Release 2 e devem registrar
+qualquer divergência exigida pelo modelo real, acessibilidade ou limitação
+técnica no handoff correspondente. Ver também `OD-006`.
+
 ## Tela
 
 `/admin/tenants`
 
 ## Propósito
 
-Superfície administrativa para operar a base de clientes B2B da Genius.
+Superfície administrativa para operar a base de clientes B2B do ConfiOne.
 
 A palavra técnica `tenant` não deve dominar a interface. Na UI final, a linguagem principal é:
 - Clientes B2B
@@ -18,9 +38,10 @@ A palavra técnica `tenant` não deve dominar a interface. Na UI final, a lingua
 ## Fonte de verdade visual
 
 Prioridade:
-1. `docs/design/blueprint/Tenants.png`
-2. Shell Admin Console já aprovada em `/admin/knowledge`, `/admin/access` e `/admin/system`
-3. `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`
+1. Os dois blueprints oficiais acima
+2. `docs/design/blueprint/Tenants.png`, somente como referência histórica de contexto
+3. Shell Admin Console já aprovada em `/admin/knowledge`, `/admin/access` e `/admin/system`
+4. `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`
 
 Se a implementação parecer um dashboard genérico ou um CRUD adaptado, está fora do contrato.
 
@@ -38,7 +59,7 @@ Não comprimir a composição principal para caber em `1024px`.
 
 - largura fixa entre `240px` e `260px`
 - navy profundo
-- branding `Genius Support OS`
+- branding `ConfiOne`
 - subtítulo `Admin Console`
 - item ativo com pill azul forte
 - logout no card do usuário no rodapé

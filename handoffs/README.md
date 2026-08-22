@@ -43,25 +43,84 @@ nem tratados como estado corrente sem leitura e classificação.
 4. Forge executa as validações reais e muda para READY_FOR_REVIEW. Quando o
    lote já estiver autorizado para auto-revisão, pode usar `VALIDATING` para
    registrar os gates finais antes do veredito.
-5. Sentinel lê TASK, IMPLEMENTATION, diff, contratos e evidências, muda para
+5. Imediatamente após entregar `READY_FOR_REVIEW`, Forge notifica Sentinel com
+   task, estado, Owner, SHAs, allowlist, gates, limitações e ação esperada. A
+   mensagem é apenas uma transferência operacional e não substitui os quatro
+   artefatos canônicos.
+6. Sentinel lê TASK, IMPLEMENTATION, diff, contratos e evidências, muda para
    REVIEWING e escreve REVIEW.md. Claude permanece como reviewer histórico ou de
    auditoria posterior. Se o proprietário tiver ativado
    `OWNER_AUTHORIZED_SELF_REVIEW`, Codex assume `Role: REVIEWER` em uma rodada
    separada e registra essa limitação no REVIEW.md.
-6. O reviewer designado em STATUS.md registra APPROVED, REQUEST_CHANGES ou
+7. O reviewer designado em STATUS.md registra APPROVED, REQUEST_CHANGES ou
    BLOCKED.
-7. REQUEST_CHANGES devolve o lote a Forge, que usa findings válidos e muda para
+8. REQUEST_CHANGES devolve o lote a Forge, que usa findings válidos e muda para
    FIXING.
-8. Depois da correção, Forge atualiza IMPLEMENTATION, preserva REVIEW histórico
+9. Depois da correção, Forge atualiza IMPLEMENTATION, preserva REVIEW histórico
    dentro do ciclo e retorna a READY_FOR_REVIEW.
-9. Em lote com `Approval = APPROVED`, `APPROVED` aciona automaticamente
+10. Em lote com `Approval = APPROVED`, `APPROVED` aciona automaticamente
    `FINALIZE_LOCAL`: validar escopo e gates, criar commit local exclusivo,
    registrar SHA, arquivar o handoff e normalizar current/ para `IDLE`.
-10. O fluxo operacional completo é `IMPLEMENTING -> VALIDATING -> APPROVED ->
+11. O fluxo operacional completo é `IMPLEMENTING -> VALIDATING -> APPROVED ->
     FINALIZING_LOCAL -> COMPLETED -> IDLE -> próxima tarefa elegível`.
-11. Push, merge, pull request, deploy, migration remota, produção, secrets e
+12. Push, merge, pull request, deploy, migration remota, produção, secrets e
     release surface continuam bloqueados. `DONE` permanece como classificação
     da fila após o checkpoint local concluído.
+
+## Coordenação explícita entre agentes
+
+Quando Forge estiver executando uma decisão, diagnóstico ou lote local que
+exija exclusividade temporária, ele deve registrar no início de
+`handoffs/current/STATUS.md`:
+
+```text
+Agent coordination: HOLD
+Hold owner: Forge
+Hold reason: <motivo objetivo>
+Hold scope: <agentes, tasks ou ações pausadas>
+Hold started: <data e hora local>
+Resume condition: <evento ou gate que libera a retomada>
+```
+
+Enquanto `Agent coordination: HOLD` estiver vigente, Sentinel, heartbeats e
+outros agentes não devem iniciar, promover, revisar ou alterar arquivos dentro
+do escopo pausado. Eles podem apenas ler o estado, registrar que encontraram o
+HOLD e aguardar a condição de retomada. O HOLD não suspende proibições de
+segurança nem autoriza ações externas.
+
+Ao liberar a pausa, Forge deve substituir o bloco por um estado explícito,
+como `Agent coordination: REVIEW_ACTIVE`, `READY_FOR_IMPLEMENTATION` ou
+`IDLE`, registrar a condição atendida e notificar o próximo papel. A ausência
+do bloco não deve ser interpretada como autorização para trabalho concorrente:
+o agente deve seguir `State`, `Owner`, `Approval` e a allowlist dos quatro
+artefatos canônicos.
+
+Se a tarefa corrente exigir revisão independente, o estado correto é
+`Agent coordination: REVIEW_ACTIVE`, com `Owner` igual ao reviewer designado.
+Nesse caso, não usar `HOLD` para impedir a revisão obrigatória.
+
+## Notificação por evento e heartbeat de recuperação
+
+A coordenação normal é orientada a eventos. Ao concluir, devolver para revisão
+ou encontrar um bloqueio, o agente responsável deve:
+
+1. atualizar `TASK.md`, `IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md` conforme
+   o papel e a transição real;
+2. avisar diretamente o próximo agente responsável;
+3. avisar o coordenador, Codex, com task, estado, SHA observado, gates,
+   findings ou bloqueio e ação esperada.
+
+Forge deve avisar Sentinel e Codex ao entregar, corrigir ou bloquear uma task.
+Sentinel deve avisar Forge e Codex ao concluir uma revisão, com o veredito e os
+findings. A mensagem é uma notificação operacional e não substitui os arquivos
+canônicos, que continuam sendo a fonte de verdade para retomada após falha,
+desconexão ou troca de agente.
+
+Os heartbeats recorrentes de Forge, Sentinel e Codex Orquestrador são apenas
+mecanismos de recuperação. Devem usar intervalo de 30 minutos, reler o estado
+atual e agir somente quando não houver uma notificação já processada e os gates
+permitirem a transição. Não devem duplicar execução, aprovação ou revisão em
+andamento.
 
 Para lotes previamente autorizados na fila, `APPROVED` autoriza o Forge a
 executar `FINALIZE_LOCAL`, criar o checkpoint Git local exclusivo do lote,
@@ -111,29 +170,33 @@ PROPOSED`, e somente um item pode estar `ACTIVE` por vez.
 | 24 | PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21 | ConfiOne / Produto | Auditar indicadores de Produto e Desenvolvimento | P1 | DONE | APPROVED | KPI-REGISTRY-2026-08-21 | Owner mission 2026-08-21 | APPROVED por Sentinel; commit local exclusivo `a1265a80f98095c56a60355327f7f06dd1912cd9`; handoff arquivado. |
 | 25 | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21 | ConfiOne / Dashboard | Reorganizar Atenção, Governança e cobertura | P1 | DONE | APPROVED | CS-DOMAIN-AUDIT-2026-08-21, SUPPORT-DOMAIN-AUDIT-2026-08-21, FINANCE-DOMAIN-AUDIT-2026-08-21, PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21 | Owner mission 2026-08-21 | APPROVED por Sentinel; checkpoint local exclusivo `60bff9577de1bb4477d096e2989dae3d392df782`; handoff arquivado. |
 | 26 | DASHBOARD-UX-DENSITY-2026-08-21 | ConfiOne / Dashboard | Refinar densidade e qualidade de decisão | P1 | DONE | APPROVED | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21, COMMERCIAL-EVOLUTION-2026-08-21 | Owner mission 2026-08-21 | APPROVED por Sentinel; commit local exclusivo `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1`; handoff arquivado. |
-| 27 | ANALYTICS-METRIC-METHODOLOGY-2026-08-21 | ConfiOne / Analytics | Documentar metodologia e proveniência dos KPIs | P1 | BACKLOG | PROPOSED | KPI-REGISTRY-2026-08-21, COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21 | Owner request 2026-08-21 | Explicar em linguagem de usuário a fonte, o campo de data (created_at, closed_at ou outro), período, timezone, filtros, fórmula, nulos e limitações de cada indicador. |
-| 28 | ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 | ConfiOne / Dashboard | Expor metodologia dos indicadores na interface | P1 | BACKLOG | PROPOSED | ANALYTICS-METRIC-METHODOLOGY-2026-08-21, KPI-REGISTRY-2026-08-21 | Owner request 2026-08-21 | Reutilizada pelo gate do Dashboard R1; exibir contexto acessível junto aos KPIs, incluindo coorte, campo de data, período, filtros, fonte e ressalvas aplicáveis. |
+| 27 | ANALYTICS-METRIC-METHODOLOGY-2026-08-21 | ConfiOne / Analytics | Documentar metodologia e proveniência dos KPIs | P1 | DONE | APPROVED | KPI-REGISTRY-2026-08-21, COMMERCIAL-CONVERSION-SEMANTICS-2026-08-21 | Owner request 2026-08-21; finalizada localmente em `0f514f9f1509c081f3f422212c856e7f64179656` após aprovação do Sentinel | Registry canônico reconciliado com fontes executáveis, campos/datas, coortes, fórmulas, cobertura, frescor, filtros e limitações; handoff arquivado sem alteração de runtime. |
+| 28 | ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 | ConfiOne / Dashboard | Expor metodologia dos indicadores na interface | P1 | DONE | APPROVED | ANALYTICS-METRIC-METHODOLOGY-2026-08-21, KPI-REGISTRY-2026-08-21 | Owner request 2026-08-21; finalizado localmente após APPROVED do Sentinel; commit `da206123b77c7cfab6ee10ffe32fa3b7b8f7b498` | Exibir contexto acessível junto aos KPIs usando apenas o contrato existente: coorte, campo de data, período, filtros, fonte, frescor, cobertura, estado e ressalvas; sem regra de negócio no frontend e sem criar segunda fonte de verdade. |
 | 29 | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21 | ConfiOne / Identity & Access | Reproduzir e corrigir administrador válido recebendo Acesso negado | P1 | DONE | APPROVED | —; handoff aberto após finalização da task 26 | Owner request 2026-08-21 | APPROVED por Sentinel; commit local exclusivo `0581660ae9b617845b66160dfa6059616cabecce`; handoff arquivado. |
 | 30 | AUTH-MODEL-INVENTORY-2026-08-21 | ConfiOne / Identity & Access | Mapear fluxo e modelo atual de autorização | P1 | DONE | APPROVED | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21 | Owner decision OD-007 2026-08-22 | APPROVED por Sentinel; checkpoint local exclusivo; inventário factual arquivado. Não iniciou simplificação estrutural. |
-| 31 | AUTH-MODEL-AUDIT-2026-08-21 | ConfiOne / Identity & Access | Auditar complexidade, redundâncias e regras legadas | P1 | BACKLOG | PROPOSED | AUTH-MODEL-INVENTORY-2026-08-21 | Owner request 2026-08-21 | Classificar opções atuais como necessárias, redundantes, legadas, futuras, ambíguas ou potencialmente inseguras e definir a semântica factual de administrador. |
-| 32 | AUTH-SCREEN-REGISTRY-2026-08-21 | ConfiOne / Identity & Access | Definir registry canônico de áreas, telas, rotas e capabilities | P1 | BACKLOG | PROPOSED | AUTH-MODEL-AUDIT-2026-08-21 | Owner request 2026-08-21 | Consolidar `domain -> screen -> route -> capabilities` a partir da aplicação real, para que menu e guard usem a mesma referência. |
-| 33 | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21 | ConfiOne / Identity & Access | Especificar modelo simplificado de nível, área, tela e READ/WRITE | P1 | BACKLOG | PROPOSED | AUTH-MODEL-AUDIT-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21 | Owner request 2026-08-21 | Definir níveis mínimos, `WRITE` implica `READ`, deny by default, precedência, escopo, auditoria, proteção do último admin e de-para do modelo atual. |
-| 34 | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | ConfiOne / Identity & Access | Consolidar resolução de autorização, menu e route guards | P1 | BACKLOG | PROPOSED | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21, AUTH-TARGET-ACCESS-CONTRACT-2026-08-21 | Owner request 2026-08-21 | Fazer menu, landing, router, página e backend consumirem a mesma autorização efetiva, com fallback válido e sem loops. |
-| 35 | AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21 | ConfiOne / Identity & Access | Simplificar painel administrativo de usuários e acessos | P2 | BACKLOG | PROPOSED | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | Owner request 2026-08-21 | Permitir nível, áreas, telas e READ/WRITE em linguagem do produto, sem claims, scopes, IDs, policy IDs ou configurações ocultas. |
-| 36 | AUTH-LEGACY-MIGRATION-SAFEGUARDS-2026-08-21 | ConfiOne / Identity & Access | Normalizar usuários e permissões existentes com de-para seguro | P1 | BACKLOG | PROPOSED | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21 | Owner request 2026-08-21 | Classificar e migrar permissões existentes sem perda de acesso válido, escalada de privilégio, remoção do último admin ou operação destrutiva não autorizada. |
-| 37 | AUTH-SECURITY-REGRESSION-2026-08-21 | ConfiOne / Identity & Access | Validar autorização funcional, segurança e regressão ponta a ponta | P1 | BACKLOG | PROPOSED | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21, AUTH-MODEL-INVENTORY-2026-08-21, AUTH-MODEL-AUDIT-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21, AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21, AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21, AUTH-LEGACY-MIGRATION-SAFEGUARDS-2026-08-21 | Owner request 2026-08-21 | Fechar a frente com matriz de acesso, testes de bypass/cross-tenant/WRITE, revogação, sessão stale, usuário desativado e validações reais registradas. |
-| 38 | R1-MY-SPACE-SAFE-LANDING-2026-08-21 | ConfiOne / Release 1 | Consolidar Meu Espaço como safe landing universal | P1 | BACKLOG | PROPOSED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | Owner decision 2026-08-21 | Toda sessão interna autenticada deve ter recepção permitida, fallback sem loop, contexto de permissões e estados explícitos para ausência de workspace. |
-| 39 | R1-SHELL-NAV-AUTH-INTEGRATION-2026-08-21 | ConfiOne / Release 1 | Fechar shell, navegação e autorização integrada | P1 | BACKLOG | PROPOSED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21, R1-MY-SPACE-SAFE-LANDING-2026-08-21 | Owner decision 2026-08-21 | Sidebar, header, busca global, menu do usuário, rotas, guards e menu usam a mesma fonte de verdade e cobrem loading, error, empty e fallback. |
-| 40 | R1-DASHBOARD-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Dashboard Gerencial completo | P1 | BACKLOG | PROPOSED | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21, DASHBOARD-UX-DENSITY-2026-08-21, ANALYTICS-METRIC-METHODOLOGY-2026-08-21, ANALYTICS-METRIC-CONTEXT-UI-2026-08-21, SUPPORT-DOMAIN-AUDIT-2026-08-21, FINANCE-DOMAIN-AUDIT-2026-08-21, PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21, R1-INTEGRATION-CALL-QUALITY-2026-08-21 | Owner decision 2026-08-21 | Gate para Visão Geral, Comercial, Customer Success, Suporte, Financeiro e Produto/Desenvolvimento, com investigação de APIs antes de marcar métrica como indisponível e evidência da cadeia de refresh. |
-| 41 | R1-CONFIGURATION-OPERATIONS-2026-08-21 | ConfiOne / Release 1 | Fechar Configurações operacionais | P1 | BACKLOG | PROPOSED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | Owner decision 2026-08-21 | Integrações, Governança de Dados, Histórico de Sincronizações e Marcas funcionam dentro da boundary de segurança e exibem cobertura, integridade, dependências e resultados reais. |
-| 42 | R1-HELP-ADMIN-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Central de Ajuda administrativa | P1 | BACKLOG | PROPOSED | R1-CONFIGURATION-OPERATIONS-2026-08-21 | Owner decision 2026-08-21 | Operação administrativa da Knowledge Base, lista, detalhe, criação, edição, estados editoriais, configurações e link público com autorização consistente. |
-| 43 | R1-PUBLIC-HELP-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Central Pública de Ajuda | P1 | BACKLOG | PROPOSED | R1-HELP-ADMIN-RELEASE-GATE-2026-08-21 | Owner decision 2026-08-21 | Expor somente conteúdo publicado, com home, lista, categoria, busca, artigo, relacionados e estados de ausência conforme contrato real. |
-| 44 | R1-INTEGRATED-QA-SECURITY-2026-08-21 | ConfiOne / Release 1 | Validar R1 ponta a ponta | P1 | BACKLOG | PROPOSED | R1-MY-SPACE-SAFE-LANDING-2026-08-21, R1-SHELL-NAV-AUTH-INTEGRATION-2026-08-21, R1-DASHBOARD-RELEASE-GATE-2026-08-21, R1-CONFIGURATION-OPERATIONS-2026-08-21, R1-HELP-ADMIN-RELEASE-GATE-2026-08-21, R1-PUBLIC-HELP-RELEASE-GATE-2026-08-21, AUTH-SECURITY-REGRESSION-2026-08-21 | Owner decision 2026-08-21 | Validar fluxo autenticado, navegação, dados, RLS, isolamento, permissões, auditoria, performance, console, rede, runtime e regressões. |
-| 45 | R1-RELEASE-READINESS-2026-08-21 | ConfiOne / Release 1 | Decidir prontidão da Release 1 | P1 | BACKLOG | PROPOSED | R1-INTEGRATED-QA-SECURITY-2026-08-21 | Owner decision 2026-08-21 | Go/no-go baseado em evidência, sem P1 aberto, limitações externas explicitadas e nenhuma superfície parcial declarada como pronta. |
-| 46 | R2-CUSTOMER-DATA-FOUNDATION-2026-08-21 | ConfiOne / Release 2 | Fechar fundação de dados da Central de Clientes | P2 | BACKLOG | PROPOSED | R1-RELEASE-READINESS-2026-08-21 | Owner decision 2026-08-21 | Identidade canônica, cliente ativo HubSpot, importação segura, referências externas e matching com OMIE sem fuzzy matching silencioso. |
-| 47 | R2-CUSTOMER-CENTRAL-WORKSPACE-2026-08-21 | ConfiOne / Release 2 | Implementar workspace da Central de Clientes | P2 | BACKLOG | PROPOSED | R2-CUSTOMER-DATA-FOUNDATION-2026-08-21 | Owner decision 2026-08-21 | Usar os blueprints oficiais, carteira e rota dedicada do cliente, tabs com dados reais, busca global sem duplicação e sem slide-over como workspace principal. |
-| 48 | R2-CUSTOMER-CENTRAL-QA-2026-08-21 | ConfiOne / Release 2 | Validar Central de Clientes V1 | P2 | BACKLOG | PROPOSED | R2-CUSTOMER-CENTRAL-WORKSPACE-2026-08-21 | Owner decision 2026-08-21 | Validar fidelidade visual, arquitetura de informação, segurança, tenant, performance, estados reais e divergências justificadas contra os blueprints. |
-| 49 | R1-INTEGRATION-CALL-QUALITY-2026-08-21 | ConfiOne / Release 1 | Verificar qualidade das chamadas de integrações e refresh dos painéis | P1 | DONE | APPROVED | FINANCE-DOMAIN-AUDIT-2026-08-21, KPI-REGISTRY-2026-08-21 | Owner decision OD-009 2026-08-22 | APPROVED por Sentinel; diagnóstico local arquivado em `handoffs/archive/R1-INTEGRATION-CALL-QUALITY-2026-08-21/` e `docs/reports/R1_INTEGRATION_CALL_QUALITY_2026-08-21.md`; sem escrita externa. |
+| 31 | AUTH-MODEL-AUDIT-2026-08-21 | ConfiOne / Identity & Access | Auditar complexidade, redundâncias e regras legadas | P1 | DONE | APPROVED | AUTH-MODEL-INVENTORY-2026-08-21 | Owner request 2026-08-21; promoção sequencial autorizada por OD-008 após inventário `APPROVED` e handoff `IDLE` | Auditoria documental aprovada pelo Sentinel; matriz factual, semântica limitada de `platform_admin`, itens não removíveis, contraexemplos e decisões pendentes arquivados. Sem simplificação estrutural. |
+| 32 | AUTH-SCREEN-REGISTRY-2026-08-21 | ConfiOne / Identity & Access | Definir registry canônico de áreas, telas, rotas e capabilities | P1 | DONE | APPROVED | AUTH-MODEL-AUDIT-2026-08-21 | Owner request 2026-08-21; promoção sequencial autorizada por OD-008 após audit `APPROVED` e handoff `IDLE` | Registry documental aprovado pelo Sentinel; capability `analytics.view` reconciliada, papel `dashboard_viewer` separado e superfícies não publicadas explicitamente classificadas. Sem alteração de runtime. |
+| 33 | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21 | ConfiOne / Identity & Access | Especificar modelo simplificado de nível, área, tela e READ/WRITE | P1 | DONE | APPROVED | AUTH-MODEL-AUDIT-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21 | Handoff arquivado e concluído localmente no checkpoint `d1f7793`; a especificação foi entregue sem implementar o modelo executável | Especificação documental concluída: níveis, precedência, `WRITE` implica `READ`, deny by default, escopo tenant/área, auditoria, proteção do último admin, sessão stale e de-para. O modelo executável permanece na task futura 53. |
+| 34 | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | ConfiOne / Identity & Access | Consolidar resolução de autorização, menu e route guards | P1 | DONE | APPROVED | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21, AUTH-TARGET-ACCESS-CONTRACT-2026-08-21 | Owner request 2026-08-21 | Fazer menu, landing, router, página e backend consumirem a mesma autorização efetiva, com fallback válido e sem loops. Commit local exclusivo após revisão Sentinel. |
+| 35 | AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21 | ConfiOne / Identity & Access | Simplificar linguagem do painel administrativo de usuários e acessos | P2 | DONE | APPROVED | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | OD-012 2026-08-22; execução restrita à UI, sem unificar o modelo executável | Usar linguagem de produto na AccessPage, sem claims, scopes, IDs, policy IDs ou configurações ocultas. Fontes e flags atuais permanecem autoridade; modelo Nível → Área → Tela → READ/WRITE fica em task futura. Commit local `a1c6993`. |
+| 36 | AUTH-LEGACY-MIGRATION-SAFEGUARDS-2026-08-21 | ConfiOne / Identity & Access | Normalizar usuários e permissões existentes com de-para seguro | P1 | DONE | APPROVED | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21 | OD-008; promoção sequencial após task 35 aprovada; fase inicial somente documental/read-only | Auditar e classificar o de-para atual, riscos de perda de acesso, escalada de privilégio, último administrador e stale. Nenhuma migration, grant, RLS/RPC ou escrita será executada nesta fase sem autorização específica. Commit local `f444a95`. |
+| 37 | AUTH-SECURITY-REGRESSION-2026-08-21 | ConfiOne / Identity & Access | Validar autorização funcional, segurança e regressão ponta a ponta | P1 | DONE | APPROVED | AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21, AUTH-MODEL-INVENTORY-2026-08-21, AUTH-MODEL-AUDIT-2026-08-21, AUTH-SCREEN-REGISTRY-2026-08-21, AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21, AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21, AUTH-LEGACY-MIGRATION-SAFEGUARDS-2026-08-21 | OD-008; aprovado por Sentinel e finalizado localmente em `cce0fdd`; fase read-only preservou limitações de cobertura | Matriz e testes locais para bypass, deny by default, perfil inativo, fallback e contexto. WRITE, stale real, revogação em sessão carregada e cross-tenant ponta a ponta permanecem não comprovados; sem alteração de autorização. |
+| 38 | R1-MY-SPACE-SAFE-LANDING-2026-08-21 | ConfiOne / Release 1 | Consolidar Meu Espaço como safe landing universal | P1 | DONE | APPROVED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | OD-008; aprovado por Sentinel e finalizado localmente em `66952d62c286eb4db38e049c34f90b199a66319f` | `/inicio` publicado como landing neutra, sem redirect indevido para Analytics, sem SupportGate, com proteção de sessão expirada e fallback seguro. QA browser autenticado permanece pendente. |
+| 39 | R1-SHELL-NAV-AUTH-INTEGRATION-2026-08-21 | ConfiOne / Release 1 | Fechar shell, navegação e autorização integrada | P1 | DONE | APPROVED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21, R1-MY-SPACE-SAFE-LANDING-2026-08-21 | OD-008; aprovado por Sentinel e finalizado localmente em `9cafdaf3b30d9581821a519933b5d74e0763dd32` | Shell, menu, busca e guards reconciliados por testes focused; sem alteração de runtime, autorização ou shell visual. QA browser autenticado permanece pendente. |
+| 40 | R1-DASHBOARD-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Dashboard Gerencial completo | P1 | DONE | APPROVED | OVERVIEW-GOVERNANCE-DENSITY-2026-08-21, DASHBOARD-UX-DENSITY-2026-08-21, ANALYTICS-METRIC-METHODOLOGY-2026-08-21, ANALYTICS-METRIC-CONTEXT-UI-2026-08-21, SUPPORT-DOMAIN-AUDIT-2026-08-21, FINANCE-DOMAIN-AUDIT-2026-08-21, PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21, R1-INTEGRATION-CALL-QUALITY-2026-08-21, DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21, R1-UTF8-ENCODING-INTEGRITY-2026-08-21 | OD-008/OD-011; aprovado por Sentinel e finalizado localmente em `0e7d7c1bccb2aed0b0fd9eb673d4e2eb72fcb230` | Gate auditável das seis abas, filtros, coortes, frescor, estados, refresh/503 e visualizações; Produto/Desenvolvimento explicitamente indisponível e Financeiro fora do filtro operacional. |
+| 41 | R1-CONFIGURATION-OPERATIONS-2026-08-21 | ConfiOne / Release 1 | Fechar Configurações operacionais | P1 | DONE | APPROVED | AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21 | OD-008; promoção sequencial após task 40 aprovada | Integrações, Governança de Dados, Histórico de Sincronizações e Marcas funcionam dentro da boundary de segurança e exibem cobertura, integridade, dependências e resultados reais. |
+| 42 | R1-HELP-ADMIN-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Central de Ajuda administrativa | P1 | DONE | APPROVED | R1-CONFIGURATION-OPERATIONS-2026-08-21 | OD-008; promovida após task 41 aprovada, finalizada e current/ normalizado para IDLE | Operação administrativa da Knowledge Base, lista, detalhe, criação, edição, estados editoriais, configurações e link público com autorização consistente. |
+| 43 | R1-PUBLIC-HELP-RELEASE-GATE-2026-08-21 | ConfiOne / Release 1 | Fechar Central Pública de Ajuda | P1 | DONE | APPROVED | R1-HELP-ADMIN-RELEASE-GATE-2026-08-21 | OD-008; promovida após task 42 aprovada, finalizada e current/ normalizado para IDLE | Expor somente conteúdo publicado, com home, lista, categoria, busca, artigo, relacionados e estados de ausência conforme contrato real. |
+| 44 | R1-INTEGRATED-QA-SECURITY-2026-08-21 | ConfiOne / Release 1 | Validar R1 ponta a ponta | P1 | DONE | APPROVED | R1-MY-SPACE-SAFE-LANDING-2026-08-21, R1-SHELL-NAV-AUTH-INTEGRATION-2026-08-21, R1-DASHBOARD-RELEASE-GATE-2026-08-21, R1-CONFIGURATION-OPERATIONS-2026-08-21, R1-HELP-ADMIN-RELEASE-GATE-2026-08-21, R1-PUBLIC-HELP-RELEASE-GATE-2026-08-21, AUTH-SECURITY-REGRESSION-2026-08-21 | OD-008; finalizada localmente após APPROVED do Sentinel; handoff arquivado. | Auditoria integrada local/read-only concluída; limitações de browser autenticado, runtime servido, RLS/cross-tenant, performance e integrações permanecem registradas. |
+| 45 | R1-RELEASE-READINESS-2026-08-21 | ConfiOne / Release 1 | Decidir prontidão da Release 1 | P1 | DONE | APPROVED | R1-INTEGRATED-QA-SECURITY-2026-08-21 | OD-008; finalizada localmente após APPROVED do Sentinel; handoff arquivado. | Recomendação documental NO-GO preservada; limitações externas permanecem explícitas. |
+| 46 | R2-CUSTOMER-DATA-FOUNDATION-2026-08-21 | ConfiOne / Release 2 | Fechar fundação de dados da Central de Clientes | P2 | DONE | APPROVED | R1-RELEASE-READINESS-2026-08-21 | OD-008; finalizada localmente após APPROVED do Sentinel; handoff arquivado. | Fundação auditada localmente; matching OMIE NOT_PROVEN, sem fuzzy matching, e NO-GO externo preservado. |
+| 47 | R2-CUSTOMER-CENTRAL-WORKSPACE-2026-08-21 | ConfiOne / Release 2 | Implementar workspace da Central de Clientes | P2 | DONE | APPROVED | R2-CUSTOMER-DATA-FOUNDATION-2026-08-21 | OD-008; finalizada localmente após APPROVED do Sentinel; handoff arquivado. | Rota dedicada e workspace existente reutilizado; QA autenticado, tabs internas, estados e isolamento servido permanecem não comprovados; R2 não publicada. |
+| 48 | R2-CUSTOMER-CENTRAL-QA-2026-08-21 | ConfiOne / Release 2 | Validar Central de Clientes V1 | P2 | DONE | APPROVED | R2-CUSTOMER-CENTRAL-WORKSPACE-2026-08-21 | OD-008; finalizada no commit local exclusivo; QA local não publica a Release 2 | Validar fidelidade visual, arquitetura de informação, segurança, tenant, performance, estados reais e divergências justificadas contra os blueprints. |
+| 49 | R1-INTEGRATION-CALL-QUALITY-2026-08-21 | ConfiOne / Release 1 | Verificar qualidade das chamadas de integrações e refresh dos painéis | P1 | DONE | APPROVED | FINANCE-DOMAIN-AUDIT-2026-08-21, KPI-REGISTRY-2026-08-21 | Owner decision OD-009 2026-08-22 | APPROVED por Sentinel; diagnóstico local arquivado em `handoffs/archive/R1-INTEGRATION-CALL-QUALITY-2026-08-21/` e `docs/reports/R1_INTEGRATION_CALL_QUALITY_2026-08-21.md`; atualização de radar em 2026-08-22 registra 503 no HubSpot/analytics e recusa inicial do painel local; sem escrita externa. |
+| 53 | AUTH-ACCESS-MODEL-EXECUTABLE-2026-08-22 | ConfiOne / Identity & Access | Definir e implementar modelo executável Nível → Área → Tela → READ/WRITE | P1 | DONE | APPROVED | AUTH-TARGET-ACCESS-CONTRACT-2026-08-21, AUTH-ADMIN-CONSOLE-SIMPLIFICATION-2026-08-21, AUTH-SECURITY-REGRESSION-2026-08-21 | OD-013; auditoria/especificação documental finalizada em commit local exclusivo; sem migração executável neste lote | Auditar e especificar o contrato executável compatível, com segurança, tenant/área, auditoria, compatibilidade e plano separado para RLS/RPC/migrations. Nenhuma alteração remota neste lote. |
+| 54 | AUTH-RELEASE-SURFACE-REGRESSION-2026-08-22 | ConfiOne / Identity & Access | Resolver divergência de publicação da rota /admin/tenants | P1 | DONE | APPROVED | AUTH-ACCESS-MODEL-EXECUTABLE-2026-08-22 | OD-014; finalizada localmente; deploy condicionado a autorização operacional separada | Publicar `/admin/tenants` no manifesto first-release usando screen key e guards existentes, corrigir regressões do contrato e preparar o checklist de deploy. |
+| 50 | DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21 | ConfiOne / Release 1 | Governar o vínculo entre pipeline HubSpot, área e operação | P1 | DONE | APPROVED | DATA-OPERATION-SCOPE-2026-08-21, DATA-PIPELINE-STAGE-SCOPE-2026-08-21, KPI-REGISTRY-2026-08-21 | Owner decision OD-009 2026-08-22; aprovado pelo Sentinel e finalizado localmente por Codex | Implementado e aprovado: mapa canônico `pipeline_id -> área -> operação`, elegibilidade server-side confirmada, exclusão de suggested/ambiguous, filtros operacionais para os domínios aplicáveis e cobertura ticket-empresa auditável em Customer Success. Handoff arquivado; sem push, merge, deploy ou escrita externa. |
+| 51 | R1-UTF8-ENCODING-INTEGRITY-2026-08-21 | ConfiOne / Release 1 | Corrigir integridade UTF-8 e caracteres acentuados/especiais | P1 | DONE | APPROVED | R1-INTEGRATION-CALL-QUALITY-2026-08-21, DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21 | Owner request 2026-08-21; aprovado pelo Sentinel e finalizado localmente por Codex | Mitigação defensiva de charset UTF-8 aplicada nas respostas compartilhadas; causa do incidente permanece não confirmada por limitação do runtime local. Regressões e diagnóstico arquivados; sem push, merge, deploy ou escrita externa. |
 | 52 | DEV-CONTROL-VISUAL-V1-2026-08-22 | ConfiOne / Engineering | Evoluir o painel visual local de acompanhamento | P1 | DONE | APPROVED | DEV-CONTROL-MVP, CONTROL-PLANE-BACKLOG-2026-08-21 | Owner decision OD-010 2026-08-22 | APPROVED pelo Sentinel após re-review; handoff arquivado em `handoffs/archive/DEV-CONTROL-VISUAL-V1-2026-08-22/`; painel local read-only concluído, sem escrita externa. |
 
 Regras da fila:
@@ -141,11 +204,15 @@ Regras da fila:
 - somente um item pode estar `ACTIVE` por vez;
 - `BACKLOG` representa item decomposto aguardando dependência ou seleção;
 - `READY` representa item elegível para abertura da próxima TASK;
-- A frente de autorização foi registrada com a primeira task em `READY` e as
-  demais em `BACKLOG/PROPOSED`. A task 29 foi aprovada, integrada localmente e
-  marcada como `DONE`; `handoffs/current/` retornou a `IDLE`.
-- A task 30 permanece `BACKLOG` com `Approval = PROPOSED`, portanto não é
-  elegível para abertura automática neste ciclo.
+- A frente de autorização foi registrada com as tasks 29 e 30 concluídas
+  localmente; a task 30 foi aprovada por Sentinel, arquivada e finalizada pelo
+  Forge em checkpoint local exclusivo.
+- A autorização de `OD-007` cobre somente a task 30 e não promove as tasks 31 a
+  37, que permanecem `BACKLOG/PROPOSED`.
+- `OD-008` autoriza o monitoramento contínuo do ciclo local e a promoção
+  sequencial da próxima task existente quando os gates, dependências e o estado
+  `IDLE` forem satisfeitos. Não autoriza aprovação em massa nem elimina a
+  revisão independente do Sentinel.
 - o próximo item só pode ser aberto depois de `APPROVED` no item anterior, suas
   dependências satisfeitas e o retorno de `handoffs/current/` para `IDLE`;
 - `Approval` é autorização do proprietário; `State` controla elegibilidade e
@@ -161,6 +228,14 @@ Regras da fila:
   observabilidade. Não deve ser confundida com a auditoria de domínio
   financeiro já concluída nem autoriza executar sync externo ou alterar
   credenciais;
+- `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` estende as tasks de escopo de
+  Operação e Pipeline/Stage já concluídas. Ela trata a governança de vínculo
+  entre pipeline, área e operação, não a semântica de estágio já fechada;
+- `R1-UTF8-ENCODING-INTEGRITY-2026-08-21` trata a integridade da codificação e
+  não deve ser resolvida por transliteração ou remoção de acentos;
+- em `OWNER_DECISION_REQUIRED`, risco material ou contaminação não separável,
+  o heartbeat deve preservar o worktree, registrar a evidência e interromper a
+  promoção até decisão específica do proprietário;
 - cada item exige TASK, IMPLEMENTATION e REVIEW próprios, com entrega em
   `READY_FOR_REVIEW` e `Owner = Sentinel` antes da revisão;
 - heartbeat do Forge pode abrir automaticamente o próximo item somente quando a

@@ -32,7 +32,7 @@ try {
   await page.getByLabel('Email').fill(credentials.email);
   await page.getByLabel('Senha').fill(credentials.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.waitForURL(/\/admin\/analytics/, { timeout: 30_000 });
+  await page.waitForURL(/\/inicio/, { timeout: 30_000 });
   await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
 
   const bodyText = await page.locator('body').innerText();
@@ -49,7 +49,7 @@ try {
   for (const route of ['/admin/knowledge', '/admin/settings', '/admin/system', '/admin/logs', '/admin/customer-portal', '/portal', '/cs', '/support', '/engineering', '/internal-actions']) {
     await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1_500);
-    results.push({ route, blocked: new URL(page.url()).pathname === '/access-denied' });
+    results.push({ route, redirectedToReception: new URL(page.url()).pathname === '/inicio' });
   }
 
   await page.goto(`${baseUrl}/admin/analytics`, { waitUntil: 'networkidle' });
@@ -63,5 +63,5 @@ try {
 }
 
 console.log(JSON.stringify({ results, consoleErrors, requestFailures }, null, 2));
-const blocked = results.filter((item) => 'blocked' in item);
-if (consoleErrors.length || requestFailures.length || results.some((item) => item.horizontalOverflow === false) || blocked.some((item) => !item.blocked)) process.exitCode = 1;
+const redirected = results.filter((item) => 'redirectedToReception' in item);
+if (consoleErrors.length || requestFailures.length || results.some((item) => item.horizontalOverflow === false) || redirected.some((item) => !item.redirectedToReception)) process.exitCode = 1;

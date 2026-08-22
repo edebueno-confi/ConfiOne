@@ -889,6 +889,41 @@ Fase 8.2:
   - mantém os contatos como payload contratual único para evitar join de frontend em tabelas base;
   - usa `security_barrier = true`.
 
+### `vw_admin_customer_account_groups_list`
+- Finalidade: lista administrativa de agrupamentos internos de relacionamento.
+- Retorna: slug, nome, tipo (`economic_group` ou `service_umbrella` para novos agrupamentos), status, descricao, autoria e contadores de tenants e marcas representadas. O valor legado `portfolio`, se existir em dados antigos, nao representa a carteira de Customer Success.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - nao afirma relacao societaria, juridica ou financeira;
+  - nao depende de leitura direta do frontend nas tabelas de grupos e membros;
+  - usa `security_barrier = true`.
+
+### `vw_admin_customer_account_group_detail`
+- Finalidade: detalhe administrativo de um agrupamento interno.
+- Retorna: metadados do agrupamento e `members` em `jsonb`, com tenants operacionais e marcas representadas, relacao operacional, origem e chave externa sanitizada.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - marcas podem ser representadas sem criar contrato ou entidade juridica ficticia;
+  - nenhuma escrita e feita no HubSpot, OMIE/OME ou outra integracao;
+  - usa `security_barrier = true`.
+
+### `vw_admin_tenant_group_context`
+- Finalidade: contexto resumido do agrupamento principal de cada tenant para a Central de Clientes.
+- Retorna: `tenant_id`, grupo principal, tipo, relacao e quantidade de grupos ativos.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - a escolha do grupo principal respeita `is_primary` e depois ordem deterministica por nome;
+  - nao calcula ou infere grupos por CNPJ, nome ou dados do HubSpot;
+  - usa `security_barrier = true`.
+
+As mutacoes desta camada passam exclusivamente por:
+
+- `rpc_admin_create_customer_account_group`;
+- `rpc_admin_add_customer_account_group_member`;
+- `rpc_admin_archive_customer_account_group_member`.
+
+Essas RPCs exigem `platform_admin`, registram autoria e preservam `source_system`/`source_external_id` apenas como metadados de reconciliacao. Elas nao sincronizam dados para provedores externos.
+
 ### `vw_admin_tenant_memberships`
 - Finalidade: read model global de memberships por tenant.
 - Retorna: identidade do membership, tenant associado, status do tenant, `user_id`, nome, email, avatar, `is_active`, role e status do membership, além do convidante quando existir.

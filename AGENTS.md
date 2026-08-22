@@ -165,6 +165,14 @@ Comece pelo resultado e informe objetivamente:
 
 ## Colaboração multiagente e handoff canônico
 
+### Identidade operacional vigente
+
+Nesta fase, o agente executor Codex opera com o nome Forge e o reviewer
+independente ativo opera com o nome Sentinel. Claude permanece como referência
+histórica e pode auditar os lotes quando retornar. O campo `Reviewer active` em
+`handoffs/current/STATUS.md` é a fonte do reviewer corrente; não aguardar Claude
+quando ele indicar Sentinel.
+
 O fluxo persistente entre Codex e Claude está em
 docs/engineering/REVIEW_PROTOCOL.md e handoffs/README.md.
 
@@ -210,8 +218,16 @@ Ao implementar:
 - não use `git add .` na finalização. Se houver contaminação que não possa ser
   separada deterministicamente, preserve o worktree e registre
   `OWNER_DECISION_REQUIRED`;
-- nunca altere REVIEW.md para remover ou suavizar finding do Claude;
-- nunca autodeclare APPROVED.
+- nunca altere REVIEW.md para remover ou suavizar finding do Claude ou Sentinel;
+- nunca autodeclare APPROVED como executor.
+
+Ao concluir implementação, correção ou validação e entregar o lote para
+`READY_FOR_REVIEW`, Forge deve avisar explicitamente o Sentinel no canal/thread
+disponível, informando task, estado, Owner, SHAs, allowlist, gates, limitações e
+ação esperada. A notificação é complementar ao `TASK.md`,
+`IMPLEMENTATION.md` e `STATUS.md`; não substitui esses artefatos e não autoriza
+aprovação automática. Se não houver canal direto entre threads, registre a
+transferência no handoff e aguarde o reviewer sem autodeclarar `APPROVED`.
 
 Ao entregar para review, `IMPLEMENTATION.md` é o pedido canônico. Rode
 `npm run review:gates` quando aplicável e, se o quality gate gerar um pacote
@@ -254,10 +270,10 @@ Quando um quality gate for aplicável, o Codex deve registrar seus comandos e
 resultados em `IMPLEMENTATION.md`; pode gerar `.review/inbox/<lote>.json` com o
 escopo, arquivos, contratos, validações, riscos e pendências. O gate falha apenas
 em regressão contra `.review/baseline.json`; o baseline não deve ser alterado para
-obter aprovação. Claude pode executar `npm run review:context` e gravar evidência
+obter aprovação. Sentinel ou Claude pode executar `npm run review:context` e gravar evidência
 opcional em `.review/verdicts/<lote>.md`, sempre alinhada a `REVIEW.md`.
 
-Durante revisão, Claude não altera código de produto, migrations, testes de produto,
+Durante revisão, Sentinel e Claude não alteram código de produto, migrations, testes de produto,
 contratos ou configuração executável. Objeto listado em `SURFACE_PENDING_UI` é
 funcionalidade pronta aguardando UI ou release, nunca código morto.
 

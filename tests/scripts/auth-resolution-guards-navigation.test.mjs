@@ -16,10 +16,10 @@ const admin = {
   hasReceptionAccess: true,
 };
 
-test('administrador válido abre somente superfície publicada e recebe landing publicada', () => {
+test('administrador válido abre somente superfície publicada e recebe landing neutra', () => {
   assert.equal(canOpenInternalRoute('/admin/analytics', admin), true);
   assert.equal(canOpenInternalRoute('/admin/system', admin), false);
-  assert.equal(getDefaultInternalLandingRoute(admin), '/admin/analytics');
+  assert.equal(getDefaultInternalLandingRoute(admin), '/inicio');
 });
 
 test('rota solicitada sem autorização retorna fallback seguro sem encerrar sessão', () => {
@@ -29,7 +29,7 @@ test('rota solicitada sem autorização retorna fallback seguro sem encerrar ses
     hasReceptionAccess: true,
   };
   assert.equal(canOpenInternalRoute('/admin/settings', viewer), false);
-  assert.equal(getDefaultInternalLandingRoute(viewer), '/admin/analytics');
+  assert.equal(getDefaultInternalLandingRoute(viewer), '/inicio');
 });
 
 test('rota não publicada permanece negada mesmo para administrador', () => {
@@ -58,5 +58,5 @@ test('contexto sem autorização não cria rota operacional por texto ou role im
     hasReceptionAccess: true,
   };
   assert.equal(canOpenInternalRoute('/admin/analytics', denied), false);
-  assert.equal(getDefaultInternalLandingRoute(denied), null);
+  assert.equal(getDefaultInternalLandingRoute(denied), '/inicio');
 });

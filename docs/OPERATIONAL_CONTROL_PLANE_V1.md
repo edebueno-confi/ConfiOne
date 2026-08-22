@@ -83,6 +83,16 @@ Auditar antes de qualquer schema change. A decisao futura deve ser uma destas:
 
 Criar `internal_area_memberships_v2` sem justificativa tecnica esta proibido.
 
+### Agrupamento interno de clientes
+
+O cliente B2B continua sendo representado por `tenants`, a ancora operacional e contratual do ConfiOne. Quando a operacao precisar consolidar uma familia de marcas ou uma carteira atendida por um contrato, o agrupamento deve usar `customer_account_groups` e `customer_account_group_members`.
+
+Esse agrupamento e uma classificacao interna e nao deve ser interpretado automaticamente como grupo economico, entidade juridica ou entidade de faturamento. O tipo explicito suporta `economic_group`, `service_umbrella` e `portfolio`, enquanto a relacao do membro distingue `contract_holder`, `served_brand` e `operational_member`.
+
+Uma marca representada pode existir como membro do agrupamento sem receber um tenant ou contrato proprio. Quando houver operacao, permissao, carteira, KPI ou isolamento especifico, ela deve ser vinculada a um tenant operacional existente. HubSpot e OMIE/OME permanecem fontes externas de dados e identidade; o cadastro interno registra origem e chave externa, mas nao escreve nesses provedores.
+
+Essa separacao permite representar tanto Grendene e suas marcas quanto Infracommerce e as marcas atendidas dentro do contrato, sem duplicar clientes nem inventar relacoes societarias.
+
 ### `customer_account_features`
 
 Reaproveitar apenas como estado/feature operacional de uma conta quando fizer sentido. Nao usar como catalogo canonico de produtos, planos, modulos ou features comercializadas.

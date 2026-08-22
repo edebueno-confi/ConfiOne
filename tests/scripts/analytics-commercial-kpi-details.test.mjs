@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mapCommercialKpiDetails } from '../../apps/web/src/features/analytics/analytics-model.ts';
+import { formatCommercialWinRate, mapCommercialKpiDetails } from '../../apps/web/src/features/analytics/analytics-model.ts';
 
 test('preserva ganhos fechados por responsável e o detalhamento auditável do período', () => {
   const result = mapCommercialKpiDetails({
@@ -22,4 +22,10 @@ test('preserva ganhos fechados por responsável e o detalhamento auditável do p
     { dealId: '54744523356', dealName: 'Contrato Pedro', ownerName: 'Pedro Santos', closedOn: '2026-08-06', amountHome: 4000 },
     { dealId: '59854632523', dealName: 'Contrato Lucas', ownerName: 'Lucas Sacramento', closedOn: '2026-08-06', amountHome: 3000 },
   ]);
+});
+
+test('formata win rate do read model em pontos percentuais sem multiplicação dupla', () => {
+  assert.equal(formatCommercialWinRate(75), '75%');
+  assert.equal(formatCommercialWinRate(0), '0%');
+  assert.equal(formatCommercialWinRate(null), 'Indisponível');
 });

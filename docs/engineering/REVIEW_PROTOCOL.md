@@ -2,7 +2,8 @@
 
 ## Objetivo
 
-Este é o contrato normativo do fluxo Codex e Claude. O repositório é a fonte
+Este é o contrato normativo do fluxo Forge/Sentinel, com Codex e Claude preservados
+como referências históricas e aliases de agente. O repositório é a fonte
 compartilhada da verdade. Conversas externas, memória de chat e copy/paste não
 substituem TASK.md, IMPLEMENTATION.md, REVIEW.md, STATUS.md, commits, diff, testes
 ou evidências persistidas.
@@ -23,14 +24,24 @@ persistente correspondente.
 
 ## Papéis
 
-### Codex, Software Engineer / Executor
+### Forge, Senior Software Engineer / Implementer
 
-Codex investiga, implementa, corrige, altera banco somente quando autorizado,
-executa validações, atualiza documentação, responde findings e publica
-IMPLEMENTATION.md. Codex não aprova formalmente a própria implementação.
+Forge é o alias operacional do agente Codex executor. Investiga, implementa,
+corrige, altera banco somente quando autorizado, executa validações, atualiza
+documentação, responde findings e publica IMPLEMENTATION.md. Forge não aprova
+formalmente a própria implementação.
+
+### Sentinel, Independent Code Reviewer / Principal Engineer
+
+Sentinel é o reviewer independente ativo enquanto Claude estiver indisponível.
+Revisa requisitos, contratos, arquitetura, segurança, multi-tenancy, autorização,
+RLS, migrations, regressões, QA, UX e documentação. Sentinel escreve findings
+objetivos e o veredito formal em REVIEW.md, sem alterar código de produto,
+migrations, testes de produto, contratos ou configuração executável.
 
 ### Claude, Principal Engineer / Reviewer
 
+Claude permanece como reviewer histórico e reviewer de auditoria quando retornar.
 Claude revisa implementação contra requisitos, contratos, arquitetura, segurança,
 multi-tenancy, autorização, RLS, migrations, regressões, QA, UX e documentação.
 Claude escreve findings objetivos e o veredito formal em REVIEW.md.
@@ -45,10 +56,34 @@ posterior do proprietário.
 ### Owner do ciclo
 
 O campo `Owner` identifica o agente responsável pelo próximo passo do estado atual,
-não o autor da última alteração. Codex atualiza `Owner` para `Claude` ao concluir a
-implementação e mover o estado para `READY_FOR_REVIEW`. Claude atualiza `Owner` para
-`Codex` ao solicitar correções e para o próximo responsável definido pelo processo
-quando aprovar ou bloquear. `STATUS.md` é a fonte canônica desse campo.
+não o autor da última alteração. Forge atualiza `Owner` para `Sentinel` ao concluir
+a implementação e mover o estado para `READY_FOR_REVIEW`. Sentinel atualiza `Owner`
+para `Forge` ao solicitar correções e após aprovar um lote elegível para integração
+local. `Owner = Ede` fica reservado a decisões do proprietário, bloqueios dependentes
+do proprietário e operações protegidas. `STATUS.md` é a fonte canônica desse campo.
+
+### Notificação de transferência
+
+Sempre que Forge concluir uma implementação, corrigir um finding ou finalizar
+os gates e transferir o lote para `READY_FOR_REVIEW`, Forge deve enviar uma
+notificação explícita ao chat/thread do Sentinel. A notificação deve conter, no
+mínimo, a task, o estado, `Owner=Sentinel`, o reviewer ativo, base SHA, estado
+do implementation SHA, resumo da allowlist, gates executados, limitações e a
+ação esperada do reviewer. Ela deve ser feita imediatamente após a atualização
+de `TASK.md`, `IMPLEMENTATION.md` e `STATUS.md`.
+
+Essa notificação não substitui os artefatos canônicos, não altera o REVIEW.md e
+não autoriza commit, push, merge, deploy ou qualquer operação externa. Se o
+ambiente não oferecer um canal direto entre threads, Forge deve registrar a
+entrega nos artefatos canônicos e deixar explícito no handoff que a revisão de
+Sentinel está pendente; a ausência do canal não autoriza autodeclarar aprovação.
+
+Sempre que Sentinel concluir uma verificação e transferir o próximo passo para
+Forge, seja por `CHANGES_REQUESTED` ou por `APPROVED`, Sentinel deve enviar uma
+notificação explícita ao chat do Forge com a task, o veredito, os findings ainda
+abertos quando houver, os gates relevantes e a ação esperada. A notificação não
+substitui `REVIEW.md` ou `STATUS.md`; ela apenas garante que o implementador
+receba imediatamente a transição registrada no repositório.
 
 ### Modo excepcional de agente único
 
@@ -96,17 +131,17 @@ COMPLETED, BLOCKED, DONE.
 
 Fluxo normal:
 
-READY_FOR_IMPLEMENTATION -> Codex
+READY_FOR_IMPLEMENTATION -> Forge
 BACKLOG -> aguardando dependências ou elegibilidade
-READY -> Codex pode abrir a TASK quando dependências e autorização estiverem satisfeitas
-IMPLEMENTING -> Codex trabalha
-VALIDATING -> Codex executa os gates finais aplicáveis
-READY_FOR_REVIEW -> Codex preenche IMPLEMENTATION.md
-REVIEWING -> Claude lê TASK, IMPLEMENTATION, diff e evidências
+READY -> Forge pode abrir a TASK quando dependências e autorização estiverem satisfeitas
+IMPLEMENTING -> Forge trabalha
+VALIDATING -> Forge executa os gates finais aplicáveis
+READY_FOR_REVIEW -> Forge preenche IMPLEMENTATION.md
+REVIEWING -> Sentinel lê TASK, IMPLEMENTATION, diff e evidências
 APPROVED -> ação automática FINALIZE_LOCAL para lote elegível
-FINALIZING_LOCAL -> Codex verifica escopo, cria checkpoint local e arquiva
+FINALIZING_LOCAL -> Forge verifica escopo, cria checkpoint local e arquiva
 COMPLETED -> checkpoint local registrado; normalizar current/ para IDLE
-REQUEST_CHANGES -> CHANGES_REQUESTED -> Codex corrige findings
+REQUEST_CHANGES -> CHANGES_REQUESTED -> Forge corrige findings
 CHANGES_REQUESTED -> FIXING -> READY_FOR_REVIEW
 BLOCKED -> intervenção do proprietário
 APPROVED -> DONE somente após o processo de integração aplicável
@@ -122,7 +157,7 @@ representa trabalho elegível para abrir uma TASK. Ao abrir a TASK, o estado
 corrente deve ser `READY_FOR_IMPLEMENTATION`; a fila permanece `READY` até a
 implementação começar.
 
-Durante `FINALIZING_LOCAL`, o Codex relê TASK, IMPLEMENTATION e REVIEW, confirma
+Durante `FINALIZING_LOCAL`, Forge relê TASK, IMPLEMENTATION e REVIEW, confirma
 o veredito APPROVED, executa os gates finais e `git diff --check`, verifica a
 allowlist do lote contra o diff, faz stage somente dos caminhos pertencentes ao
 lote, cria um commit local exclusivo, registra o SHA nos artefatos de conclusão,
@@ -131,19 +166,19 @@ promove a próxima tarefa elegível da fila. Se a separação determinística fa
 preserva todo o worktree e registra `OWNER_DECISION_REQUIRED`.
 
 Após `APPROVED`, uma tarefa previamente autorizada na fila possui autorização
-persistente para o ciclo `FINALIZE_LOCAL`. O Codex pode criar o commit local
+persistente para o ciclo `FINALIZE_LOCAL`. Forge pode criar o commit local
 exclusivo do lote, arquivar o handoff e promover o próximo item elegível sem nova
 autorização conversacional. Essa autorização não inclui `git add .`, push, force
 push, merge, pull request, deploy, migration remota, alteração de secrets,
 produção ou alteração da release surface. Se o escopo do commit não puder ser
-separado com segurança das alterações preexistentes, o Codex deve parar e
+separado com segurança das alterações preexistentes, Forge deve parar e
 registrar `OWNER_DECISION_REQUIRED`.
 
 Em `READY_FOR_IMPLEMENTATION`, `IMPLEMENTING`, `CHANGES_REQUESTED` e `FIXING`, o
-Owner esperado é Codex. Em `READY_FOR_REVIEW` e `REVIEWING`, o Owner esperado é
-Claude, salvo `OWNER_AUTHORIZED_SELF_REVIEW`, quando o Owner permanece Codex e
-`Role: REVIEWER`. A transição deve ser registrada em `STATUS.md` pelo agente
-que entrega o próximo passo.
+Owner esperado é Forge. Em `READY_FOR_REVIEW` e `REVIEWING`, o Owner esperado é
+Sentinel enquanto `Reviewer active = Sentinel`. Após `APPROVED` de tarefa
+previamente autorizada, o Owner retorna a Forge para `FINALIZE_LOCAL`. A transição
+deve ser registrada em `STATUS.md` pelo agente que entrega o próximo passo.
 
 Nenhum agente deve editar código do produto enquanto o outro estiver em
 IMPLEMENTING, FIXING ou REVIEWING na mesma working tree. Worktrees paralelos
@@ -152,8 +187,8 @@ só devem ser usados se já estiverem funcionando de forma confiável.
 ## Artefatos obrigatórios
 
 - handoffs/current/TASK.md: escopo e critérios antes da implementação;
-- handoffs/current/IMPLEMENTATION.md: evidência do lote executado pelo Codex;
-- handoffs/current/REVIEW.md: findings e veredito do Claude;
+- handoffs/current/IMPLEMENTATION.md: evidência do lote executado pelo Forge;
+- handoffs/current/REVIEW.md: findings e veredito do reviewer ativo;
 - handoffs/current/STATUS.md: estado atual da máquina;
 - .review/inbox/<task-id>.json: pacote técnico opcional, gerado quando o quality
   gate for aplicável; não substitui `IMPLEMENTATION.md`;
@@ -171,7 +206,7 @@ UNRESOLVED — requires project owner decision
 
 ## IMPLEMENTATION.md
 
-O Codex registra implementador, base SHA, implementation SHA ou estado
+Forge registra implementador, base SHA, implementation SHA ou estado
 UNCOMMITTED_WORKTREE, resumo, decisões, arquivos, migrations, testes, comandos,
 resultados, limitações, riscos e pontos para o reviewer.
 
@@ -179,7 +214,7 @@ Nenhum teste pode ser declarado aprovado sem ter sido executado.
 
 ## REVIEW.md e findings
 
-O Claude registra Task ID, reviewer, commit ou worktree revisado, base commit,
+O reviewer ativo registra Task ID, reviewer, commit ou worktree revisado, base commit,
 data, resultado e findings. Cada finding contém:
 
 - ID;

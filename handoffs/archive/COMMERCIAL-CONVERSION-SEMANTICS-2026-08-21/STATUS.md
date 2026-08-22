@@ -7,10 +7,11 @@ Role: EXECUTOR
 Reviewer active: Sentinel
 Review mode: SENTINEL_REQUIRED
 Base SHA: 892efd4c7d6e988bc98f4e0598f00782776f721f
-Current SHA: UNCOMMITTED_WORKTREE (HEAD 47fba447731bd702c72fe7f147887a0072082890)
+Current SHA: 63efe05f566dd63a2a74e7d4089abf14fa381373
 Last reviewer: Sentinel
 Last review: 2026-08-21 — APPROVED; F-CONV-001 e F-CONV-002 resolvidos; observação PROPOSED para o registro canônico de KPIs
 Updated at: 2026-08-21
+Integration commit: 63efe05f566dd63a2a74e7d4089abf14fa381373
 
 ## Handoff
 

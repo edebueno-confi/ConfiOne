@@ -6,4 +6,5 @@
 - Reviewer active: Sentinel
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
-- Próximo passo: aguardar promoção sequencial de task autorizada.
+
+Nenhuma task ativa no diretório corrente.

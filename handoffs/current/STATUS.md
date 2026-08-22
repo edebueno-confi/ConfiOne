@@ -7,5 +7,6 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Approval: n/a
-- Próximo passo: aguardar próxima task autorizada e elegível.
+- Approval: none
+- Review verdict: none
+- Próximo passo: aguardar promoção autorizada da fila.

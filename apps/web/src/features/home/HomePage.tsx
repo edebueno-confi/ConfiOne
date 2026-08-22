@@ -92,7 +92,11 @@ function KpiCard({
 
 export function HomePage() {
   const location = useLocation();
-  const { user } = useAuthContext();
+  const { gate, user } = useAuthContext();
+  const isSupportOperator =
+    gate.actor?.is_platform_admin === true ||
+    gate.actor?.roles.some((role) => role === 'support_manager' || role === 'support_agent') === true ||
+    gate.actor?.screen_keys.some((key) => ['support_inbox', 'support_queue', 'support_tickets'].includes(key)) === true;
   const [state, setState] = useState<LoadState>({ phase: 'loading' });
   const accessDeniedState = location.state as AccessDeniedNavigationState | null;
   const accessDeniedNotice = accessDeniedState?.fromAccessDenied
@@ -100,6 +104,11 @@ export function HomePage() {
     : null;
 
   useEffect(() => {
+    if (!isSupportOperator) {
+      setState({ phase: 'ready', items: [] });
+      return undefined;
+    }
+
     let cancelled = false;
     listInboxItems()
       .then((items) => {
@@ -111,7 +120,7 @@ export function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isSupportOperator]);
 
   const items = state.phase === 'ready' ? state.items : [];
   const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
@@ -173,6 +182,16 @@ export function HomePage() {
           <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando o seu dia…</p>
         ) : state.phase === 'error' ? (
           <MinimalState description="Não foi possível carregar os números agora. Atualize a página." title="Falha ao carregar" tone="critical" />
+        ) : !isSupportOperator ? (
+          <section className="max-w-3xl rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-5">
+            <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Sua área está pronta</h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
+              Este é o seu espaço no ConfiOne. As atividades e indicadores aparecem aqui conforme as áreas liberadas para o seu perfil.
+            </p>
+            <p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">
+              Nenhum acesso de Atendimento foi consultado porque ele não faz parte das suas permissões.
+            </p>
+          </section>
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

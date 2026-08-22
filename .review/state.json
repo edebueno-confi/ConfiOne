@@ -1,19 +1,37 @@
 {
-  "atualizadoEm": "2026-08-20",
+  "atualizadoEm": "2026-08-21",
   "ultimaVarredura": {
-    "head": "55353058f537761536d53513b7db4d2e412c81f3",
+    "head": "1ea22b20d9703b76c57aff53f7bee6e0c2c1ae93",
     "branch": "main",
-    "entradas": 83,
+    "aheadDeOrigin": 7,
+    "entradas": 78,
     "diffCheck": "limpo",
-    "gates": "0 regressoes bloqueantes"
+    "gates": "0 regressoes; 8 itens do baseline resolvidos; baseline intacto",
+    "observacao": "DATA-TEMPORAL-SEMANTICS-2026-08-21: bloqueio de timezone confirmado com evidencia propria e resolvido por OD-003. Lote devolvido a READY_FOR_IMPLEMENTATION com Owner Codex."
   },
   "ultimoHeartbeat": {
-    "em": "2026-08-20T02:44:00Z",
-    "resultado": "STATUS.md em READY_FOR_REVIEW com Owner Claude; ciclo de re-review executado",
-    "acoes": "quality gates, docs:validate, diff --check e validacao de JSON reexecutados"
+    "em": "2026-08-21T14:40:00Z",
+    "resultado": "BLOCKED confirmado, escalado ao proprietario e resolvido; OD-003 registrada e lote desbloqueado",
+    "acoes": "Verificacao independente das tres afirmacoes do bloqueio: analytics-periods.ts usa componentes locais de Date; as RPCs usam p_from::timestamptz e date_trunc dependentes da sessao; ANALYTICS_METRIC_CATALOG_V1 declara o timezone como pendente. Nenhum arquivo de produto havia sido tocado pelo Codex."
   },
-  "notas": [
-    "Metadados de automacao apenas. O estado da tarefa, o Owner e o veredito ficam em handoffs/current/STATUS.md e handoffs/current/REVIEW.md.",
-    "Atualizado pelo agente revisor ao fechar cada ciclo de varredura."
-  ]
+  "proximoMarco": {
+    "ordemAutorizadaPeloProprietario": [
+      "DEV-CONTROL-MVP",
+      "R-11",
+      "R-14"
+    ],
+    "loteAtivo": "DATA-TEMPORAL-SEMANTICS-2026-08-21 em READY_FOR_IMPLEMENTATION com Owner Codex, apos OD-003",
+    "pendenciaDeAtomicidade": "ao promover o R-11, aplicar baixa do DEV-CONTROL-MVP e promocao do R-11 na mesma edicao do handoffs/README.md, senao a invariante activeCount === 1 fica vermelha na janela intermediaria"
+  },
+  "ownerDecisions": {
+    "registro": "docs/engineering/OWNER_DECISIONS.md",
+    "ativas": [
+      "OD-001",
+      "OD-002",
+      "OD-003"
+    ],
+    "OD-001": "Autonomia operacional do ciclo local sem autorizacao conversacional entre lotes: commit local, finalizacao de lotes APPROVED, arquivamento, state machine/heartbeat e ajustes de governanca. Commit 53e705c ratificado. Push, merge, deploy e producao seguem fora da autorizacao. Repositorio e a fonte oficial ate o painel existir.",
+    "OD-002": "Backlog prolongado autorizado pelo proprietario: itens 7 a 26 da fila canonica com Approval APPROVED legitimo. Nao antecipa aprovacao de review por lote.",
+    "OD-003": "Timezone operacional do analytics: America/Sao_Paulo, aplicado retroativamente a series, coortes e comparativos. Frontend e RPCs devem materializar limites nesse fuso, preservando a convencao meia-aberta."
+  }
 }

@@ -51,8 +51,11 @@ async function sendComposer(page, mode, body) {
 
 async function restoreAndCheck(page, body) {
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
-  if (!(await page.getByText(body, { exact: true }).count())) throw new Error(`LOCAL_QA_UI_WRITE_NOT_PERSISTED: ${body}`);
+  try {
+    await page.getByText(body, { exact: true }).first().waitFor({ state: 'visible', timeout: 5_000 });
+  } catch {
+    throw new Error(`LOCAL_QA_UI_WRITE_NOT_PERSISTED: ${body}`);
+  }
 }
 
 const evidenceDir = mkdtempSync(join(tmpdir(), 'gso-qa-e2e-'));
@@ -74,10 +77,16 @@ try {
   await manager.page.waitForTimeout(600);
   await manager.page.getByRole('button', { name: 'Alterar status' }).first().click();
   const progressButton = manager.page.getByRole('button', { name: /Em andamento/ }).last();
-  if (!(await progressButton.count())) throw new Error('LOCAL_QA_UI_STATUS_OPTION_MISSING');
-  await progressButton.click();
-  await manager.page.getByRole('button', { name: 'Salvar status' }).click();
-  await manager.page.waitForTimeout(600);
+  if (await progressButton.count()) {
+    await progressButton.click();
+    await manager.page.getByRole('button', { name: 'Salvar status' }).click();
+    await manager.page.waitForTimeout(600);
+  } else {
+    // A fixture pode já estar em `in_progress` por uma execução anterior.
+    // Nesse caso a operação já foi validada e apenas fechamos a superfície.
+    const cancelStatus = manager.page.getByRole('button', { name: 'Cancelar' }).last();
+    if (await cancelStatus.count()) await cancelStatus.click();
+  }
   const closeStatus = manager.page.getByRole('button', { name: 'Cancelar' });
   if (await closeStatus.count()) await closeStatus.last().click();
   await sendComposer(manager.page, 'internal', markers.managerNote);

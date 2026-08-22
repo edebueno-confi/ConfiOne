@@ -153,6 +153,23 @@ não foram possíveis neste lote.
 4. Só depois investigar credencial, transporte e contrato do portal OMIE em
    ambiente autorizado. Nenhum desses passos autoriza escrita externa.
 
+## Atualização de radar — evidência adicional de disponibilidade local — 2026-08-22
+
+O proprietário informou nova ocorrência observada no navegador durante o uso do
+ambiente local:
+
+| Sinal | Classificação | Evidência e limite |
+|---|---|---|
+| `hubspot-orchestrator-start` respondeu HTTP 503 | Bloqueador local de runtime/endpoint | Reproduzido no console do navegador em `127.0.0.1:54321/functions/v1/hubspot-orchestrator-start`; não foi feita nova chamada POST neste registro para evitar acionar integração externa. |
+| `analytics-sequential-sync` respondeu HTTP 503 | Bloqueador local de runtime/endpoint | Reproduzido no console do navegador em `127.0.0.1:54321/functions/v1/analytics-sequential-sync`; a ocorrência é consistente com o Edge Runtime local parado já documentado, mas a causa efetiva da falha ainda exige health/log do runtime. |
+| `127.0.0.1` recusou conexão | Indisponibilidade do servidor local do painel ou porta incorreta | A porta canônica do painel de controle é `4178`, não a raiz sem porta. Após iniciar o servidor read-only, `GET http://127.0.0.1:4178` e `GET /api/snapshot` responderam HTTP 200. |
+| Aviso do React DevTools | Informativo, não bloqueador | A mensagem de disponibilidade das ferramentas de desenvolvimento não indica falha da aplicação e não entra como incidente de integração. |
+
+Este registro amplia o radar do lote já concluído sem criar uma task duplicada.
+Permanece pendente a recuperação controlada do runtime local e a validação da
+cadeia de refresh, sem chamadas externas, alteração de credenciais, produção,
+secrets ou migration remota.
+
 ## Evidência e reprodutibilidade
 
 - `npm run supabase:status`: banco local acessível; Edge Runtime listado como

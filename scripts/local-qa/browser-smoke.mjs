@@ -76,9 +76,15 @@ async function waitForPathChange(page, originalPath, timeoutMs = 20_000) {
   return new URL(page.url()).pathname;
 }
 
+async function waitForReception(page, originalPath, timeoutMs = 20_000) {
+  const firstPath = await waitForPathChange(page, originalPath, timeoutMs);
+  if (firstPath !== '/access-denied') return firstPath;
+  return waitForPathChange(page, '/access-denied', timeoutMs);
+}
+
 const accounts = [
-  // `/inicio` is a retained technical entry point; the first-release manifest
-  // intentionally lands platform administrators on the published dashboard.
+  // `/inicio` is the neutral authenticated reception. It is the safe fallback
+  // when the requested operational route is not authorized for the profile.
   {
     role: 'platform_admin',
     email: qa.LOCAL_QA_ADMIN_EMAIL,
@@ -91,7 +97,7 @@ const accounts = [
     // `internal_screen_catalog`. As demais respondem `/access-denied` porque
     // estão fora do manifesto do primeiro release, o que é contrato funcionando
     // e não falta de grant na fixture.
-    extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings'],
+    extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings', '/admin/tenants'],
     knowledgeEditorScenario: true,
     themeSurfaceScenario: true,
     settingsIntegrationsScenario: true,
@@ -101,7 +107,6 @@ const accounts = [
     // release. Quando uma for publicada, promova para `extraRoutes`.
     probeRoutes: [
       '/admin/visao-geral',
-      '/admin/tenants',
       '/admin/system',
       '/admin/internal-areas',
       '/admin/product-docs',
@@ -110,9 +115,9 @@ const accounts = [
     ],
   },
   { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics', settingsAccessScenario: 'denied' },
-  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied', settingsAccessScenario: 'denied' },
-  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied', settingsAccessScenario: 'denied' },
-  { role: 'customer_user', email: qa.LOCAL_QA_CLIENT_EMAIL, password: qa.LOCAL_QA_CLIENT_PASSWORD, desktop: '/portal', mobile: '/portal', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
+  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/inicio', expectedMobile: '/inicio', settingsAccessScenario: 'denied' },
+  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/inicio', expectedMobile: '/inicio', settingsAccessScenario: 'denied' },
+  { role: 'customer_user', email: qa.LOCAL_QA_CLIENT_EMAIL, password: qa.LOCAL_QA_CLIENT_PASSWORD, desktop: '/portal', mobile: '/portal', expectedDesktop: '/inicio', expectedMobile: '/inicio' },
 ];
 
 for (const account of accounts) {
@@ -127,6 +132,7 @@ const probeResults = [];
 const deepScenarios = [];
 const settingsAccessResults = [];
 const settingsRequestMatrix = [];
+let defaultReceptionResult = null;
 let browser;
 try {
   await waitForWebServer();
@@ -199,7 +205,10 @@ try {
           await page.goto(`${baseUrl}${extraRoute}`, { waitUntil: 'domcontentloaded' });
           await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
           await page.waitForTimeout(500);
-          const reachedPath = new URL(page.url()).pathname;
+          let reachedPath = new URL(page.url()).pathname;
+          if (reachedPath === '/access-denied' && account.settingsAccessScenario !== 'admin') {
+            reachedPath = await waitForPathChange(page, '/access-denied', 20_000);
+          }
           if (reachedPath === '/login' || reachedPath === '/access-denied') {
             throw new Error(`LOCAL_QA_INTERNAL_ROUTE_UNREACHABLE: ${account.role} ${extraRoute} -> ${reachedPath}`);
           }
@@ -216,26 +225,26 @@ try {
 
       if (account.role === 'dashboard_viewer') {
         await page.goto(`${baseUrl}/admin/settings`, { waitUntil: 'domcontentloaded' });
-        const deniedPath = await waitForPathChange(page, '/admin/settings', 20_000);
-        if (deniedPath !== '/access-denied') throw new Error(`LOCAL_QA_VIEWER_ROUTE_NOT_BLOCKED: ${page.url()}`);
+        const deniedPath = await waitForReception(page, '/admin/settings', 20_000);
+        if (deniedPath !== '/inicio') throw new Error(`LOCAL_QA_VIEWER_ROUTE_NOT_REDIRECTED_TO_RECEPTION: ${page.url()}`);
       }
       if (account.role === 'customer_user') {
         await page.goto(`${baseUrl}/support/queue`, { waitUntil: 'domcontentloaded' });
-        const deniedPath = await waitForPathChange(page, '/support/queue', 20_000);
-        if (deniedPath !== '/access-denied') {
+        const deniedPath = await waitForReception(page, '/support/queue', 20_000);
+        if (deniedPath !== '/inicio') {
           await page.screenshot({ path: join(logDir, `browser-customer-route-check-${viewport.name}.png`), fullPage: true });
-          throw new Error(`LOCAL_QA_CUSTOMER_ROUTE_NOT_BLOCKED: ${page.url()} body=${(await page.locator('body').innerText()).slice(0, 240)}`);
+          throw new Error(`LOCAL_QA_CUSTOMER_ROUTE_NOT_REDIRECTED_TO_RECEPTION: ${page.url()} body=${(await page.locator('body').innerText()).slice(0, 240)}`);
         }
       }
       if (account.role === 'support_manager' || account.role === 'support_agent') {
         await page.goto(`${baseUrl}/admin/settings`, { waitUntil: 'domcontentloaded' });
-        const deniedPath = await waitForPathChange(page, '/admin/settings', 20_000);
-        if (deniedPath !== '/access-denied') throw new Error(`LOCAL_QA_SUPPORT_SETTINGS_NOT_BLOCKED: ${account.role} ${page.url()}`);
+        const deniedPath = await waitForReception(page, '/admin/settings', 20_000);
+        if (deniedPath !== '/inicio') throw new Error(`LOCAL_QA_SUPPORT_SETTINGS_NOT_REDIRECTED_TO_RECEPTION: ${account.role} ${page.url()}`);
       }
       if (account.role === 'customer_user') {
         await page.goto(`${baseUrl}/admin/analytics`, { waitUntil: 'domcontentloaded' });
-        const deniedPath = await waitForPathChange(page, '/admin/analytics', 20_000);
-        if (deniedPath !== '/access-denied') throw new Error(`LOCAL_QA_CUSTOMER_ANALYTICS_NOT_BLOCKED: ${page.url()}`);
+        const deniedPath = await waitForReception(page, '/admin/analytics', 20_000);
+        if (deniedPath !== '/inicio') throw new Error(`LOCAL_QA_CUSTOMER_ANALYTICS_NOT_REDIRECTED_TO_RECEPTION: ${page.url()}`);
       }
       if (viewport.name === 'desktop' && account.settingsAccessScenario) {
         const settingsRoutes = [
@@ -252,7 +261,7 @@ try {
           await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
           await page.waitForTimeout(350);
           const reachedPath = new URL(page.url()).pathname;
-          const expectedPath = account.settingsAccessScenario === 'admin' ? settingsRoute : '/access-denied';
+          const expectedPath = account.settingsAccessScenario === 'admin' ? settingsRoute : '/inicio';
           if (reachedPath !== expectedPath) {
             throw new Error(`LOCAL_QA_SETTINGS_ACCESS_MATRIX_FAILED: ${account.role} ${settingsRoute} -> ${reachedPath}; expected ${expectedPath}`);
           }
@@ -527,6 +536,18 @@ try {
       await context.close();
     }
   }
+
+  // Login sem `redirectTo`: qualquer perfil autenticado deve iniciar na
+  // recepção, e não no Dashboard nem em uma rota operacional fixa.
+  const defaultContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const defaultPage = await defaultContext.newPage();
+  await defaultPage.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
+  await defaultPage.getByLabel('Email').fill(qa.LOCAL_QA_ADMIN_EMAIL);
+  await defaultPage.getByLabel('Senha').fill(qa.LOCAL_QA_ADMIN_PASSWORD);
+  await defaultPage.getByRole('button', { name: /entrar/i }).click();
+  await defaultPage.waitForURL((url) => url.pathname === '/inicio', { timeout: 20_000 });
+  defaultReceptionResult = { role: 'platform_admin', route: new URL(defaultPage.url()).pathname };
+  await defaultContext.close();
 } finally {
   if (browser) await browser.close();
   await stopWebServer(server);
@@ -534,4 +555,4 @@ try {
 
 const failures = results.filter((item) => item.consoleErrors || item.pageErrors || item.requestFailures || item.unexpectedResponses);
 if (failures.length) throw new Error(`LOCAL_QA_BROWSER_SMOKE_FAILED: ${JSON.stringify(failures)}`);
-console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, deepScenarios, settingsAccessMatrix: settingsAccessResults, settingsRequestMatrix, probedRoutes: probeResults, screenshots }));
+console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, defaultReception: defaultReceptionResult, internalRoutes: extraRouteResults, deepScenarios, settingsAccessMatrix: settingsAccessResults, settingsRequestMatrix, probedRoutes: probeResults, screenshots }));

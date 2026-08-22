@@ -102,6 +102,8 @@ import {
   upsertCustomerAccountProfile,
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
+import { CustomerGroupsPanel } from './CustomerGroupsPanel';
+import { CustomerOperationsPanel } from './CustomerOperationsPanel';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
@@ -386,6 +388,24 @@ function labelForProductLine(value: CustomerProductLine | null | undefined) {
   }
 
   return 'Indisponível';
+}
+
+function labelForCustomerGroupType(
+  value: 'economic_group' | 'service_umbrella' | 'portfolio' | null | undefined,
+) {
+  if (value === 'economic_group') {
+    return 'Grupo econômico';
+  }
+
+  if (value === 'service_umbrella') {
+    return 'Guarda-chuva de serviço';
+  }
+
+  if (value === 'portfolio') {
+    return 'Classificação legada';
+  }
+
+  return null;
 }
 
 function labelForOperationalStatus(value: CustomerOperationalStatus | null | undefined) {
@@ -835,6 +855,8 @@ export function TenantsPage() {
   const [updatedFilter, setUpdatedFilter] = useState<TenantUpdatedFilter>('all');
   const [sortOrder, setSortOrder] = useState<TenantSort>('updated');
   const [showCreateTenant, setShowCreateTenant] = useState(false);
+  const [showGroupsPanel, setShowGroupsPanel] = useState(false);
+  const [showOperationsPanel, setShowOperationsPanel] = useState(false);
   const [showContactManager, setShowContactManager] = useState(false);
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [tenantForm, setTenantForm] = useState<TenantFormState>(emptyTenantForm);
@@ -1750,19 +1772,33 @@ export function TenantsPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-              Contas B2B
+              Central de Clientes
             </h1>
             <p className="text-sm text-[color:var(--minimal-text-secondary)]">
-              Administre contas, vínculos e contexto operacional dos clientes B2B.
+              Administre contas, grupos, marcas e contexto operacional dos clientes B2B.
             </p>
           </div>
 
-          <AppButton
-            className="min-h-9 gap-2 rounded-md px-4 text-sm"
-            onClick={() => setShowCreateTenant((current) => !current)}
-          >
-            + Novo cliente
-          </AppButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <GhostButton
+              className="min-h-9 gap-2 rounded-md px-4 text-sm"
+              onClick={() => setShowGroupsPanel(true)}
+            >
+              Grupos e marcas
+            </GhostButton>
+            <GhostButton
+              className="min-h-9 gap-2 rounded-md px-4 text-sm"
+              onClick={() => setShowOperationsPanel(true)}
+            >
+              Operações
+            </GhostButton>
+            <AppButton
+              className="min-h-9 gap-2 rounded-md px-4 text-sm"
+              onClick={() => setShowCreateTenant((current) => !current)}
+            >
+              + Novo cliente
+            </AppButton>
+          </div>
         </div>
       </section>
 
@@ -1996,7 +2032,8 @@ export function TenantsPage() {
 
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[0.8rem] leading-5 text-[color:var(--color-muted)]">
                               <span>
-                                Grupo: Indisponível
+                                Grupo: {sanitizeOperationalVisibleText(tenant.primary_group_display_name)}
+                                {tenant.group_count > 1 ? ` (+${tenant.group_count - 1})` : ''}
                               </span>
                               <span>
                                 Contato principal:{' '}
@@ -2155,7 +2192,18 @@ export function TenantsPage() {
                           <p className="mb-1.5 text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
                             Informações do cliente
                           </p>
-                          <TenantRailInfoRow label="Grupo" value="Indisponível" />
+                          <TenantRailInfoRow
+                            label="Grupo"
+                            value={
+                              tenantDetail.primary_group_display_name
+                                ? `${sanitizeOperationalVisibleText(tenantDetail.primary_group_display_name)}${
+                                    labelForCustomerGroupType(tenantDetail.primary_group_type)
+                                      ? ` · ${labelForCustomerGroupType(tenantDetail.primary_group_type)}`
+                                      : ''
+                                  }`
+                                : 'Indisponível'
+                            }
+                          />
                           <TenantRailInfoRow label="Empresa" value={sanitizeOperationalVisibleText(tenantDetail.legal_name)} />
                           <TenantRailInfoRow
                             label="Plano"
@@ -3420,6 +3468,16 @@ export function TenantsPage() {
           </form>
         </GovernedActionDrawer>
       ) : null}
+
+      {showGroupsPanel ? (
+        <CustomerGroupsPanel
+          onChanged={() => loadSurface(selectedTenantId)}
+          onClose={() => setShowGroupsPanel(false)}
+          tenants={tenants}
+        />
+      ) : null}
+
+      {showOperationsPanel ? <CustomerOperationsPanel onClose={() => setShowOperationsPanel(false)} /> : null}
 
       {showCreateTenant ? (
         <GovernedActionDrawer

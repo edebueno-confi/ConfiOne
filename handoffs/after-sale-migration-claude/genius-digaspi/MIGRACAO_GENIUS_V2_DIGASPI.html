@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Migração Genius para After Sale V2 | Di Gaspi e Up Sports</title>
+  <style>
+    :root{--ink:#1f2937;--muted:#64748b;--line:#dbe3ee;--blue:#2457a6;--blue-soft:#eef5ff;--green:#0f766e;--green-soft:#ecfdf5;--amber:#92400e;--amber-soft:#fff7ed;--red:#991b1b;--red-soft:#fef2f2}
+    *{box-sizing:border-box} body{margin:0;background:#f5f7fb;color:var(--ink);font:15px/1.5 Arial,Helvetica,sans-serif}
+    .page{max-width:1180px;margin:0 auto;padding:34px 28px 60px;background:#fff;min-height:100vh}
+    h1{font-size:30px;line-height:1.2;margin:0 0 8px;color:#173b73} h2{margin:34px 0 12px;padding-bottom:7px;border-bottom:2px solid var(--line);font-size:22px;color:#173b73} h3{margin:22px 0 8px;font-size:18px;color:#234b80}
+    p{margin:7px 0}.sub{color:var(--muted);margin-bottom:20px}.note{padding:14px 16px;border-radius:8px;margin:14px 0;background:var(--blue-soft);border-left:4px solid var(--blue)}
+    .ok{background:var(--green-soft);border-left-color:var(--green)} .warn{background:var(--amber-soft);border-left-color:#d97706}.block{background:var(--red-soft);border-left-color:#dc2626}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{border:1px solid var(--line);border-radius:9px;padding:16px;background:#fff}.card strong{display:block;margin-bottom:4px}
+    table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:14px} th,td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;text-align:left} th{background:#edf3fb;color:#173b73;font-weight:700} tr:nth-child(even) td{background:#fafcff}
+    .status{font-weight:700;white-space:nowrap}.migrado{color:var(--green)}.parcial{color:#a16207}.pendente{color:var(--red)}.info{color:var(--blue)}
+    ul{margin:8px 0 12px 22px;padding:0} li{margin:5px 0}.small{font-size:13px;color:var(--muted)}
+    .footer{margin-top:38px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:12px}
+    @media(max-width:800px){.page{padding:22px 14px}.grid{grid-template-columns:1fr}table{font-size:12px;display:block;overflow-x:auto}h1{font-size:25px}}
+  </style>
+</head>
+<body>
+<main class="page">
+  <h1>Migração da Genius para o After Sale V2</h1>
+  <p class="sub">Di Gaspi e Up Sports | Resultado da configuração funcional e pontos que ainda precisam de tratamento</p>
+
+  <div class="note ok"><strong>Resultado geral</strong>As configurações suportadas foram ajustadas nas duas lojas. Os motivos foram editados quando já havia um cadastro correspondente e criados quando a V2 ainda não possuía o motivo. A integração foi mantida exatamente como estava e não faz parte desta etapa. Os itens sem destino seguro estão separados abaixo como alertas, sem impedir o avanço da migração.</div>
+
+  <h2>1. Identificação das lojas</h2>
+  <div class="grid">
+    <div class="card"><strong>Di Gaspi</strong><p>Loja principal identificada na Genius como Di Gaspi, com operação em devoluções e integração VTEX na origem.</p></div>
+    <div class="card"><strong>Up Sports</strong><p>Loja independente da Di Gaspi, identificada separadamente na Genius e selecionada separadamente na V2.</p></div>
+  </div>
+  <p class="small">A conferência foi feita uma loja por vez. A seleção global da V2 foi validada antes dos ajustes para evitar aplicar uma alteração na loja errada.</p>
+
+  <h2>2. Configurações realizadas na Di Gaspi</h2>
+  <table>
+    <thead><tr><th>Configuração encontrada na Genius</th><th>Como ficou na V2</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Motivos de devolução, com prazos e exigência de evidências</td><td>Os seis motivos que já existiam foram editados e os cinco motivos adicionais foram criados, totalizando os onze motivos únicos encontrados na Genius. Os prazos, as fotos e a aprovação automática foram ajustados.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Aprovação automática dos motivos</td><td>A aprovação automática foi ativada nos seis motivos reconfigurados.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Ruptura de estoque exclusiva para o SAC</td><td>Motivo criado na V2 com prazo de 1 dia, sem foto obrigatória e visível somente no painel administrativo.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Vale-compra restrito ao comprador, com validade de 90 dias</td><td>Validade de 90 dias, restrição ao comprador e visualização do código mantidas ativas.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Solicitações abertas como devolução na Genius</td><td>A Genius usa “devolução” como nomenclatura do pedido inicial, mas a resolução pode ser feita com vale-compra. A troca não deve ser considerada bloqueada por esse motivo. A configuração da V2 precisa manter disponível a alternativa de troca ou vale-compra.</td><td class="status parcial">Revisar configuração</td></tr>
+      <tr><td>Retenção física, equivalente ao “ficar com o produto”</td><td>Retenção física ativada com os valores padrão da V2, pois a Genius indicava a funcionalidade ativa, mas não fornecia percentual específico.</td><td class="status parcial">Migrado com padrão V2</td></tr>
+      <tr><td>Não utilizar loja física como método de retorno</td><td>Método de retorno por loja física desativado. A V2 não possui lojas físicas cadastradas para a Di Gaspi.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Reembolso automático via Pix</td><td>Não foi mantido ativo porque a V2 não apresentou métodos de pagamento disponíveis para seleção enquanto a integração permaneceu inalterada.</td><td class="status pendente">Não concluído</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Motivos da Di Gaspi</h3>
+  <table>
+    <thead><tr><th>Motivo na Genius</th><th>Prazo</th><th>Foto</th><th>Uso</th><th>Correspondência na V2</th></tr></thead>
+    <tbody>
+      <tr><td>Defeito de fabricação</td><td>30 dias</td><td>Obrigatória</td><td>Consumidor</td><td>Defeito de fabricação, 30 dias, foto obrigatória e aprovação automática</td></tr>
+      <tr><td>Arrependimento</td><td>7 dias</td><td>Não</td><td>Consumidor</td><td>Arrependimento, 7 dias e aprovação automática</td></tr>
+      <tr><td>Produto em desacordo com o pedido</td><td>30 dias</td><td>Obrigatória</td><td>Consumidor</td><td>Produto em desacordo com o pedido, 30 dias, foto obrigatória e aprovação automática</td></tr>
+      <tr><td>Qualidade do produto</td><td>30 dias</td><td>Obrigatória</td><td>Consumidor</td><td>Qualidade do produto, 30 dias, foto obrigatória e aprovação automática</td></tr>
+      <tr><td>Não gostei</td><td>7 dias</td><td>Não</td><td>Consumidor</td><td>Não gostei, 7 dias e aprovação automática</td></tr>
+      <tr><td>Cor errada</td><td>30 dias</td><td>Não</td><td>Consumidor</td><td>Cor errada, 30 dias e aprovação automática</td></tr>
+      <tr><td>Diferente da foto</td><td>30 dias</td><td>Obrigatória</td><td>Consumidor</td><td>Motivo criado na V2 com a mesma finalidade, prazo e exigência de foto</td></tr>
+      <tr><td>Ficou grande</td><td>30 dias</td><td>Não</td><td>Consumidor</td><td>Motivo criado na V2</td></tr>
+      <tr><td>Ficou pequeno</td><td>30 dias</td><td>Não</td><td>Consumidor</td><td>Motivo criado uma única vez; o registro repetido na Genius não foi duplicado</td></tr>
+      <tr><td>Produto errado</td><td>30 dias</td><td>Obrigatória</td><td>Consumidor</td><td>Motivo criado na V2 com a mesma finalidade, prazo e exigência de foto</td></tr>
+      <tr><td>Ruptura de estoque</td><td>1 dia</td><td>Não</td><td>Somente SAC</td><td>Motivo criado na V2 para uso exclusivo do painel administrativo</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Configurações realizadas na Up Sports</h2>
+  <table>
+    <thead><tr><th>Configuração encontrada na Genius</th><th>Como ficou na V2</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Motivos ativos com prazos e exigência de foto</td><td>Os seis motivos existentes foram editados e o motivo adicional “Tamanho errado” foi criado. A lista da V2 passou a conter os sete motivos encontrados na Genius.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Ruptura de estoque exclusiva para o SAC</td><td>Configurada como motivo administrativo, com prazo de 1 dia e sem exigência de foto.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Vale-compra restrito ao comprador, com validade de 90 dias</td><td>Validade de 90 dias e restrição ao comprador mantidas ativas.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Tamanho errado</td><td>Motivo criado na V2 com prazo de 30 dias, sem foto obrigatória.</td><td class="status migrado">Migrado</td></tr>
+      <tr><td>Reembolso automático, troca e retenção física</td><td>Não foram confirmadas como regras específicas da Up Sports. Não devem ser copiadas da Di Gaspi sem validação própria.</td><td class="status pendente">Confirmar</td></tr>
+    </tbody>
+  </table>
+  <p class="small">A lista da Up Sports foi completada com os sete motivos encontrados na Genius. Os seis cadastros padrão foram reaproveitados e o sétimo motivo foi criado.</p>
+
+  <h2>4. Itens que não foram alterados</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Situação atual</th><th>Motivo</th></tr></thead>
+    <tbody>
+      <tr><td>Integração da Di Gaspi e da Up Sports</td><td>A V2 continua com o cadastro já existente.</td><td>Solicitação expressa para não mexer na integração nesta etapa.</td></tr>
+      <tr><td>Status aceitos dos pedidos</td><td>Não configurados.</td><td>É necessário confirmar qual integração deve ser considerada oficial na V2: VTEX, conforme a Genius, ou Nuvemshop, que é a integração atualmente exibida na V2. Nenhuma integração foi alterada nesta etapa.</td></tr>
+      <tr><td>Correios, postagem e coleta</td><td>Não ativados na gestão logística da V2.</td><td>A configuração depende de um conector funcional. Ativar sem o conector poderia liberar um método sem emissão real de etiqueta.</td></tr>
+      <tr><td>Lojas físicas e sellers</td><td>Não há lojas físicas cadastradas para a Di Gaspi; não foram encontrados sellers cadastrados na leitura da origem.</td><td>Nenhum cadastro equivalente exigia criação nesta etapa.</td></tr>
+      <tr><td>Mensagens, e-mails e HTML personalizado</td><td>Não transportados por recomendação.</td><td>O editor de e-mails da V2 oferece mais recursos de edição e manutenção. Recomenda-se que o cliente personalize as comunicações diretamente no painel da V2, sem transportar os modelos antigos.</td></tr>
+      <tr><td>Lista de bloqueio e notificações administrativas</td><td>Não reproduzidas.</td><td>A origem possui registros que não foram detalhados individualmente no material de migração; não seria seguro inventar destinatários ou bloqueios.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Alertas objetivos para a conferência</h2>
+  <ol>
+    <li>Confirmar se a integração oficial de cada loja deve ser VTEX ou Nuvemshop. Essa decisão define quais status de pedido poderão ser configurados na V2.</li>
+    <li>Configurar o conector dos Correios antes de ativar postagem ou coleta na gestão logística.</li>
+    <li>Revisar a ação de troca da Di Gaspi na V2. Na Genius, “devolução” identifica a solicitação inicial, mas o atendimento pode concluir o caso com vale-compra.</li>
+    <li>Confirmar se a retenção física da Di Gaspi deve permanecer com o percentual padrão da V2.</li>
+    <li>Confirmar se a regra “Fique com o item” da Genius deve usar os valores padrão da V2, pois não foi encontrado um percentual específico na origem.</li>
+  </ol>
+
+  <div class="note warn"><strong>Regra de segurança aplicada</strong>Não foram copiados tokens, senhas, chaves, cookies ou credenciais. A integração existente foi preservada. Os cadastros existentes foram reaproveitados sempre que possível e os motivos adicionais foram criados quando necessário para completar a configuração da Genius.</div>
+
+  <div class="footer">Documento consolidado para leitura humana. Fonte das configurações: ambiente Genius e painel After Sale V2. Data da conferência: 21/08/2026.</div>
+</main>
+</body>
+</html>

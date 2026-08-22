@@ -1,7 +1,8 @@
 # CODE_REVIEW_PROTOCOL_V1.md
 
 Protocolo de revisão de código do ConfiOne com dois agentes: um agente **implementador**
-(hoje o Codex) e um agente **revisor** (hoje o Claude). O objetivo é que nenhum lote entre
+(hoje o Codex, alias operacional Forge) e um agente **revisor** (Claude, ou Sentinel
+durante a substituição temporária vigente). O objetivo é que nenhum lote entre
 no produto sem passar por um crivo objetivo, reprodutível e auditável por humano.
 
 Este documento é contrato de processo. Ele não substitui `AGENTS.md`,
@@ -13,8 +14,8 @@ sequência em que essas regras são verificadas.
 
 | Papel | Responsabilidade | Pode escrever em |
 | --- | --- | --- |
-| Implementador (Codex) | Entender o problema, implementar o lote, escrever/atualizar testes, rodar as validações, atualizar a documentação impactada e publicar o pedido de revisão | Todo o repositório, dentro do escopo autorizado |
-| Revisor (Claude) | Auditar o lote contra contratos, segurança, cobertura e documentação; emitir veredito; propor correção mínima | `.review/`, `docs/` e correções explicitamente autorizadas |
+| Implementador (Codex / Forge) | Entender o problema, implementar o lote, escrever/atualizar testes, rodar as validações, atualizar a documentação impactada e publicar o pedido de revisão | Todo o repositório, dentro do escopo autorizado |
+| Revisor (Claude; Sentinel enquanto substituto temporário) | Auditar o lote contra contratos, segurança, cobertura e documentação; emitir veredito; propor correção mínima | `.review/`, `docs/` e correções explicitamente autorizadas |
 | Product owner (Ede) | Autorizar escopo, publicação, release surface, push, deploy e qualquer operação destrutiva; a autorização persistente da fila também pode liberar checkpoint local após APPROVED | Tudo |
 
 Regra dura: **o revisor não publica, não faz merge, não faz push, não aplica migration
@@ -32,11 +33,11 @@ Codex roda npm run review:gates quando aplicável
    ↓
 Opcionalmente, Codex publica .review/inbox/<lote>.json como pacote técnico
    ↓
-Claude audita e escreve handoffs/current/REVIEW.md
+Reviewer ativo audita e escreve handoffs/current/REVIEW.md
    ↓
-Opcionalmente, Claude escreve .review/verdicts/<lote>.md alinhado ao REVIEW.md
+Opcionalmente, o reviewer ativo escreve .review/verdicts/<lote>.md alinhado ao REVIEW.md
    ↓
-Codex integra por commit local se a fila já autorizou o lote e Claude registrou APPROVED
+Codex integra por commit local se a fila já autorizou o lote e o reviewer ativo registrou APPROVED
 Ede decide push / merge / deploy / publicação
 ```
 
@@ -51,7 +52,7 @@ podem manter vocabulário legado, mas não representam o estado corrente. O esta
 corrente é o de `handoffs/current/STATUS.md`, e o pedido corrente é o de
 `handoffs/current/IMPLEMENTATION.md`.
 
-Claude não altera código de produto durante review. Codex não pode autodeclarar
+Claude ou Sentinel não altera código de produto durante review. Codex não pode autodeclarar
 APPROVED. Não há edição concorrente na mesma working tree.
 
 ### 2.1 Pedido de revisão
@@ -231,6 +232,32 @@ O revisor escreve `handoffs/current/REVIEW.md` com:
 `.review/state.json` guarda somente metadados de automação, como último HEAD varrido,
 contagem de entradas e último heartbeat. Ele não guarda lote, commit revisado,
 estado de review ou veredito.
+
+### 6.1 Devolução de ownership no veredito
+
+Regra vigente por decisão do proprietário, a partir de 2026-08-20.
+
+Ao registrar `APPROVED` em uma TASK que já estava autorizada na fila, o revisor
+devolve `Owner = Codex`, não `Owner = Ede`. O Codex assume a integração do lote,
+o arquivamento do handoff, a normalização da tarefa corrente e a abertura da
+próxima TASK `APPROVED` da fila, sem passar por nova autorização.
+
+`Owner = Ede` é reservado a quatro situações:
+
+- `OWNER_DECISION_REQUIRED`;
+- `BLOCKED` cuja resolução depende do proprietário;
+- decisão explícita de produto ou de escopo;
+- autorização de release, deploy ou operação equivalente.
+
+A regra não altera nada mais do contrato. `APPROVED` continua amarrado a um
+estado de código inequívoco, o revisor continua sem escolher prioridade de
+produto e sem iniciar implementação, e `handoffs/current/` continua sendo a
+única tarefa ativa. Vereditos já publicados não são reabertos por causa dela.
+
+Esta subseção especifica o trecho deliberadamente aberto de
+`docs/engineering/REVIEW_PROTOCOL.md`, que atribui ao revisor a devolução do
+ownership "para o próximo responsável definido pelo processo quando aprovar ou
+bloquear". Não há conflito normativo entre os dois documentos.
 
 ## 7. Cadência
 

@@ -1,10 +1,137 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Governança executável de pipeline, área e operação — 2026-08-22
+
+- **Tipo:** implementação backend/frontend e documentação de governança do Analytics; sem chamadas externas ou escrita em integrações.
+- **Task:** `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`, base `051ce0b`.
+- **Artefato:** `ANALYTICS_PIPELINE_OPERATION_GOVERNANCE_V1.md`.
+- **Runtime:** novo inventário server-side com estados de mapeamento e reconciliação; novo wrapper de Customer Success por operação usando ticket confirmado e associação ticket-empresa; seletor de operação compartilhado na tela de Customer Success; Produto/Desenvolvimento continua indisponível e Financeiro fora da dimensão.
+- **Views/RPCs:** `rpc_analytics_pipeline_inventory`, `rpc_analytics_customer_success_kpis_by_operation`, `vw_admin_analytics_pipeline_catalog_v2` como fonte de catálogo.
+- **Testes:** `supabase/tests/121_analytics_pipeline_operation_governance.sql` e `tests/scripts/analytics-dashboard-domains-integrations.test.mjs`, gates registrados no handoff corrente.
+- **Riscos restantes:** paridade do catálogo com o portal HubSpot requer próxima sincronização read-only autorizada; empresas sem associação CS confirmada não são atribuídas por nome.
+- **Limites:** sem Financeiro na dimensão, sem GitHub/Product data, sem secrets, sem produção, sem migration remota e sem escrita externa.
+
+# Continuidade autônoma da fila e monitoramento — 2026-08-22
+
+- **Tipo:** decisão operacional do proprietário e governança do Control Plane;
+  sem mudança de runtime, produção ou integração externa.
+- **Fonte canônica:** `docs/engineering/OWNER_DECISIONS.md`, `OD-008`, e
+  `handoffs/README.md`.
+- **Decisão:** o heartbeat local acompanha Forge/Sentinel e promove somente a
+  próxima task elegível, em sequência, preservando gates e revisão independente.
+- **Estado inicial:** `AUTH-MODEL-INVENTORY-2026-08-21` está
+  `READY_FOR_IMPLEMENTATION/APPROVED`; tasks futuras não foram aprovadas em
+  massa.
+- **Limites:** sem push, merge, deploy, produção, secrets, migrations remotas,
+  escritas externas ou ações destrutivas.
+
+# Coordenação explícita de pausa entre agentes — 2026-08-22
+
+- **Tipo:** ajuste de governança do handoff; sem mudança de runtime, banco,
+  produção ou integração externa.
+- **Decisão:** quando Forge precisar de exclusividade temporária, deve gravar
+  `Agent coordination: HOLD`, motivo, escopo, início e condição de retomada em
+  `handoffs/current/STATUS.md`. Agentes e heartbeats devem aguardar dentro do
+  escopo pausado.
+- **Exceção corrente:** a task `AUTH-MODEL-INVENTORY-2026-08-21` permanece em
+  `Agent coordination: REVIEW_ACTIVE`, pois Sentinel tem revisão independente
+  obrigatória. Não há HOLD aplicado agora.
+- **Documentos alterados:** `handoffs/README.md`,
+  `handoffs/current/STATUS.md`, `docs/PROJECT_STATE.md` e este ledger.
+- **Riscos e limites:** HOLD não autoriza ação externa, não substitui Owner,
+  State, Approval ou allowlist e não pode bloquear revisão independente
+  obrigatória.
+
+# Notificação por evento e heartbeat de recuperação — 2026-08-22
+
+- **Tipo:** ajuste de governança da colaboração entre agentes; sem mudança de
+  runtime, banco, produção ou integração externa.
+- **Decisão:** Forge e Sentinel devem atualizar os quatro artefatos canônicos,
+  avisar diretamente o próximo papel e notificar o Codex ao concluir, bloquear,
+  corrigir ou revisar uma task.
+- **Fallback:** os heartbeats de Forge, Sentinel e Codex Orquestrador permanecem
+  ativos em intervalo de 30 minutos e só atuam quando o estado atual exigir
+  recuperação; não aprovam em massa nem duplicam execução ou revisão.
+- **Documentos alterados:** `handoffs/README.md`,
+  `handoffs/current/STATUS.md`, `docs/PROJECT_STATE.md` e este ledger.
+- **Limites:** as notificações não substituem os handoffs, a revisão
+  independente, a allowlist ou as proibições de ações externas.
+
+# Briefing do modelo de trabalho para apresentação executiva — 2026-08-22
+
+- **Tipo:** síntese conceitual para apresentação; sem mudança de runtime,
+  banco, fila, permissões ou integração externa.
+- **Artefato:** `docs/reports/CONFIONE_AGENT_OPERATING_MODEL_PRESENTATION_BRIEF_2026-08-22.md`.
+- **Conteúdo:** papéis de produto, Codex Orquestrador, Forge, Sentinel,
+  Cloud/Claude, repositório, handoffs, comunicação por evento, heartbeats,
+  controles e roteiro visual sugerido.
+- **Limite:** não detalha lotes nem substitui roadmap, task ou handoff técnico.
+- **Validação:** coerência com `AGENTS.md`, `handoffs/README.md`, estado do
+  projeto e avaliação existente do Development Control Plane.
+
+# Inventário factual do modelo de autorização — 2026-08-22
+
+- **Tipo:** inventário técnico documental da task `AUTH-MODEL-INVENTORY-2026-08-21`.
+- **Fonte corrente:** código frontend, contratos TypeScript, migrations,
+  views/RPCs e testes locais; documentação histórica não prevaleceu sobre
+  contratos executáveis.
+- **Artefato:** `docs/specs/AUTHORIZATION_MODEL_INVENTORY_V1.md`.
+- **Conteúdo:** fluxo de identidade até autorização, fontes de permissão,
+  menu, router, release gate, backend, RLS/grants, estados de ausência,
+  revogação, usuário inativo, sessão stale e classificação de riscos.
+- **Estado:** `READY_FOR_REVIEW`, Owner Sentinel; nenhum runtime, banco,
+  migration, policy, grant, secret ou serviço externo foi alterado.
+- **Próximo gate:** revisão independente do Sentinel; a task de auditoria do
+  modelo continua proposta e não foi aprovada em massa.
+
+# Reorientação do roadmap e blueprints da Central de Clientes — 2026-08-21
+
+- **Tipo:** decisão de produto e contrato visual; sem mudança de runtime,
+  banco, contrato executável, permissão ou release surface.
+- **Fonte canônica:** `docs/ROADMAP_BUILDOUT_V3.md` na seção `CURRENT PRODUCT
+  EXECUTION ORDER` e `docs/engineering/OWNER_DECISIONS.md` em `OD-006`.
+- **Decisão:** Release 1 é o Core Interno em Produção. Release 2 é a Central
+  de Clientes. O histórico permanece preservado e classificado como CURRENT,
+  NEXT, DEFERRED, COMPLETED ou SUPERSEDED.
+- **Blueprints:**
+  `docs/design/blueprints/central-clientes/CENTRAL_CLIENTES_HOME_V1.png` e
+  `docs/design/blueprints/central-clientes/CLIENTE_RESUMO_V1.png` são as
+  referências visuais aprovadas para a futura implementação da Central.
+- **Docs alterados:** `ROADMAP_BUILDOUT_V3.md`, `PROJECT_STATE.md`,
+  `docs/README.md`, `docs/design/screens/ADMIN_TENANTS.md`,
+  `CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`,
+  `reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md`, este ledger e
+  `OWNER_DECISIONS.md`.
+- **Fila:** gates R1 e R2 foram materializados em `handoffs/README.md`, com
+  reuso das tasks AUTH e Analytics existentes; não foi criada task de
+  implementação dos blueprints neste lote.
+- **Validação:** referências, hashes dos assets, `git diff --check` e
+  `npm run docs:validate`; sem commit, push, deploy, migration remota ou
+  escrita externa.
+
+# Avaliação do Development Control Plane Visual — 2026-08-21
+
+- **Tipo:** descoberta técnica e estimativa; sem mudança de runtime ou
+  publicação online.
+- **Fonte:** `tools/dev-control/*`, `tests/scripts/dev-control-mvp.test.mjs`,
+  `handoffs/README.md`, handoffs correntes, Git local e documentação de
+  governança.
+- **Resultado:** `C. PARCIALMENTE IMPLEMENTADO`. Existe MVP local read-only,
+  mas faltam contrato completo do snapshot, detalhe de task, decisões,
+  heartbeat, estados canônicos e publicação online protegida.
+- **Recomendação:** `SIM, COM PRÉ-REQUISITOS` para V1 online read-only,
+  separada da Release 1 e sem writes na primeira versão.
+- **Validação:** `node --test tests/scripts/dev-control-mvp.test.mjs` teve 7
+  aprovações e 1 falha por allowlist histórica de owner que não inclui
+  `Sentinel`; o relatório registra a limitação e não corrige o produto nesta
+  descoberta.
+
 # Plano de autorização administrativa e acesso de usuários — 2026-08-21
 
 - **Tipo:** decisão de produto, planejamento e decomposição no Development Control Plane; sem mudança de runtime.
 - **Fonte canônica:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`.
 - **Decisão:** priorizar a reprodução e correção do acesso negado indevido de administrador válido; depois simplificar progressivamente para nível, área, tela e `READ/WRITE`, preservando backend, isolamento e auditoria.
+- **Regra adicional do Owner:** negação de rota não inativa o usuário nem encerra a sessão; quando autorizado, o fallback é `/inicio`, a recepção exibida como `Meu espaço`. Falta de workspace deve ser informada explicitamente e não presumida como autorização.
 - **Fila:** `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` ficou `READY/APPROVED`; tasks estruturais 30 a 37 ficaram `BACKLOG/PROPOSED` e dependentes.
 - **Estado atual:** `CS-DOMAIN-AUDIT-2026-08-21` foi finalizado localmente e arquivado; `handoffs/current/` está ocupado por `SUPPORT-DOMAIN-AUDIT-2026-08-21`, em `READY_FOR_REVIEW`, sob responsabilidade do Sentinel.
 - **Docs alterados:** `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`, `docs/PROJECT_STATE.md`, `docs/ROADMAP_BUILDOUT_V3.md`, `docs/README.md`, `docs/engineering/OWNER_DECISIONS.md`, `handoffs/README.md` e este ledger.
@@ -35,6 +162,27 @@
 - **Impacto futuro na FAQ:** documentar a origem e a data considerada de cada
   realizado quando a interface de metodologia for criada.
 
+## Metodologia e proveniência dos KPIs — 2026-08-22
+
+- **Tipo:** auditoria documental do registro canônico; sem mudança de runtime,
+  banco, contrato executável, integração ou release surface.
+- **Fonte canônica:** `docs/ANALYTICS_KPI_REGISTRY_V1.md`, reconciliado com
+  `analytics-api.ts`, `analytics-model.ts`, `analytics-kpi-contract.mjs`,
+  migrations dos read models e testes locais.
+- **Registro:** o documento passou a explicitar campo/data, coorte ou posição,
+  timezone, fórmula, unidade, nulo, cobertura, frescor, filtros, estado e
+  limitações por domínio. Produto/Desenvolvimento permanece indisponível por
+  falta de fonte/read model executável, sem KPI inventado.
+- **Docs alterados:** `docs/ANALYTICS_KPI_REGISTRY_V1.md`,
+  `docs/PROJECT_STATE.md`, este ledger e `handoffs/current/`.
+- **Telas, views/RPCs/migrations:** nenhuma alteração; foram somente lidas como
+  evidência local.
+- **Validação:** `docs:validate`, auditoria de governança, `review:gates` e
+  `git diff --check` serão registrados no handoff após a execução final.
+- **Limitações:** não houve chamadas externas, leitura de secrets ou validação
+  de cobertura/frescor em ambiente remoto; estados sem contrato executável
+  permanecem indisponíveis ou como lacuna explícita.
+
 ## Auditoria do domínio Financeiro — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
@@ -63,6 +211,70 @@
 - **Impacto futuro na FAQ:** explicar fonte, campo de data, período, timezone,
   fórmula, cobertura, ausência e limitação de cada indicador sem leitura do
   código.
+
+## Qualidade de chamadas de integrações e atualização dos painéis — 2026-08-21
+
+- **Tipo:** atualização de roadmap e decomposição de qualidade; sem execução de
+  sync, alteração de credencial, escrita externa ou mudança de runtime.
+- **Task:** `R1-INTEGRATION-CALL-QUALITY-2026-08-21`, P1,
+  `BACKLOG/PROPOSED`.
+- **Escopo:** verificar a cadeia OMIE Financeiro e integrações do Dashboard,
+  separando credencial/configuração, transporte, contrato da chamada,
+  paginação, timeout, retry, resposta, normalização, persistência, `sync_run`,
+  read model, frescor e chamadas de refresh dos painéis.
+- **Dependências:** `FINANCE-DOMAIN-AUDIT-2026-08-21` e
+  `KPI-REGISTRY-2026-08-21`. O gate `R1-DASHBOARD-RELEASE-GATE-2026-08-21`
+  passa a depender desta verificação.
+- **Regra de segurança:** não rotacionar credenciais, não executar escrita
+  externa e não usar planilha como fallback silencioso neste lote.
+
+## Governança de pipelines HubSpot por área e operação — 2026-08-21
+
+- **Tipo:** inclusão de item de roadmap e investigação de qualidade de dados;
+  sem alteração de pipeline externo, runtime, contrato executável ou filtro em
+  produção.
+- **Task:** `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`, P1,
+  `BACKLOG/PROPOSED`.
+- **Problema registrado:** o Dashboard retorna valores quando o filtro é
+  `Todas as operações`, mas não carrega corretamente ao filtrar `After Sales`.
+  A hipótese é falha de vínculo/aplicação do escopo pipeline, área e operação,
+  ainda não confirmada.
+- **Escopo:** inventário por `pipeline_id` e objeto, mapa canônico para After
+  Sales, Conf e Neo Trust, tratamento de sem vínculo/ambíguo, filtro server-side
+  e reconciliação `Todas` versus cada operação.
+- **Dependências:** `DATA-OPERATION-SCOPE-2026-08-21`,
+  `DATA-PIPELINE-STAGE-SCOPE-2026-08-21` e `KPI-REGISTRY-2026-08-21`. O gate
+  `R1-DASHBOARD-RELEASE-GATE-2026-08-21` passa a depender desta task.
+- **Limite:** não inferir operação pelo nome do pipeline, não criar regra no
+  frontend e não executar escrita externa neste lote.
+
+## Continuidade autônoma da frente de autorização — 2026-08-22
+
+- **Tipo:** decisão de governança e ativação de handoff; sem alteração de
+  runtime, banco, permissões ou serviços externos.
+- **Fonte:** `OD-007` em `docs/engineering/OWNER_DECISIONS.md`.
+- **Decisão:** o próximo item elegível foi promovido, e somente ele, para
+  `READY/APPROVED`: `AUTH-MODEL-INVENTORY-2026-08-21`.
+- **Handoff:** Forge executor, Sentinel reviewer obrigatório, inventário
+  factual de autorização como escopo.
+- **Limites:** tasks 31 a 37 continuam `BACKLOG/PROPOSED`; não há autorização
+  para simplificação estrutural, RLS/RPC/migration, escrita remota, secrets,
+  deploy, push ou merge.
+
+## Cobertura de filtro por operação e integridade UTF-8 — 2026-08-21
+
+- **Tipo:** ajuste de escopo do roadmap e inclusão de correção P1; sem mudança
+  de runtime ou execução externa.
+- **Filtro:** a governança de pipelines deve cobrir Visão Geral, Comercial,
+  Customer Success, Suporte e Produto e Desenvolvimento. Financeiro fica fora
+  até existir dimensão confiável de área/operação.
+- **Task de encoding:** `R1-UTF8-ENCODING-INTEGRITY-2026-08-21`,
+  `BACKLOG/PROPOSED`, para localizar e corrigir corrupção de caracteres
+  acentuados/especiais entre origem, transporte, banco, read model, JSON,
+  headers e renderização.
+- **Regra:** não remover acentos, transliterar ou trocar caracteres para ocultar
+  o problema; criar regressões com dados em português.
+
 ## Auditoria do domínio de Customer Success — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
@@ -133,6 +345,7 @@
   cobertura de backlog histórico antes de publicar novos KPIs.
 - **Impacto futuro na FAQ:** exibir fonte, campo de data, período, timezone,
   frescor, cobertura e estado de ausência sem exigir leitura do código.
+
 ## Fundação de predição comercial explicável — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
@@ -172,6 +385,12 @@
   `review:gates` quando aplicável e `git diff --check` serão registrados no
   handoff.
 - **Riscos restantes:** falta decidir a fonte oficial de Produto, confirmar
+  scopes/organização/repositórios, separar demanda de Produto de work item de
+  suporte e definir histórico de eventos antes de criar indicadores.
+- **Impacto futuro na FAQ:** explicar fonte, campo de data, período, timezone,
+  frescor, cobertura e estados de ausência para cada indicador antes de expor a
+  metodologia na interface.
+
 ## Fundação de contratos próximos do vencimento — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
@@ -7597,3 +7816,11 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - **Validação:** `npm run docs:validate`, auditoria documental da skill, `git diff --check` e inspeção do diff; nenhum arquivo de produto foi incluído.
 - **Riscos restantes:** a metodologia ainda não está exposta na interface; a fila mantém `ANALYTICS-METRIC-METHODOLOGY-2026-08-21` e `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21` como `PROPOSED`.
 - **Impacto futuro na FAQ:** o registro é a base para uma explicação de usuário por indicador, sem substituir a futura superfície de contexto na UI.
+
+## OD-011 — diversidade e adequação das visualizações do Dashboard — 2026-08-22
+
+- **Escopo:** diretriz de produto incorporada ao gate `R1-DASHBOARD-RELEASE-GATE-2026-08-21`; nenhuma task paralela foi criada.
+- **Decisão:** escolher o tipo de visualização pela pergunta operacional e pelo dado, avaliando alternativas a barras, pizzas e KPIs, sem variedade decorativa.
+- **Critérios:** título, unidade, período, fonte, cobertura, acessibilidade, responsividade e estados honestos de loading, vazio, erro e stale.
+- **Documentos:** `docs/engineering/OWNER_DECISIONS.md`, `handoffs/README.md`, `docs/DASHBOARD_GERENCIAL_UX_SPEC_V1.md` e `docs/PROJECT_STATE.md`.
+- **Limites:** somente contratos e dados reais; sem alteração de biblioteca, código de produto, shell global ou integração externa neste registro.

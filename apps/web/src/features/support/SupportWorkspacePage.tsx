@@ -47,9 +47,9 @@ import {
   createSupportEngineeringWorkItemFromTicket,
   getSupportInternalActionDetail,
   getSupportTicketAttachmentSignedUrl,
-  getSupportCustomerAccountContext,
   listSupportCustomerProductContexts,
   getSupportCustomer360,
+  getSupportCustomerAccountContext,
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
@@ -289,30 +289,6 @@ function toneForPriority(priority: TicketPriority) {
   return 'default' as const;
 }
 
-function toneForSeverity(severity: TicketSeverity) {
-  if (severity === 'critical') {
-    return 'critical' as const;
-  }
-
-  if (severity === 'high') {
-    return 'warning' as const;
-  }
-
-  return 'default' as const;
-}
-
-function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] | SupportTicketDetail['slaPolicyScope']) {
-  if (scope === 'tenant') {
-    return 'Política do cliente';
-  }
-
-  if (scope === 'global_fallback') {
-    return 'Fallback interno';
-  }
-
-  return 'Sem política definida';
-}
-
 function approximateSlaPercent(detail: SupportTicketDetail) {
   const dueAt = detail.resolutionDueAt ?? detail.firstResponseDueAt;
   if (!dueAt) {
@@ -363,18 +339,6 @@ function formatAttachmentSize(sizeBytes: number) {
   }
 
   return `${Math.round((sizeBytes / (1024 * 1024)) * 10) / 10} MB`;
-}
-
-function initialsFromSupportLabel(value: string | null | undefined) {
-  const parts = (value ?? 'IN')
-    .split(/[\s@._-]+/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .slice(0, 2);
-
-  return parts.length > 0
-    ? parts.map((part) => part[0]?.toLocaleUpperCase('pt-BR') ?? '').join('')
-    : 'IN';
 }
 
 function LoadingBlock({ className }: { className?: string }) {
@@ -714,21 +678,6 @@ function SupportCustomerProductsPanel({
   );
 }
 
-function extractPublicArticleBasePath(publicArticlePath: string | null | undefined) {
-  if (!publicArticlePath) {
-    return null;
-  }
-
-  const marker = '/articles/';
-  const markerIndex = publicArticlePath.indexOf(marker);
-
-  if (markerIndex <= 0) {
-    return null;
-  }
-
-  return publicArticlePath.slice(0, markerIndex);
-}
-
 function buildAbsoluteAppUrl(path: string) {
   if (typeof window === 'undefined') {
     return path;
@@ -900,24 +849,6 @@ function humanizeEngineeringWorkItemStatus(
     default:
       return humanizeToken(status).replaceAll('_', ' ');
   }
-}
-
-function toneForEngineeringWorkItemStatus(
-  status: SupportTicketEngineeringLink['workItemStatus'],
-) {
-  if (status === 'released') {
-    return 'positive' as const;
-  }
-
-  if (status === 'rejected' || status === 'cancelled') {
-    return 'critical' as const;
-  }
-
-  if (status === 'triage' || status === 'waiting_external') {
-    return 'warning' as const;
-  }
-
-  return 'default' as const;
 }
 
 function formatAssignableAgentLabel(agent: SupportAssignableAgent) {
@@ -2036,28 +1967,6 @@ function isOperationsQueueTicket(ticket: SupportTicketQueueItem) {
     candidate.includes('opera') ||
     candidate.includes('support') ||
     candidate.includes('suporte')
-  );
-}
-
-function ticketMatchesInboxScope(
-  ticket: SupportTicketQueueItem,
-  scope: TicketInboxScope,
-) {
-  if (scope === 'open') {
-    return (
-      ticket.status === 'new' ||
-      ticket.status === 'triage' ||
-      ticket.status === 'waiting_customer' ||
-      ticket.status === 'waiting_support' ||
-      ticket.status === 'waiting_engineering' ||
-      ticket.status === 'in_progress'
-    );
-  }
-
-  return (
-    ticket.status === 'resolved' ||
-    ticket.status === 'closed' ||
-    ticket.status === 'cancelled'
   );
 }
 
@@ -4796,7 +4705,6 @@ function SupportWorkspaceView({
 
   const canUsePublicComposer = ticketDetail?.canReplyNow ?? false;
   const canUseInternalComposer = ticketDetail?.canAddInternalNote ?? false;
-  const knowledgeBusy = knowledgeSubmitting;
   const canCreateEngineeringHandoff =
     (ticketDetail?.canUpdateStatus ?? false) &&
     engineeringPhase !== 'contract-unavailable' &&
@@ -4971,19 +4879,11 @@ function SupportWorkspaceView({
     ticketDetail?.requesterContactFullName ??
     ticketDetail?.requesterContactEmail ??
     'Cliente B2B';
-  const primaryCustomerContact = customer ? primaryContactFromCustomer(customer) : null;
   const customerDocumentLabel = readCustomerDocumentLabel(customer);
   const currentAssignedLabel =
     formatAssignedAgentSummary(currentAssignedAgent) ??
     ticketDetail?.assignedToFullName ??
     'Sem responsavel definido';
-  const pendingCloseItems = [
-    !ticketDetail?.categoryName ? 'Definir categoria operacional.' : null,
-    !ticketDetail?.assignedToUserId ? 'Atribuir responsável pela tratativa.' : null,
-    ticketDetail?.status === 'waiting_customer' ? 'Aguardar retorno do cliente antes do encerramento.' : null,
-    ticketDetail?.status === 'waiting_engineering' ? 'Consolidar retorno da engenharia antes do encerramento.' : null,
-    ticketDetail && !ticketDetail.canClose ? 'Encerramento indisponível para este ticket no momento.' : null,
-  ].filter((item): item is string => Boolean(item));
   const slaProgress = ticketDetail ? approximateSlaPercent(ticketDetail) : 0;
   const slaDueAt = ticketDetail?.resolutionDueAt ?? ticketDetail?.firstResponseDueAt ?? null;
 
@@ -6871,7 +6771,6 @@ export function SupportCustomersPage() {
     );
   }, [customers, query]);
 
-  const totalCustomers = customers.length;
   const activeCustomers = customers.filter((customer) => customer.tenantStatus === 'active').length;
   const openTickets = customers.reduce((sum, customer) => sum + customer.openTicketCount, 0);
   const activeContacts = customers.reduce((sum, customer) => sum + customer.activeContactsCount, 0);
@@ -7236,7 +7135,6 @@ export function SupportCustomersPage() {
 export function SupportCustomerPage() {
   const { markSessionExpired } = useAuthContext();
   const { tenantId } = useParams();
-  const didBootstrapRef = useRef(false);
   const [backendDenied, setBackendDenied] = useState(false);
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [message, setMessage] = useState<string | null>(null);

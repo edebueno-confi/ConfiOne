@@ -30,6 +30,10 @@ respeitado por todas as abas. O backend permanece a fonte da verdade.
   ponto, percentual com vírgula, datas `dd/mm/aaaa`, meses por extenso.
 - Densidade cockpit, sem cardização excessiva nem scroll horizontal (tabelas
   largas usam `overflow-x-auto` com largura mínima controlada).
+- Diversidade orientada à decisão: não repetir barras, pizzas ou KPIs por
+  padrão. Escolher a visualização que melhor explica comparação, evolução,
+  distribuição, composição, relação ou exceção, sempre respeitando o contrato
+  de dados e a leitura operacional.
 
 ## 3. Fonte de verdade e período compartilhado
 
@@ -74,6 +78,20 @@ respeitado por todas as abas. O backend permanece a fonte da verdade.
   secundário "Limpar" (borda). Controles com a classe padrão de input.
 - CTAs: primário sólido `--minimal-action`; secundário contornado; posição
   canônica no topo à direita do bloco (ex.: "Sincronizar", "Exportar").
+
+### 5.1 Critério de escolha de visualização
+
+Antes de adicionar um gráfico, registrar qual pergunta operacional ele responde
+e qual encodamento a torna mais legível. Séries temporais podem usar linha, área
+ou faixa; relações podem usar dispersão; composição pode usar treemap ou
+waterfall; funil, heatmap, bullet, tabela analítica e composições híbridas são
+alternativas válidas quando o dado exigir. Barras, pizzas e KPIs continuam
+disponíveis, mas não são a escolha padrão nem devem ser usados apenas para
+preencher espaço.
+
+Toda visualização deve informar título, unidade, período, fonte e estado de
+cobertura. Deve também funcionar em loading, vazio, erro e stale, sem publicar
+uma forma visual que faça dado ausente parecer zero.
 
 ## 6. Estados
 

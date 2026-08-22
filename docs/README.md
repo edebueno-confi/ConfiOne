@@ -1,5 +1,10 @@
 # Docs
 
+## Ordem de produto vigente
+
+- [Roadmap e ordem canônica de releases](./ROADMAP_BUILDOUT_V3.md#current-product-execution-order) — Release 1 agora, Release 2 depois e histórico preservado com classificação explícita.
+- [Decisões do proprietário](./engineering/OWNER_DECISIONS.md#od-011--diversidade-e-adequação-das-visualizações-do-dashboard) — ordem de releases, painel visual de desenvolvimento e diretriz de diversidade das visualizações do Dashboard.
+
 - [Engenharia e governança](./engineering/PROJECT.md) — índice inicial da camada normativa para Codex e Claude.
 - [Protocolo de revisão multiagente](./engineering/REVIEW_PROTOCOL.md) — papéis, precedência, estados e artefatos.
 - [CODE_REVIEW_PROTOCOL_V1.md](./CODE_REVIEW_PROTOCOL_V1.md) — contrato de revisão entre agente implementador e agente revisor, quality gates e política de severidade.
@@ -9,6 +14,7 @@
 - [Prompt de takeover temporário do ConfiOne, 2026-08-19](../handoffs/PROMPT_CLAUDE_PROJECT_TAKEOVER_2026-08-19.md)
 
 - [CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md](./CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md)
+- [Handoff de migração Genius e After Sale V1 → V2](./AFTER_SALE_V1_V2_GENIUS_MIGRATION_HANDOFF.md) — ponto de entrada para leitura pelo Cloud, com fontes, regras de proveniência, de-para, segurança e pendências.
 - [Importação local do diretório HubSpot](./reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md)
 - [Auditoria do domínio Customer Success V1](./ANALYTICS_CS_DOMAIN_AUDIT_V1.md) — fontes locais, descoberta oficial das APIs HubSpot e lacunas de health score, churn, expansão e renovação.
 - [Auditoria do domínio de Suporte V1](./ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md) — fila, tickets, conversas, chat, SLA, aging, prioridade, tenant e semântica de datas.
@@ -16,6 +22,7 @@
 
 - [VIEW_RPC_CONTRACTS.md](./VIEW_RPC_CONTRACTS.md) — contratos de agrupamento interno da Central de Clientes (`customer_account_groups`).
 - [Customer Relationship Groups V1](./reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md) — decisão de domínio, implementação e validação da Central de Clientes.
+- [Blueprints visuais oficiais da Central de Clientes V1](./design/screens/ADMIN_TENANTS.md#blueprints-visuais-oficiais-da-central-de-clientes-v1) — visão da carteira e workspace dedicado do cliente.
 
 - [Operational Support Flow V1 kickoff](./reports/OPERATIONAL_SUPPORT_FLOW_V1_KICKOFF_2026-08-16.md) — contrato de autorização corrigido e ativação local controlada do Support Workspace.
 
@@ -25,19 +32,23 @@
 
 - [Contrato Visual de Administração e Configurações V1](./specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md) — precedência local para shell, Usuários, Histórico, Fontes e Integrações a partir de 2026-08-09.
 - [Mapa de componentes do Blueprint V1](./reports/2026-08-09_admin-configuration-blueprint-component-map.md) — matriz REUSE/ADAPT/NEW/OMIT e evidência das referências aprovadas.
+- [Avaliação de prontidão do Development Control Plane Visual](./reports/DEVELOPMENT_CONTROL_PLANE_VISUAL_READINESS_ASSESSMENT_2026-08-21.md) — MVP local, lacunas, segurança e recomendação para V1 online read-only.
+- [Briefing do modelo de trabalho com agentes](./reports/CONFIONE_AGENT_OPERATING_MODEL_PRESENTATION_BRIEF_2026-08-22.md) — material conceitual para apresentar à diretoria Codex, Forge, Sentinel, Cloud/Claude, handoffs, eventos e heartbeats.
 
 ## Branches e release
 
 - [context-handoff/00_CONTEXT_PACK_INDEX.md](./context-handoff/00_CONTEXT_PACK_INDEX.md)
 - [ACCESS_AREAS_ROLES_PORTFOLIOS_SPEC_V1.md](./ACCESS_AREAS_ROLES_PORTFOLIOS_SPEC_V1.md)
 - [ACCESS_CONTROL_V2_2026-08-11.md](./reports/ACCESS_CONTROL_V2_2026-08-11.md) — ciclo de vida, dependências e evidência de permissões efetivas do control plane.
+- [AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md](./specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md) — decisão, evidência, decomposição e critérios para cadastro, liberação e autorização de usuários; planejamento sem implementação.
+- [AUTHORIZATION_MODEL_INVENTORY_V1.md](./specs/AUTHORIZATION_MODEL_INVENTORY_V1.md) — inventário factual do fluxo atual de autenticação, contexto, autorização, menu, router, backend, estados e lacunas; task `AUTH-MODEL-INVENTORY-2026-08-21`.
 - [GIT_BRANCHING_AND_RELEASE_POLICY.md](./GIT_BRANCHING_AND_RELEASE_POLICY.md)
 - [reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md](./reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md)
 - [reports/SDD_CONTINUITY_AUDIT_2026-07-21.md](./reports/SDD_CONTINUITY_AUDIT_2026-07-21.md)
 - [superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md)
 - [superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md)
 
-Fonte oficial da documentação do Genius Support OS.
+Fonte oficial da documentação do ConfiOne.
 
 ## Regra de leitura
 
@@ -59,10 +70,11 @@ Fonte oficial da documentação do Genius Support OS.
 - [reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md](./reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md)
 - [reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md](./reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md)
 - [ANALYTICS_METRIC_CATALOG_V1.md](./ANALYTICS_METRIC_CATALOG_V1.md)
-- [reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md](./reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md)
-- [ANALYTICS_KPI_REGISTRY_V1.md](./ANALYTICS_KPI_REGISTRY_V1.md)
+- [ANALYTICS_KPI_REGISTRY_V1.md](./ANALYTICS_KPI_REGISTRY_V1.md) — registro de KPIs e escopos; a validação pipeline → área → operação está na task `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` e a integridade de caracteres na `R1-UTF8-ENCODING-INTEGRITY-2026-08-21`.
+- [ANALYTICS_PIPELINE_OPERATION_GOVERNANCE_V1.md](./ANALYTICS_PIPELINE_OPERATION_GOVERNANCE_V1.md) — mapa canônico pipeline → área → operação, estados de ausência/ambiguidade, filtros server-side e reconciliação por operação.
 - [ANALYTICS_MRR_GOALS_FOUNDATION_V1.md](./ANALYTICS_MRR_GOALS_FOUNDATION_V1.md)
-- [ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md](./ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md) — fonte OMIE, datas, posição atual, recebido, vencido, aging, cobertura e limitações do Financeiro.
+- [ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md](./ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md) — fonte OMIE, datas, posição atual, recebido, vencido, aging, cobertura e limitações do Financeiro; vinculado à task `R1-INTEGRATION-CALL-QUALITY-2026-08-21` para qualidade das chamadas e refresh dos painéis.
+- [DASHBOARD_GERENCIAL_UX_SPEC_V1.md](./DASHBOARD_GERENCIAL_UX_SPEC_V1.md) — contrato visual histórico do Dashboard, atualizado com o critério de escolha de visualizações por pergunta operacional.
 - [ANALYTICS_PREDICTION_FOUNDATION_V1.md](./ANALYTICS_PREDICTION_FOUNDATION_V1.md)
 - [ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md](./ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md)
 - [ANALYTICS_CS_DOMAIN_AUDIT_V1.md](./ANALYTICS_CS_DOMAIN_AUDIT_V1.md)
@@ -152,7 +164,7 @@ Fonte oficial da documentação do Genius Support OS.
 - [BUILD_JOURNAL_STRATEGY.md](./BUILD_JOURNAL_STRATEGY.md)
 - [BUILD_JOURNAL_SCREEN_SPEC.md](./BUILD_JOURNAL_SCREEN_SPEC.md)
 
-Área interna para explicar como o Genius Support OS foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex. A experiência runtime atual usa conteúdo estático versionado no frontend, em composição dark compacta e desktop-first, sem criar backend, migrations, RPCs, tabelas ou RLS nova.
+Área interna para explicar como o ConfiOne foi planejado, arquitetado e construído com colaboração entre humano, ChatGPT e Codex. A experiência runtime atual usa conteúdo estático versionado no frontend, em composição dark compacta e desktop-first, sem criar backend, migrations, RPCs, tabelas ou RLS nova.
 
 Na fase `Build Journal Immersive Blueprint Fidelity V1`, a rota foi redesenhada com hero dark horizontal, paisagem abstrata, faixa `A jornada em uma visão`, mapa da construção, timeline por fases, documentos-fonte curados, arquitetura explicada, papel da IA, estado atual e fechamento editorial, sempre preservando shell real, gate administrativo existente, ausência de backend novo e ausência de alteração em Product Docs nesta rodada.
 
@@ -166,7 +178,7 @@ Direção já registrada para a próxima rodada: conectar a narrativa do Diário
 - [PRODUCT.md](../PRODUCT.md)
 - [DESIGN.md](../DESIGN.md)
 
-Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do Genius Support OS. A experiência atual consome o catálogo e o detalhe oficiais por contratos reais de documentos internos, com `Por onde começar`, trilhas de leitura, rail de governança e índice interno derivado do markdown sanitizado, sem parser de filesystem ou leitura arbitrária de arquivos.
+Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do ConfiOne. A experiência atual consome o catálogo e o detalhe oficiais por contratos reais de documentos internos, com `Por onde começar`, trilhas de leitura, rail de governança e índice interno derivado do markdown sanitizado, sem parser de filesystem ou leitura arbitrária de arquivos.
 
 Direção já registrada para a próxima rodada: evoluir a biblioteca para leitura mais profunda e navegação documental mais rica, mantendo whitelist explícita, curadoria, sanitização e ausência de leitura arbitrária do repositório.
 
@@ -193,7 +205,7 @@ A política de higiene da raiz traduz a auditoria estrutural em regra prática p
 
 - [../.skills/genius-cockpit-ui-blueprint/SKILL.md](../.skills/genius-cockpit-ui-blueprint/SKILL.md)
 
-Skill local versionada para tarefas de UI/UX do Genius Support OS baseadas em blueprint, screenshot, polish visual, copy operacional e tradução fiel para React/Tailwind com aderência ao Design System V3 e aos contratos reais do produto.
+Skill local versionada para tarefas de UI/UX do ConfiOne baseadas em blueprint, screenshot, polish visual, copy operacional e tradução fiel para React/Tailwind com aderência ao Design System V3 e aos contratos reais do produto.
 
 ## Planejamento e execução
 

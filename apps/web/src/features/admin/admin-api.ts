@@ -16,6 +16,8 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCustomerAccountGroupListRow,
+  AdminCustomerAccountGroupDetailRow,
   AdminCommercialProduct,
   AdminCommercialProductDetail,
   AdminCommercialProductDetailFeature,
@@ -73,6 +75,12 @@ import type {
   KnowledgeVisibility,
   RpcAdminAddTenantMemberPayload,
   RpcAdminAddTenantMemberResponse,
+  RpcAdminCreateCustomerAccountGroupPayload,
+  RpcAdminCreateCustomerAccountGroupResponse,
+  RpcAdminAddCustomerAccountGroupMemberPayload,
+  RpcAdminAddCustomerAccountGroupMemberResponse,
+  RpcAdminArchiveCustomerAccountGroupMemberPayload,
+  RpcAdminArchiveCustomerAccountGroupMemberResponse,
   RpcAdminAddCustomerAccountAlertPayload,
   RpcAdminAddCustomerCustomizationPayload,
   RpcAdminAddCustomerIntegrationPayload,
@@ -140,6 +148,11 @@ import type {
   RpcAdminReplaceInternalMembershipScreensResponse,
   RpcAdminUpsertCustomerAccountProfilePayload,
 } from '../../contracts/admin-contracts';
+import type {
+  AdminCustomerInventoryObservationRow,
+  AdminCustomerMigrationKanbanRow,
+  AdminCustomerOperationsDirectoryRow,
+} from '@genius-support-os/contracts';
 
 function requireClient() {
   return requireSupabaseBrowserClient();
@@ -260,7 +273,127 @@ export async function listAdminTenants() {
     throw toAppError(error, 'Falha ao carregar a lista de clientes.');
   }
 
-  return (data ?? []) as AdminTenantsListItemRow[];
+  const tenants = (data ?? []) as AdminTenantsListItemRow[];
+  if (tenants.length === 0) {
+    return tenants;
+  }
+
+  const { data: groupContext, error: groupContextError } = await client
+    .from('vw_admin_tenant_group_context')
+    // O contexto já é um read model administrativo escopado pelo backend.
+    // Evite montar um filtro `in` com centenas de UUIDs: a URL REST cresce
+    // além do limite do preflight e quebra a Central quando a base aumenta.
+    .select('*');
+
+  if (groupContextError) {
+    throw toAppError(groupContextError, 'Falha ao carregar o agrupamento dos clientes.');
+  }
+
+  const contextByTenantId = new Map(
+    ((groupContext ?? []) as Array<{
+      tenant_id: string;
+      group_id: string;
+      group_display_name: string;
+      group_type: AdminTenantsListItemRow['primary_group_type'];
+      relationship: AdminTenantsListItemRow['primary_group_relationship'];
+      group_count: number;
+    }>).map((context) => [context.tenant_id, context]),
+  );
+
+  return tenants.map((tenant) => {
+    const context = contextByTenantId.get(tenant.id);
+    return {
+      ...tenant,
+      primary_group_id: context?.group_id ?? null,
+      primary_group_display_name: context?.group_display_name ?? null,
+      primary_group_type: context?.group_type ?? null,
+      primary_group_relationship: context?.relationship ?? null,
+      group_count: context?.group_count ?? 0,
+    };
+  });
+}
+
+export async function listAdminCustomerAccountGroups() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_groups_list')
+    .select('*')
+    .order('status', { ascending: true })
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os grupos de clientes.');
+  }
+
+  return (data ?? []) as AdminCustomerAccountGroupListRow[];
+}
+
+export async function listAdminCustomerOperationsDirectory() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_operations_directory')
+    .select('*')
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o diretório operacional de clientes.');
+  }
+
+  return (data ?? []) as AdminCustomerOperationsDirectoryRow[];
+}
+
+export async function listAdminCustomerMigrationKanban() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_migration_kanban')
+    .select('*')
+    .order('priority', { ascending: true })
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os projetos de migração.');
+  }
+
+  return (data ?? []) as AdminCustomerMigrationKanbanRow[];
+}
+
+export async function listAdminCustomerInventoryObservations(limit = 80) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_inventory_observations')
+    .select('*')
+    .order('observed_at', { ascending: false })
+    .range(0, Math.max(0, limit - 1));
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as observações de inventário.');
+  }
+
+  return (data ?? []) as AdminCustomerInventoryObservationRow[];
+}
+
+export async function getAdminCustomerAccountGroupDetail(groupId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_group_detail')
+    .select('*')
+    .eq('id', groupId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do grupo de clientes.');
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    ...(data as AdminCustomerAccountGroupDetailRow),
+    members: Array.isArray(data.members)
+      ? (data.members as AdminCustomerAccountGroupDetailRow['members'])
+      : [],
+  } satisfies AdminCustomerAccountGroupDetailRow;
 }
 
 export async function getAdminTenantDetail(tenantId: string) {
@@ -279,9 +412,24 @@ export async function getAdminTenantDetail(tenantId: string) {
     return null;
   }
 
+  const { data: groupContext, error: groupContextError } = await client
+    .from('vw_admin_tenant_group_context')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (groupContextError) {
+    throw toAppError(groupContextError, 'Falha ao carregar o agrupamento do cliente.');
+  }
+
   return {
     ...(data as AdminTenantDetailRow),
     contacts: Array.isArray(data.contacts) ? (data.contacts as AdminTenantDetailRow['contacts']) : [],
+    primary_group_id: groupContext?.group_id ?? null,
+    primary_group_display_name: groupContext?.group_display_name ?? null,
+    primary_group_type: groupContext?.group_type ?? null,
+    primary_group_relationship: groupContext?.relationship ?? null,
+    group_count: groupContext?.group_count ?? 0,
   } satisfies AdminTenantDetailRow;
 }
 
@@ -1260,6 +1408,54 @@ export async function createTenant(payload: RpcAdminCreateTenantPayload) {
   }
 
   return data as RpcAdminCreateTenantResponse;
+}
+
+export async function createCustomerAccountGroup(
+  payload: RpcAdminCreateCustomerAccountGroupPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_create_customer_account_group',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar o agrupamento de clientes.');
+  }
+
+  return data as RpcAdminCreateCustomerAccountGroupResponse;
+}
+
+export async function addCustomerAccountGroupMember(
+  payload: RpcAdminAddCustomerAccountGroupMemberPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_add_customer_account_group_member',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao adicionar o membro ao agrupamento.');
+  }
+
+  return data as RpcAdminAddCustomerAccountGroupMemberResponse;
+}
+
+export async function archiveCustomerAccountGroupMember(
+  payload: RpcAdminArchiveCustomerAccountGroupMemberPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_archive_customer_account_group_member',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar o membro do agrupamento.');
+  }
+
+  return data as RpcAdminArchiveCustomerAccountGroupMemberResponse;
 }
 
 export async function updateTenantStatus(payload: RpcAdminUpdateTenantStatusPayload) {

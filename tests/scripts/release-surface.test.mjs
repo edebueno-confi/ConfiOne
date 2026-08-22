@@ -28,6 +28,7 @@ const postLoginSource = await readFile(
 );
 
 const PUBLISHED_ROUTES = [
+  '/inicio',
   '/admin/analytics',
   '/admin/knowledge',
   '/admin/knowledge/new',
@@ -36,10 +37,10 @@ const PUBLISHED_ROUTES = [
   '/admin/cockpit',
   // `/admin/access` passou a ser publicada no manifesto (tela `access`).
   '/admin/access',
+  '/admin/tenants',
 ];
 
 const HIDDEN_ROUTES = [
-  '/inicio',
   '/support',
   '/support/inbox',
   '/support/queue',
@@ -56,7 +57,6 @@ const HIDDEN_ROUTES = [
   '/engineering/work-items/abc',
   '/internal-actions',
   '/internal-actions/abc',
-  '/admin/tenants',
   // `/admin/access` saiu daqui: passou a ser rota publicada no manifesto.
   // `/admin/internal-areas` continua oculta — nao e prefixo de nenhuma rota publicada.
   '/admin/internal-areas',
@@ -118,13 +118,13 @@ test('manifest has no internal inconsistency', () => {
 
 // A tela `access` passou a integrar o release: usuarios, convites e permissoes
 // sao necessarios para operar as demais telas publicadas.
-test('publishes exactly the four approved screens', () => {
-  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access']);
-  for (const key of ['analytics', 'knowledge', 'settings', 'access']) {
+test('publishes the reception and the approved operational screens', () => {
+  assert.deepEqual([...listPublishedScreenKeys()], ['home', 'analytics', 'knowledge', 'settings', 'access', 'tenants']);
+  for (const key of ['home', 'analytics', 'knowledge', 'settings', 'access', 'tenants']) {
     assert.equal(isScreenPublishedInRelease(key), true, key);
   }
   // `access` saiu desta lista de negados junto com a publicacao da tela.
-  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio', 'product_docs']) {
+  for (const key of ['system', 'support_queue', 'cs_portfolio', 'product_docs']) {
     assert.equal(isScreenPublishedInRelease(key), false, key);
   }
 });
@@ -133,7 +133,7 @@ test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
     // `/admin/access` acompanha a publicacao da tela `access`.
-    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
+    ['/inicio', '/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access', '/admin/tenants'],
   );
 });
 
@@ -145,7 +145,8 @@ test('every published route resolves to its screen key', () => {
   assert.equal(resolveReleaseRouteScreenKey('/admin/cockpit'), 'settings');
   // Rota publicada nova: precisa resolver para a propria tela `access`.
   assert.equal(resolveReleaseRouteScreenKey('/admin/access'), 'access');
-  assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), null);
+  assert.equal(resolveReleaseRouteScreenKey('/inicio'), 'home');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), 'tenants');
 });
 
 test('recognizes the internal route families', () => {
@@ -201,7 +202,7 @@ test('cockpit administrativo usa a permissao de Configurações', () => {
 // ------------------------------------------------------------- redirects
 
 test('technical entry points redirect to a published surface', () => {
-  assert.equal(resolveReleaseRedirect('/inicio'), '/admin/analytics');
+  assert.equal(resolveReleaseRedirect('/inicio'), null);
   assert.equal(resolveReleaseRedirect('/admin'), '/admin/analytics');
 });
 
@@ -213,13 +214,13 @@ test('post-login normalizes technical entry points before permission checks', ()
 });
 
 test('forbidden product routes are not turned into silent redirects', () => {
-  for (const route of ['/support/queue', '/cs/portfolio', '/portal', '/admin/access', '/admin/system']) {
+  for (const route of ['/support/queue', '/cs/portfolio', '/portal', '/admin/system']) {
     assert.equal(resolveReleaseRedirect(route), null, route);
   }
 });
 
-test('landing route is the dashboard', () => {
-  assert.equal(getReleaseLandingRoute(), '/admin/analytics');
+test('landing route is the authenticated reception', () => {
+  assert.equal(getReleaseLandingRoute(), '/inicio');
 });
 
 // --------------------------------------------------- platform_admin surface
@@ -238,8 +239,8 @@ test('platform_admin is blocked on every hidden route despite full permissions',
   }
 });
 
-test('platform_admin lands on the dashboard instead of the internal home', () => {
-  assert.equal(getDefaultInternalLandingRoute(platformAdminContext()), '/admin/analytics');
+test('platform_admin lands on the authenticated reception', () => {
+  assert.equal(getDefaultInternalLandingRoute(platformAdminContext()), '/inicio');
 });
 
 test('platform_admin keeps the complete surface in full mode', () => {
@@ -260,7 +261,7 @@ test('dashboard_viewer stays blocked on authoring and configuration', () => {
   const context = dashboardViewerContext();
   // `/admin/access` migrou de HIDDEN_ROUTES para ca: agora e publicada, e a
   // negacao para este perfil passa a ser garantida pela permissao de tela.
-  for (const route of ['/admin/knowledge', '/admin/knowledge/new', '/admin/settings', '/admin/access']) {
+  for (const route of ['/admin/knowledge', '/admin/knowledge/new', '/admin/settings', '/admin/access', '/admin/tenants']) {
     assert.equal(canOpenInternalRoute(route, context), false, route);
   }
 });
@@ -272,8 +273,8 @@ test('dashboard_viewer stays blocked on every hidden route', () => {
   }
 });
 
-test('dashboard_viewer lands on the dashboard', () => {
-  assert.equal(getDefaultInternalLandingRoute(dashboardViewerContext()), '/admin/analytics');
+test('dashboard_viewer lands on the authenticated reception', () => {
+  assert.equal(getDefaultInternalLandingRoute(dashboardViewerContext()), '/inicio');
 });
 
 // ------------------------------------------------------------- navigation
@@ -293,10 +294,12 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     screenKeys: platformAdminContext().screenKeys,
   });
 
-  assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'administration']);
+  assert.deepEqual(navigation.map((section) => section.id), ['workspace', 'intelligence', 'knowledge', 'administration']);
   // O item generico `admin-settings` deu lugar ao submenu real de Configuracoes
   // na sidebar global; a segunda coluna de navegacao dentro da tela foi removida.
   assert.deepEqual(itemIds(navigation), [
+    'user-reception',
+    'admin-tenants',
     'admin-analytics',
     'admin-knowledge',
     'admin-knowledge-new',
@@ -308,6 +311,7 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-settings-brands',
     'admin-settings-help-center',
   ]);
+  assert.equal(navigation.find((section) => section.id === 'workspace').items.at(-1).label, 'Central de Clientes');
 });
 
 test('sidebar never exposes a hidden module', () => {
@@ -325,7 +329,7 @@ test('sidebar never exposes a hidden module', () => {
   }
   // `/admin/access` saiu da lista de proibidos porque passou a ser publicada e
   // e o unico ponto de entrada da tela de usuarios. As demais seguem ocultas.
-  for (const forbidden of ['/inicio', '/support/queue', '/admin/tenants', '/admin/internal-areas', '/admin/system', '/cs/portfolio']) {
+  for (const forbidden of ['/support/queue', '/admin/internal-areas', '/admin/system', '/cs/portfolio']) {
     assert.equal(targets.includes(forbidden), false, forbidden);
   }
 });
@@ -344,6 +348,18 @@ test('the public help center entry opens outside the shell', () => {
   assert.equal(item.to, PUBLIC_HELP_CENTER_HREF);
 });
 
+test('the reception and customer central use the operational labels', () => {
+  const navigation = navigationOf({
+    isPlatformAdmin: true,
+    roles: ['platform_admin'],
+    screenKeys: platformAdminContext().screenKeys,
+  });
+  const items = navigation.flatMap((section) => section.items);
+
+  assert.equal(items.find((item) => item.id === 'user-reception').label, 'Meu espaço');
+  assert.equal(items.find((item) => item.id === 'admin-tenants').label, 'Central de Clientes');
+});
+
 test('dashboard_viewer sidebar shows only the dashboard', () => {
   const navigation = navigationOf({
     isPlatformAdmin: false,
@@ -352,7 +368,7 @@ test('dashboard_viewer sidebar shows only the dashboard', () => {
     hasDashboardViewerAccess: true,
   });
 
-  assert.deepEqual(itemIds(navigation), ['admin-analytics']);
+  assert.deepEqual(itemIds(navigation), ['user-reception', 'admin-analytics']);
 });
 
 test('a profile without published screens gets no empty groups', () => {
@@ -362,7 +378,7 @@ test('a profile without published screens gets no empty groups', () => {
     screenKeys: ['support_queue', 'support_tickets'],
   });
 
-  assert.deepEqual(navigation, []);
+  assert.deepEqual(itemIds(navigation), ['user-reception']);
 });
 
 test('a knowledge manager sees authoring without configuration', () => {
@@ -372,5 +388,5 @@ test('a knowledge manager sees authoring without configuration', () => {
     screenKeys: ['knowledge'],
   });
 
-  assert.deepEqual(itemIds(navigation), ['admin-knowledge', 'admin-knowledge-new', 'public-help-center']);
+  assert.deepEqual(itemIds(navigation), ['user-reception', 'admin-knowledge', 'admin-knowledge-new', 'public-help-center']);
 });

@@ -4,14 +4,14 @@ select plan(8);
 
 insert into public.analytics_source_config (
   domain_key, object_type, hubspot_pipeline_id, label, group_company,
-  group_company_source, is_active
+  area_key, group_company_source, is_active
 )
 values
-  ('commercial', 'deal', 'stage-scope-commercial-a', 'Comercial A', 'Confi', 'confirmed', true),
-  ('commercial', 'deal', 'stage-scope-commercial-b', 'Comercial B', 'Confi', 'confirmed', true),
-  ('commercial', 'deal', 'stage-scope-commercial-other', 'Comercial Outro', 'Aftersale', 'confirmed', true),
-  ('cs', 'ticket', 'stage-scope-cs-a', 'Suporte A', 'Confi', 'confirmed', true),
-  ('cs', 'ticket', 'stage-scope-cs-other', 'Suporte Outro', 'Aftersale', 'confirmed', true);
+  ('commercial', 'deal', 'stage-scope-commercial-a', 'Comercial A', 'Confi', 'commercial', 'confirmed', true),
+  ('commercial', 'deal', 'stage-scope-commercial-b', 'Comercial B', 'Confi', 'commercial', 'confirmed', true),
+  ('commercial', 'deal', 'stage-scope-commercial-other', 'Comercial Outro', 'Aftersale', 'commercial', 'confirmed', true),
+  ('cs', 'ticket', 'stage-scope-cs-a', 'Suporte A', 'Confi', 'support', 'confirmed', true),
+  ('cs', 'ticket', 'stage-scope-cs-other', 'Suporte Outro', 'Aftersale', 'support', 'confirmed', true);
 
 insert into public.hubspot_pipeline_stages (
   object_type, pipeline_id, stage_id, label, display_order, is_closed, is_won, metadata
