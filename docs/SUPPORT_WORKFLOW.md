@@ -1,5 +1,10 @@
 # SUPPORT_WORKFLOW.md
 
+## Atualização 2026-08-16 — Support Workspace V1
+- A capacidade `screen.support.view` foi alinhada aos grants de tela de `platform_admin`, `support_manager` e `support_agent` pela migration `20260816100000_support_screen_capability_grants_v1.sql`.
+- A publicação das rotas `/support/queue` e `/support/tickets` permanece controlada pelo release surface. A validação local em modo full confirmou os read models e RPCs de suporte sem liberar o módulo no release padrão.
+- O próximo lote deve validar ações autenticadas, isolamento por tenant, timeline, mensagens, classificação, SLA, Knowledge e handoff antes da publicação.
+
 ## Atualizacao P4-A - Fechamento operacional do MVP
 - O fluxo MVP foi validado ponta a ponta com dados locais sanitizados: ticket criado pelo Portal, entrada na fila de suporte, resposta pública via Portal, nota interna sem vazamento, Knowledge público enviado, acionamento interno com retorno, escalonamento para engenharia com update/retorno e continuidade da tratativa pelo suporte.
 - O suporte continua operando apenas por views/RPCs. Nenhuma ação visível validada nesta fase dependeu de mock, DML direto ou regra inventada no frontend.

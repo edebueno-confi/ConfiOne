@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Migração Sonho dos Pés | Genius para After Sale V2</title>
+<style>
+body{font-family:Arial,sans-serif;color:#172033;line-height:1.45;margin:0;background:#f5f7fb}
+main{max-width:1100px;margin:32px auto;background:#fff;padding:36px 44px;box-shadow:0 2px 12px #ccd3df}
+h1{margin:0;color:#3a1c70;font-size:30px}h2{color:#3a1c70;border-bottom:2px solid #e6e0f2;padding-bottom:8px;margin-top:30px}
+.sub{color:#596579;margin-top:4px}.status{background:#fff4d8;border-left:6px solid #e4a91b;padding:14px 18px;margin:22px 0;font-weight:600}
+.ok{background:#eaf7ef;border-left-color:#2c9b59}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}.card{border:1px solid #dde3ee;border-radius:8px;padding:14px}.card strong{display:block;font-size:24px;color:#3a1c70}.small{font-size:13px;color:#647086}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce2ec;padding:9px;text-align:left;vertical-align:top}th{background:#eee9f8;color:#3a1c70}.yes{color:#187a42;font-weight:700}.warn{color:#9a6800;font-weight:700}.no{color:#a33a3a;font-weight:700}
+ul{margin-top:8px}footer{font-size:12px;color:#697487;border-top:1px solid #dde3ee;margin-top:34px;padding-top:12px}
+</style>
+</head>
+<body><main>
+<h1>Migração de Sonho dos Pés</h1>
+<div class="sub">Origem: Genius Returns | Destino: After Sale V2</div>
+<div class="status">Situação: configurações gerais concluídas. A V2 mostra 1 loja ativa cadastrada, `Loja sonhodospes70`. Outras 94 lojas aptas ainda precisam ser cadastradas e conferidas.</div>
+<div class="grid">
+<div class="card"><strong>95</strong>lojas aptas para cadastro</div>
+<div class="card"><strong>1</strong>loja confirmada na V2</div>
+<div class="card"><strong>94</strong>sellers de retorno identificados</div>
+<div class="card"><strong>99</strong>registros encontrados na Genius</div>
+</div>
+<h2>1. Resultado da migração</h2>
+<p>A conta Sonho dos Pés foi conferida na Genius e na After Sale V2. As regras compatíveis foram configuradas no ambiente V2. O fluxo de devolução preserva a possibilidade de concluir a solicitação com estorno ou vale-compra.</p>
+<p>O cadastro de lojas físicas foi preparado com os endereços válidos e com o identificador de seller usado pela Genius. Na V2, cada loja é configurada para receber o retorno da mercadoria para a origem do pedido.</p>
+<h2>2. De-para das configurações</h2>
+<table><thead><tr><th>Área na Genius</th><th>Como estava</th><th>Como ficou na V2</th><th>Situação</th></tr></thead><tbody>
+<tr><td>Motivos de devolução</td><td>Motivos ativos, com prazo, exigência de foto e regras administrativas.</td><td>Motivos existentes foram ajustados e os que faltavam foram cadastrados com os mesmos prazos, evidências e restrições.</td><td class="yes">Migrado</td></tr>
+<tr><td>Produto em garantia</td><td>Inativo e disponível apenas para atendimento interno.</td><td>Permanece fora do fluxo ativo da V2.</td><td class="yes">Mantido inativo</td></tr>
+<tr><td>Estorno de frete</td><td>Proporcional aos itens, com exceções para motivos específicos.</td><td>Regra por pedido ativada e motivos sem direito a frete mantidos como exceção.</td><td class="yes">Migrado com ajuste</td></tr>
+<tr><td>Correios</td><td>Postagem em agência ativa e coleta domiciliar inativa.</td><td>Correios configurado como método de postagem.</td><td class="yes">Migrado</td></tr>
+<tr><td>Score de clientes</td><td>Recurso disponível no ambiente de origem.</td><td>Ativado com os valores padrão da V2.</td><td class="yes">Migrado</td></tr>
+<tr><td>Fique com o item</td><td>Valor zerado, sem retenção configurada.</td><td>Retenção permaneceu desativada.</td><td class="yes">Mantido</td></tr>
+<tr><td>Integração com VTEX</td><td>Conta VTEX sonhodospes.</td><td>Não foi alterada.</td><td class="warn">Preservada</td></tr>
+<tr><td>Comunicações por e-mail</td><td>Textos e modelos próprios da Genius.</td><td>A V2 possui editor próprio mais completo; a personalização deve ser feita no painel da V2.</td><td class="warn">Não bloqueia a migração</td></tr>
+</tbody></table>
+<h2>3. Lojas físicas e retorno para o seller</h2>
+<p>Na Genius, a loja física funciona como destino de retorno da mercadoria para a origem do pedido. O código do seller é o ID restritor. Na V2, esse comportamento foi representado pelo cadastro da loja com retorno para a origem e pelo uso do ID restritor como identificador externo.</p>
+<p>O arquivo <strong>LOJAS_V2_CADASTRO_SONHO_DOS_PES.csv</strong> contém 95 registros únicos, com endereço, identificador do seller, retorno para a origem e o CNPJ empresarial autorizado para atender à exigência da V2.</p>
+<table><thead><tr><th>Tratamento</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody>
+<tr><td>Incluídas na base de carga</td><td>95</td><td>Ativas, com endereço válido, ID restritor e sem duplicidade.</td></tr>
+<tr><td>Confirmada na V2</td><td>1</td><td>Loja sonhodospes70, ativa, vinculada a Sonho dos Pés.</td></tr>
+<tr><td>Não incluídas</td><td>2</td><td>Registros inativos e sem ID restritor.</td></tr>
+<tr><td>Não incluída</td><td>1</td><td>Registro ativo sem endereço suficiente para cadastro.</td></tr>
+<tr><td>Consolidada</td><td>1 duplicidade</td><td>Mesmo endereço e mesmo código de seller; mantida apenas uma ocorrência.</td></tr>
+</tbody></table>
+<p class="small">A Genius não informa CNPJ individual por loja. Por isso, a carga usa o CNPJ empresarial 28.445.729/0001-90 em cada loja. Essa adaptação deve ser conferida pelo responsável antes do uso operacional.</p>
+<h2>4. Impedimentos e pendências</h2>
+<table><thead><tr><th>Item</th><th>Classificação</th><th>O que falta</th><th>Impacto</th></tr></thead><tbody>
+<tr><td>Quantidade efetivamente criada na V2</td><td class="warn">Impedimento operacional</td><td>Recarregar a aba de lojas e conferir o total exibido.</td><td>Não iniciar nova carga até confirmar o total, para evitar duplicidades.</td></tr>
+<tr><td>CNPJ das lojas</td><td class="warn">Adaptação para conferência</td><td>Confirmar o uso do CNPJ empresarial 28.445.729/0001-90 nos 95 registros.</td><td>A Genius não informa CNPJ individual por loja.</td></tr>
+<tr><td>Dois registros inativos</td><td class="yes">Tratado</td><td>Nenhuma ação. Foram excluídos por estarem inativos e sem ID restritor.</td><td>Não impede a migração.</td></tr>
+<tr><td>Um registro sem endereço</td><td class="yes">Tratado</td><td>Nenhuma ação até que o endereço seja confirmado.</td><td>Não impede as demais lojas.</td></tr>
+<tr><td>Modelos de e-mail</td><td class="warn">Não bloqueante</td><td>Personalização pode ser feita pelo cliente no editor da V2.</td><td>Não impede a conclusão da migração.</td></tr>
+</tbody></table>
+<h2>5. Conferência final recomendada</h2>
+<ul>
+<li>Recarregar a lista de lojas da V2 e confirmar a quantidade efetivamente criada antes de iniciar qualquer nova carga.</li>
+<li>Conferir uma loja do início, uma loja com seller repetido e a última loja da lista.</li>
+<li>Confirmar que o retorno está direcionado para a origem e que o ID externo corresponde ao ID restritor da Genius.</li>
+<li>Confirmar o CNPJ empresarial utilizado no cadastro das lojas.</li>
+<li>Personalizar os modelos de comunicação diretamente no editor da V2, caso o cliente queira manter os textos da Genius.</li>
+</ul>
+<h2>6. Arquivos de apoio</h2>
+<ul>
+<li>LOJAS_FISICAS_SONHO_DOS_PES_ORIGEM.csv: relação completa dos registros encontrados na Genius.</li>
+<li>LOJAS_V2_CADASTRO_SONHO_DOS_PES.csv: carga das lojas aptas para cadastro na V2.</li>
+<li>STATUS_MIGRACAO_SONHO_DOS_PES.md: acompanhamento objetivo da situação.</li>
+</ul>
+<footer>Documento preparado para conferência operacional. Credenciais, tokens e senhas não fazem parte deste material.</footer>
+</main></body></html>

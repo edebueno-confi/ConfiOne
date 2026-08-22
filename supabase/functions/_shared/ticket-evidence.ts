@@ -47,7 +47,7 @@ export function jsonResponse(body: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(body), {
     status: init?.status ?? 200,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       ...corsHeaders,
       ...(init?.headers ?? {}),
     },
@@ -61,7 +61,7 @@ export function optionsResponse(req?: Request) {
     return new Response('CORS origin not allowed', { status: 403, headers: { Vary: 'Origin' } });
   }
   const allowedOrigin = resolveCorsOrigin(origin, { allowedOrigins: Deno.env.get('ALLOWED_CORS_ORIGINS'), allowLocal });
-  return new Response('ok', { headers: { ...corsHeaders, ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin' } : {}) } });
+  return new Response('ok', { headers: { 'Content-Type': 'text/plain; charset=utf-8', ...corsHeaders, ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin' } : {}) } });
 }
 
 export function getAuthorizationHeader(req: Request) {

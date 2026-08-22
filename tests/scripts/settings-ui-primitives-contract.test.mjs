@@ -88,9 +88,13 @@ test('o menu de linha fecha no Escape e no clique fora', () => {
 
 test('as primitivas novas nao introduzem cor literal fora dos tokens', () => {
   const css = readFileSync(resolve(uiDir, '../settings-ui.css'), 'utf8');
-  const blueprintBlock = css.slice(css.indexOf('Blueprint V4'));
-  const literals = blueprintBlock.match(/#[0-9A-Fa-f]{3,8}\b/g) ?? [];
-  // O unico literal aceito e o branco do botao do interruptor, que precisa ser
-  // branco nos dois temas.
-  assert.deepEqual([...new Set(literals)], ['#FFFFFF']);
+  const blueprintStart = css.indexOf('Blueprint V4');
+  const blueprintBlock = blueprintStart >= 0 ? css.slice(blueprintStart) : css;
+  const normalizedCss = blueprintBlock
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/var\([^)]*#[0-9A-Fa-f]{3,8}\b[^)]*\)/g, 'var(token)');
+  const literalLines = normalizedCss
+    .split('\n')
+    .filter((line) => /#[0-9A-Fa-f]{3,8}\b/.test(line) && !/--[\w-]+\s*:/.test(line));
+  assert.deepEqual(literalLines, []);
 });

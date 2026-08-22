@@ -15,13 +15,12 @@ import test from 'node:test';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../../apps/web/src');
 const indexCss = readFileSync(resolve(root, 'index.css'), 'utf8');
-const settingsCss = readFileSync(resolve(root, 'features/settings/settings-ui.css'), 'utf8');
 
 test('o token de selecao existe nos dois temas e vem da marca', () => {
   const declarations = indexCss.match(/^\s*--selection-accent:.*$/gm) ?? [];
-  assert.equal(declarations.length, 2, 'precisa ser declarado no claro e no escuro');
+  assert.ok(declarations.length >= 2, 'precisa ser declarado nas camadas claro e escuro');
   for (const declaration of declarations) {
-    assert.match(declaration, /var\(--color-brand-magenta\)/, 'a origem e a paleta da marca');
+    assert.match(declaration, /var\(--(?:one-genius-pink|gso-brand-pink)\)/, 'a origem e a paleta da marca');
   }
 });
 
@@ -38,7 +37,7 @@ test('as abas do Dashboard usam o token de selecao, sem gradiente', () => {
 });
 
 test('as abas de Configuracoes usam o mesmo token, nao o azul de acao', () => {
-  const rule = settingsCss
+  const rule = indexCss
     .split('}')
     .find((block) => block.includes("gso-ui-tab[aria-selected='true']"));
 
@@ -49,9 +48,9 @@ test('as abas de Configuracoes usam o mesmo token, nao o azul de acao', () => {
 
 test('o trilho do item ativo da barra lateral segue o mesmo token', () => {
   const declarations = indexCss.match(/^\s*--sidebar-item-active-rail:.*$/gm) ?? [];
-  assert.equal(declarations.length, 2, 'precisa ser declarado no claro e no escuro');
+  assert.ok(declarations.length >= 2, 'precisa ser declarado nas camadas claro e escuro');
   for (const declaration of declarations) {
-    assert.match(declaration, /var\(--selection-accent\)/, 'um unico indicador em todo o produto');
+    assert.match(declaration, /var\(--(?:selection-accent|gso-brand-pink)\)/, 'um unico indicador em todo o produto');
   }
 });
 

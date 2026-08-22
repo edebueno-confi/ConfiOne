@@ -47,9 +47,9 @@ import {
   createSupportEngineeringWorkItemFromTicket,
   getSupportInternalActionDetail,
   getSupportTicketAttachmentSignedUrl,
-  getSupportCustomerAccountContext,
   listSupportCustomerProductContexts,
   getSupportCustomer360,
+  getSupportCustomerAccountContext,
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
@@ -262,7 +262,6 @@ interface SupportCustomerPreviewSnapshot {
   accountContext: SupportCustomerAccountContext | null;
   productContexts: SupportCustomerProductContext[];
   recentTicketsWindow: SupportCustomerRecentTicketsWindow;
-  recentEventsWindow: SupportCustomerRecentEventsWindow;
 }
 
 const OPEN_TICKET_FILTERS = ['all', 'in_progress', 'awaiting', 'urgent', 'operations', 'engineering'] as const;
@@ -288,30 +287,6 @@ function toneForPriority(priority: TicketPriority) {
   }
 
   return 'default' as const;
-}
-
-function toneForSeverity(severity: TicketSeverity) {
-  if (severity === 'critical') {
-    return 'critical' as const;
-  }
-
-  if (severity === 'high') {
-    return 'warning' as const;
-  }
-
-  return 'default' as const;
-}
-
-function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] | SupportTicketDetail['slaPolicyScope']) {
-  if (scope === 'tenant') {
-    return 'Política do cliente';
-  }
-
-  if (scope === 'global_fallback') {
-    return 'Fallback interno';
-  }
-
-  return 'Sem política definida';
 }
 
 function approximateSlaPercent(detail: SupportTicketDetail) {
@@ -364,18 +339,6 @@ function formatAttachmentSize(sizeBytes: number) {
   }
 
   return `${Math.round((sizeBytes / (1024 * 1024)) * 10) / 10} MB`;
-}
-
-function initialsFromSupportLabel(value: string | null | undefined) {
-  const parts = (value ?? 'IN')
-    .split(/[\s@._-]+/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .slice(0, 2);
-
-  return parts.length > 0
-    ? parts.map((part) => part[0]?.toLocaleUpperCase('pt-BR') ?? '').join('')
-    : 'IN';
 }
 
 function LoadingBlock({ className }: { className?: string }) {
@@ -715,21 +678,6 @@ function SupportCustomerProductsPanel({
   );
 }
 
-function extractPublicArticleBasePath(publicArticlePath: string | null | undefined) {
-  if (!publicArticlePath) {
-    return null;
-  }
-
-  const marker = '/articles/';
-  const markerIndex = publicArticlePath.indexOf(marker);
-
-  if (markerIndex <= 0) {
-    return null;
-  }
-
-  return publicArticlePath.slice(0, markerIndex);
-}
-
 function buildAbsoluteAppUrl(path: string) {
   if (typeof window === 'undefined') {
     return path;
@@ -901,24 +849,6 @@ function humanizeEngineeringWorkItemStatus(
     default:
       return humanizeToken(status).replaceAll('_', ' ');
   }
-}
-
-function toneForEngineeringWorkItemStatus(
-  status: SupportTicketEngineeringLink['workItemStatus'],
-) {
-  if (status === 'released') {
-    return 'positive' as const;
-  }
-
-  if (status === 'rejected' || status === 'cancelled') {
-    return 'critical' as const;
-  }
-
-  if (status === 'triage' || status === 'waiting_external') {
-    return 'warning' as const;
-  }
-
-  return 'default' as const;
 }
 
 function formatAssignableAgentLabel(agent: SupportAssignableAgent) {
@@ -2040,28 +1970,6 @@ function isOperationsQueueTicket(ticket: SupportTicketQueueItem) {
   );
 }
 
-function ticketMatchesInboxScope(
-  ticket: SupportTicketQueueItem,
-  scope: TicketInboxScope,
-) {
-  if (scope === 'open') {
-    return (
-      ticket.status === 'new' ||
-      ticket.status === 'triage' ||
-      ticket.status === 'waiting_customer' ||
-      ticket.status === 'waiting_support' ||
-      ticket.status === 'waiting_engineering' ||
-      ticket.status === 'in_progress'
-    );
-  }
-
-  return (
-    ticket.status === 'resolved' ||
-    ticket.status === 'closed' ||
-    ticket.status === 'cancelled'
-  );
-}
-
 function ticketMatchesInboxFilter(
   ticket: SupportTicketQueueItem,
   filter: TicketInboxFilter,
@@ -2635,12 +2543,8 @@ function SupportWorkspaceView({
   );
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
-  const [customerAccountContext, setCustomerAccountContext] =
-    useState<SupportCustomerAccountContext | null>(null);
   const [customerRecentTickets, setCustomerRecentTickets] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
-  const [customerRecentEvents, setCustomerRecentEvents] =
-    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
   const [knowledgeLinks, setKnowledgeLinks] =
     useState<SupportTicketKnowledgeLink[]>(emptyTicketKnowledgeLinks());
   const [knowledgeArticlePicker, setKnowledgeArticlePicker] =
@@ -2650,7 +2554,6 @@ function SupportWorkspaceView({
   const [attachmentPhase, setAttachmentPhase] = useState<AttachmentPhase>('idle');
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
-  const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<Uuid | null>(null);
   const [attachmentUploadDraft, setAttachmentUploadDraft] =
     useState<TicketAttachmentUploadDraft>(emptyAttachmentUploadDraft());
   const [engineeringLinks, setEngineeringLinks] =
@@ -2944,7 +2847,6 @@ function SupportWorkspaceView({
         setTimelineLoadingMore(false);
         setCustomer(null);
         setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-        setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
         setAttachments(emptyTicketAttachments());
         setAttachmentPhase('idle');
         setAttachmentMessage(null);
@@ -2971,19 +2873,15 @@ function SupportWorkspaceView({
         return;
       }
 
-      const [customerRow, customerAccountRow, recentTicketsWindow, recentEventsWindow] = await Promise.all([
+      const [customerRow, recentTicketsWindow] = await Promise.all([
         getSupportCustomer360(detail.tenantId),
-        getSupportCustomerAccountContext(detail.tenantId),
         getSupportCustomerRecentTickets(detail.tenantId),
-        getSupportCustomerRecentEvents(detail.tenantId),
       ]);
       setTicketDetail(detail);
       setTimelineWindow(timelineRecent);
       setTimelineLoadingMore(false);
       setCustomer(customerRow);
-      setCustomerAccountContext(customerAccountRow);
       setCustomerRecentTickets(recentTicketsWindow);
-      setCustomerRecentEvents(recentEventsWindow);
       setDetailPhase('ready');
       setStatusDraft(
         buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ??
@@ -3177,9 +3075,7 @@ function SupportWorkspaceView({
       setTimelineWindow(emptyTimelineWindow());
       setTimelineLoadingMore(false);
       setCustomer(null);
-      setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-      setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
       setAttachments(emptyTicketAttachments());
       setAttachmentPhase('idle');
       setAttachmentMessage(null);
@@ -3253,9 +3149,7 @@ function SupportWorkspaceView({
       setTimelineWindow(emptyTimelineWindow());
       setTimelineLoadingMore(false);
       setCustomer(null);
-      setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
-      setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
       setAttachments(emptyTicketAttachments());
       setAttachmentPhase('idle');
       setAttachmentMessage(null);
@@ -3604,8 +3498,8 @@ function SupportWorkspaceView({
   }
 
   async function handleDownloadAttachment(attachmentId: Uuid) {
-    setAttachmentDownloadingId(attachmentId);
-    setDetailNotice(null);
+    setDetailNotice('Preparando o download seguro da evidência...');
+    setDetailNoticeTone('default');
 
     try {
       const payload = await getSupportTicketAttachmentSignedUrl(attachmentId);
@@ -3625,8 +3519,6 @@ function SupportWorkspaceView({
         return;
       }
       applyFailure(friendlyAttachmentDownloadErrorMessage(classified.message));
-    } finally {
-      setAttachmentDownloadingId(null);
     }
   }
 
@@ -4813,11 +4705,26 @@ function SupportWorkspaceView({
 
   const canUsePublicComposer = ticketDetail?.canReplyNow ?? false;
   const canUseInternalComposer = ticketDetail?.canAddInternalNote ?? false;
-  const knowledgeBusy = knowledgeSubmitting;
   const canCreateEngineeringHandoff =
     (ticketDetail?.canUpdateStatus ?? false) &&
     engineeringPhase !== 'contract-unavailable' &&
     engineeringPhase !== 'error';
+  const auxiliaryLoadFeedback = [
+    agentsPhase === 'error' || agentsPhase === 'contract-unavailable'
+      ? agentsMessage ?? 'O diretório de agentes atribuíveis não ficou disponível.'
+      : null,
+    attachmentPhase === 'error' || attachmentPhase === 'contract-unavailable'
+      ? attachmentMessage ?? 'As evidências do ticket não ficaram disponíveis.'
+      : null,
+    engineeringPhase === 'error' || engineeringPhase === 'contract-unavailable'
+      ? engineeringMessage ?? 'O handoff técnico não ficou disponível.'
+      : null,
+    knowledgePhase === 'error' || knowledgePhase === 'contract-unavailable'
+      ? knowledgeMessage ?? 'O painel de conhecimento não ficou disponível.'
+      : null,
+  ].find((message): message is string => Boolean(message)) ?? null;
+  const visibleDetailNotice = detailNotice ?? auxiliaryLoadFeedback;
+  const visibleDetailNoticeTone = detailNotice ? detailNoticeTone : 'critical';
   const selectedQueueTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const previewTicket = ticketDetail ?? null;
@@ -4972,19 +4879,11 @@ function SupportWorkspaceView({
     ticketDetail?.requesterContactFullName ??
     ticketDetail?.requesterContactEmail ??
     'Cliente B2B';
-  const primaryCustomerContact = customer ? primaryContactFromCustomer(customer) : null;
   const customerDocumentLabel = readCustomerDocumentLabel(customer);
   const currentAssignedLabel =
     formatAssignedAgentSummary(currentAssignedAgent) ??
     ticketDetail?.assignedToFullName ??
     'Sem responsavel definido';
-  const pendingCloseItems = [
-    !ticketDetail?.categoryName ? 'Definir categoria operacional.' : null,
-    !ticketDetail?.assignedToUserId ? 'Atribuir responsável pela tratativa.' : null,
-    ticketDetail?.status === 'waiting_customer' ? 'Aguardar retorno do cliente antes do encerramento.' : null,
-    ticketDetail?.status === 'waiting_engineering' ? 'Consolidar retorno da engenharia antes do encerramento.' : null,
-    ticketDetail && !ticketDetail.canClose ? 'Encerramento indisponível para este ticket no momento.' : null,
-  ].filter((item): item is string => Boolean(item));
   const slaProgress = ticketDetail ? approximateSlaPercent(ticketDetail) : 0;
   const slaDueAt = ticketDetail?.resolutionDueAt ?? ticketDetail?.firstResponseDueAt ?? null;
 
@@ -5871,8 +5770,8 @@ function SupportWorkspaceView({
                   submitting={submitting}
                 />
               }
-              detailNotice={detailNotice}
-              detailNoticeTone={detailNoticeTone}
+              detailNotice={visibleDetailNotice}
+              detailNoticeTone={visibleDetailNoticeTone}
               header={
                 <SupportTicketWorkspaceHeader
                   badges={
@@ -6711,8 +6610,6 @@ export function SupportCustomersPage() {
   >([]);
   const [selectedRecentTicketsWindow, setSelectedRecentTicketsWindow] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
-  const [selectedRecentEventsWindow, setSelectedRecentEventsWindow] =
-    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
   const [selectedPhase, setSelectedPhase] = useState<DetailPhase>('idle');
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -6722,7 +6619,6 @@ export function SupportCustomersPage() {
     setSelectedAccountContext(snapshot.accountContext);
     setSelectedProductContexts(snapshot.productContexts);
     setSelectedRecentTicketsWindow(snapshot.recentTicketsWindow);
-    setSelectedRecentEventsWindow(snapshot.recentEventsWindow);
   }
 
   const loadCustomers = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
@@ -6790,18 +6686,16 @@ export function SupportCustomersPage() {
       setSelectedAccountContext(null);
       setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
-      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(null);
       setSelectedPhase(customerSummary ? 'ready' : 'loading');
     }
 
     try {
-      const [detail, context, productContexts, recentTickets, recentEvents] = await Promise.all([
+      const [detail, context, productContexts, recentTickets] = await Promise.all([
         getSupportCustomer360(tenantId),
         getSupportCustomerAccountContext(tenantId),
         listSupportCustomerProductContexts(tenantId),
         getSupportCustomerRecentTickets(tenantId),
-        getSupportCustomerRecentEvents(tenantId),
       ]);
 
       if (selectedPreviewRequestRef.current !== requestId) {
@@ -6817,7 +6711,6 @@ export function SupportCustomersPage() {
         accountContext: context,
         productContexts,
         recentTicketsWindow: recentTickets,
-        recentEventsWindow: recentEvents,
       } satisfies SupportCustomerPreviewSnapshot;
 
       previewCacheRef.current.set(tenantId, snapshot);
@@ -6843,7 +6736,6 @@ export function SupportCustomersPage() {
       setSelectedAccountContext(null);
       setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
-      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(classified.message);
       setSelectedPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
@@ -6879,7 +6771,6 @@ export function SupportCustomersPage() {
     );
   }, [customers, query]);
 
-  const totalCustomers = customers.length;
   const activeCustomers = customers.filter((customer) => customer.tenantStatus === 'active').length;
   const openTickets = customers.reduce((sum, customer) => sum + customer.openTicketCount, 0);
   const activeContacts = customers.reduce((sum, customer) => sum + customer.activeContactsCount, 0);
@@ -7244,7 +7135,6 @@ export function SupportCustomersPage() {
 export function SupportCustomerPage() {
   const { markSessionExpired } = useAuthContext();
   const { tenantId } = useParams();
-  const didBootstrapRef = useRef(false);
   const [backendDenied, setBackendDenied] = useState(false);
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [message, setMessage] = useState<string | null>(null);

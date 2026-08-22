@@ -13,14 +13,15 @@ const navigationCatalog = navigation.slice(0, navigation.indexOf('export functio
 test('MVP shell keeps the authorized surface catalog small', () => {
   assert.match(navigation, /Dashboard gerencial/);
   assert.match(navigation, /Conhecimento/);
-  assert.match(navigation, /Acessos e áreas/);
+  assert.match(navigation, /Usuários e acessos/);
   assert.doesNotMatch(navigationCatalog, /Portal do cliente|Contas B2B|Fila operacional|Logs/);
 });
 
 test('sidebar sections are independent, persisted and internally scrollable', () => {
   assert.match(shell, /gso-shell-sections/);
-  assert.match(shell, /\{ \.\.\.current, \[section\.id\]: !willOpen \}/);
-  assert.match(shell, /overflow-y-auto overscroll-contain/);
+  assert.match(shell, /return \{\s*\.\.\.current, \[section\.id\]: !willOpen \}/);
+  assert.match(shell, /overflow-y-auto/);
+  assert.match(shell, /gso-sidebar-navigation/);
 });
 
 test('sidebar follows the approved compact icon geometry', () => {

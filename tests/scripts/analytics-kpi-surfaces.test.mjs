@@ -67,7 +67,7 @@ test('nenhuma tela define rótulo próprio: o nome vem do glossário', () => {
   // "Taxa de ganho" conviverem para a mesma métrica. O nome agora é único e
   // central; a tela escolhe quais indicadores mostrar, nunca como chamá-los.
   for (const [nome, source] of surfaces) {
-    const comRotulo = source.match(/\{ key: '[a-z_0-9]+', label:/g) ?? [];
+    const comRotulo = source.match(/\{[^}]*\bkey:\s*'[a-z_0-9]+'[^}]*\bkind:[^}]*\blabel:/gs) ?? [];
     assert.deepEqual(comRotulo, [], `${nome} não pode declarar rótulo próprio`);
   }
   assert.match(grid, /kpiLabel\(item\.key\)/);
@@ -76,4 +76,14 @@ test('nenhuma tela define rótulo próprio: o nome vem do glossário', () => {
 test('o painel codifica o estado no próprio indicador', () => {
   assert.match(grid, /data-state=\{entry\.state\}/);
   assert.match(grid, /AnalyticsBoardLimitations/);
+});
+
+test('o contexto metodológico é acessível sob demanda e usa metadados do contrato', () => {
+  assert.match(grid, /<details className="gso-board-item__context">/);
+  assert.match(grid, /<summary>Como interpretar<\/summary>/);
+  assert.match(grid, /describeKpiState\(entry\)/);
+  assert.match(grid, /meta\.periodFrom|meta\.periodTo/);
+  assert.match(grid, /meta\.coveragePercent/);
+  assert.match(grid, /meta\.freshnessAt/);
+  assert.match(grid, /não informada no contrato/);
 });

@@ -48,5 +48,6 @@ test('keeps the login focused on one primary action', () => {
   assert.doesNotMatch(loginSource, /mascotUrl/);
   assert.doesNotMatch(loginSource, />Limpar</);
   assert.doesNotMatch(loginSource, /noValidate/);
-  assert.match(loginSource, /Acesso restrito a contas autorizadas/);
+  assert.match(loginSource, /Entrar na plataforma/);
+  assert.match(loginSource, /Ambiente protegido para clientes e colaboradores autorizados/);
 });

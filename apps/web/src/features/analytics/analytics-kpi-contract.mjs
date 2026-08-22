@@ -84,6 +84,8 @@ const REASON_MESSAGES = {
     'Candidato encontrado por identidade semelhante; não há aplicação automática do vínculo.',
   confirmada:
     'Vínculo confirmado por decisão humana e preservado no histórico de auditoria.',
+  operation_dimension_unavailable:
+    'Este recorte de operação ainda não possui dimensão publicada para este domínio; o painel não atribui o consolidado a uma operação.',
 };
 
 /** Aviso genérico para um código não mapeado: nunca vaza o código cru. */

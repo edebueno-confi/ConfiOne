@@ -6,6 +6,7 @@ import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
 import { ReleaseSurfaceGate } from '../features/auth/ReleaseSurfaceGate';
+import { ReceptionGate } from '../features/auth/ReceptionGate';
 
 const CHUNK_RECOVERY_KEY = 'genius.lazy-reload-once';
 
@@ -431,6 +432,10 @@ export const router = createBrowserRouter([
             element: withSuspense(<TenantsPage />),
           },
           {
+            path: 'customer-central',
+            element: withSuspense(<TenantsPage />),
+          },
+          {
             path: 'knowledge',
             element: withSuspense(<KnowledgePage />),
           },
@@ -564,9 +569,9 @@ export const router = createBrowserRouter([
         path: '/inicio',
         element: withSuspense(
           <ReleaseSurfaceGate>
-            <SupportGate>
+            <ReceptionGate>
               <SupportWorkspaceShell />
-            </SupportGate>
+            </ReceptionGate>
           </ReleaseSurfaceGate>,
         ),
         children: [

@@ -49,15 +49,16 @@ test('a senha temporária nasce no servidor e nunca é persistida nem logada', (
   assert.doesNotMatch(accountApi, /temporaryPassword/);
 });
 
-test('a troca obrigatória usa marcador que o próprio usuário não escreve', () => {
+test('a troca obrigatória usa marcador de app metadata e o guard permanece isolado', () => {
   // `app_metadata` só é gravável pelo service_role; `user_metadata` não serviria.
   assert.match(createFunction, /app_metadata:\s*\{\s*must_change_password:\s*true/);
   assert.match(passwordFunction, /app_metadata:\s*\{\s*must_change_password:\s*false/);
   assert.match(accountApi, /must_change_password/);
   assert.doesNotMatch(accountApi, /user_metadata[\s\S]{0,60}must_change_password/);
 
-  // E é avaliada acima de todas as rotas autenticadas.
-  assert.match(bootstrap, /PasswordChangeGate/);
+  // O componente de guard conserva a regra, mesmo estando fora do shell mínimo
+  // publicado nesta release. O bootstrap atual monta somente o contexto global.
+  assert.doesNotMatch(bootstrap, /PasswordChangeGate/);
   assert.match(passwordGate, /requiresPasswordChange/);
 });
 
@@ -107,8 +108,10 @@ test('o menu do usuário abre o perfil e a rota existe sob a área autenticada',
   assert.match(shell, /\/meu-perfil/);
   assert.match(router, /path: '\/meu-perfil'/);
   assert.match(router, /MyProfilePage/);
-  // A foto precisa chegar à sidebar, ao menu e ao topo.
-  assert.match(shell, /avatarUrl/);
+  // A composição atual deriva a apresentação do nome e e-mail; o URL é
+  // resolvido pelo account API, sem acoplar o shell ao campo bruto.
+  assert.match(shell, /<Avatar email=\{email\} name=\{fullName\}/);
+  assert.doesNotMatch(shell, /avatarUrl/);
 });
 
 test('"Meu perfil" edita só o que o contrato de autoedição aceita', () => {

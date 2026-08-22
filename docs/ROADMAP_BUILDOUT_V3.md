@@ -1,6 +1,140 @@
 # ROADMAP_BUILDOUT_V3.md
 
-## Checkpoint corrente de continuidade — 2026-07-21
+## CURRENT PRODUCT EXECUTION ORDER
+
+**Owner Decision:** 2026-08-21 — Reorientação do roadmap
+
+Esta seção é a fonte canônica atual da prioridade de produto. O restante deste
+arquivo preserva decisões, checkpoints, lotes concluídos e recomendações
+históricas para rastreabilidade, mas não deve ser interpretado linearmente como
+ordem de execução.
+
+### AGORA — Release 1: ConfiOne Core Interno em Produção
+
+Objetivo: colocar em produção uma versão interna coerente, segura e funcional
+do ConfiOne. A release é um gate de produto. Rotas carregando, isoladamente,
+não caracterizam conclusão.
+
+| Marco | Superfície | Tratamento no Control Plane |
+| --- | --- | --- |
+| R1.1 | Autenticação, usuários e acessos | Reaproveitar `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` e `AUTH-*`; não duplicar a frente AUTH. |
+| R1.2 | Meu Espaço / safe landing universal | `R1-MY-SPACE-SAFE-LANDING-2026-08-21`. |
+| R1.3 | Shell, navegação e autorização integrada | `R1-SHELL-NAV-AUTH-INTEGRATION-2026-08-21`. |
+| R1.4 | Dashboard Gerencial completo | Reaproveitar tasks de Analytics, Comercial, Suporte, Financeiro, Produto e Dashboard; fechar com `R1-DASHBOARD-RELEASE-GATE-2026-08-21`. |
+| R1.4a | Qualidade das chamadas de integrações e atualização dos painéis | `R1-INTEGRATION-CALL-QUALITY-2026-08-21`, como pré-requisito do gate do Dashboard e da operação financeira. |
+| R1.4b | Governança de pipelines por área e operação | `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`, como pré-requisito para filtros e métricas por operação no Dashboard. |
+| R1.4c | Integridade de codificação UTF-8 | `R1-UTF8-ENCODING-INTEGRITY-2026-08-21`, para corrigir caracteres acentuados e especiais corrompidos nas superfícies e dados apresentados. |
+| R1.5 a R1.8 | Integrações, Governança de Dados, Histórico de Sincronizações e Marcas | `R1-CONFIGURATION-OPERATIONS-2026-08-21`, com critérios separados por superfície. |
+| R1.9 | Central de Ajuda administrativa | `R1-HELP-ADMIN-RELEASE-GATE-2026-08-21`. |
+| R1.10 | Central Pública de Ajuda | `R1-PUBLIC-HELP-RELEASE-GATE-2026-08-21`. |
+| R1.11 | QA integrado, segurança e performance | `R1-INTEGRATED-QA-SECURITY-2026-08-21`. |
+| R1.12 | Release readiness | `R1-RELEASE-READINESS-2026-08-21`. |
+
+Critérios transversais da R1: autenticação e recuperação de sessão; usuário
+ativo, inativo e sem workspace; READ/WRITE; sidebar, header, busca global,
+menu do usuário, rotas permitidas, negações, deep links e fallback sem loops;
+filtros e fontes reais; estados honestos; isolamento, RLS, autorização,
+auditoria e ausência de bypass; typecheck, build, testes, QA autenticado e
+regressão. P1 não resolvido em uma superfície da R1 impede o gate de produto.
+
+O gate `R1-INTEGRATION-CALL-QUALITY-2026-08-21` deve separar falha de
+credencial, endpoint, método, headers, payload, paginação, timeout, retry,
+rate limit, resposta, normalização, persistência, promoção do read model,
+`sync_run`, frescor e leitura do Dashboard. Deve verificar também as chamadas
+de atualização dos painéis: contrato, parâmetros, filtros, invalidação,
+concorrência, duplicidade, loading, erro, vazio, stale e publicação de estados
+honestos. Não autoriza rotação de credenciais, escrita externa, fallback
+silencioso para planilha ou alteração de produção.
+
+O gate `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` deve inventariar os
+pipelines HubSpot não arquivados e estabelecer, por `pipeline_id` e objeto, o
+vínculo canônico com área e operação, incluindo After Sales, Conf e Neo Trust.
+Deve distinguir empresa, marca, área e operação, tratar pipelines sem vínculo
+ou com vínculo ambíguo como estados explícitos e provar que o filtro de
+operação é aplicado no backend e na cadeia de leitura do Dashboard. O total de
+Todas as operações deve reconciliar com a soma das operações, ressalvadas
+populações explicitamente fora do escopo. Não se deve inferir operação pelo
+nome do pipeline nem corrigir a divergência com regra local no frontend.
+
+O filtro de operação deve estar disponível e produzir o mesmo recorte
+server-side na Visão Geral, Comercial, Customer Success, Suporte e Produto e
+Desenvolvimento. Financeiro permanece explicitamente fora dessa dimensão neste
+momento, porque ainda não existe distinção confiável de área/operação para sua
+fonte; não deve receber um filtro visual que sugira uma capacidade inexistente.
+
+O gate `R1-UTF8-ENCODING-INTEGRITY-2026-08-21` deve reproduzir e corrigir a
+quebra de acentos e caracteres especiais, verificando fronteiras de leitura,
+transporte, JSON, headers, banco, read models, labels do HubSpot, operações,
+pipelines e exportações. Deve distinguir bytes corrompidos na origem de
+decodificação incorreta na aplicação e adicionar regressões com caracteres
+portugueses. Não deve transliterar, descartar ou substituir caracteres para
+mascarar o problema.
+
+### DEPOIS — Release 2: Central de Clientes
+
+Só começa após a R1 estar funcionalmente pronta para produção. A Central de
+Clientes já possui implementação parcial, dados locais e contratos aditivos,
+mas não deve ser tratada como superfície concluída.
+
+| Marco | Escopo | Tratamento no Control Plane |
+| --- | --- | --- |
+| R2.1 a R2.6 | Identidade canônica, cliente ativo HubSpot, importação segura, referências externas e matching com OMIE | `R2-CUSTOMER-DATA-FOUNDATION-2026-08-21`. |
+| R2.7 a R2.14 | Carteira, workspace dedicado, grupos, marcas, operações, produtos, contratos, financeiro, contatos, integrações e atividade | `R2-CUSTOMER-CENTRAL-WORKSPACE-2026-08-21`. |
+| R2.15 | QA, segurança e performance | `R2-CUSTOMER-CENTRAL-QA-2026-08-21`. |
+
+Blueprints visuais obrigatórios para o futuro lote de implementação:
+
+- [Visão da carteira](design/blueprints/central-clientes/CENTRAL_CLIENTES_HOME_V1.png)
+- [Workspace dedicado e Resumo](design/blueprints/central-clientes/CLIENTE_RESUMO_V1.png)
+
+As imagens são contrato visual aprovado em `OD-006`. A implementação deve
+preservar a busca global, a densidade HD informacional, a rota própria do
+cliente e o Resumo seletivo. Divergências por dados reais, acessibilidade ou
+limitação técnica precisam ser registradas no handoff da task R2.
+
+### FUTURO E DEFERRED
+
+Frentes históricas como Customer Portal expandido, Omni Inbox, Omni Work,
+Support avançado, IAM customer-facing, expansão editorial sofisticada e
+expansões de OCP que não sejam necessárias para a R1 permanecem preservadas,
+mas não ultrapassam R1 e R2 sem nova decisão do Product Owner.
+
+### Fonte de prioridade e classificação histórica
+
+- `CURRENT`: pertence à Release 1 ou ao trabalho de preparação explicitamente
+  necessário para seu gate.
+- `NEXT`: pertence à Release 2, após a R1.
+- `DEFERRED`: continua válido, mas não está no ciclo atual.
+- `COMPLETED`: foi entregue no seu contexto histórico e não reabre prioridade.
+- `SUPERSEDED`: recomendação de prioridade substituída por esta decisão, com o
+  conteúdo mantido para consulta histórica.
+- Seções antigas intituladas `Próximo lote técnico recomendado` recebem o
+  marcador `HISTORICAL / NOT CURRENT EXECUTION ORDER`.
+
+O roadmap define direção, marcos e fora de corte. O Development Control Plane
+define task, responsável, estado, prioridade, dependências, revisão, evidência
+e commit. A fila operacional canônica está em `handoffs/README.md`.
+
+## Frente prioritária: cadastro, liberação e autorização de usuários — 2026-08-21
+
+O próximo planejamento de identidade e acesso está registrado em
+`docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md` e no
+Development Control Plane. A ordem é deliberadamente incremental:
+
+1. reproduzir e corrigir a negação indevida de administrador válido;
+2. inventariar e auditar o modelo atual;
+3. definir registry de telas e contrato `READ/WRITE` com de-para;
+4. consolidar resolução, menu e guards;
+5. simplificar o painel e normalizar usuários existentes;
+6. fechar com segurança, isolamento e regressão ponta a ponta.
+
+Esta frente está em planejamento. Não autoriza substituir o modelo vigente,
+criar permissões implícitas, executar migrations, alterar RLS, publicar UI ou
+fazer qualquer escrita externa antes das tasks e revisões correspondentes.
+
+## SUPERSEDED — Checkpoint corrente de continuidade — 2026-07-21
+
+> HISTORICAL / NOT CURRENT EXECUTION ORDER. Mantido para rastreabilidade.
 
 O roadmap histórico continua sendo referência arquitetural, mas o próximo
 trabalho operacional do checkout é governado pela spec SDD de prontidão:
@@ -16,12 +150,12 @@ Gates externos permanecem separados: push/merge, deploy, migration remota,
 scheduler, secrets e writes HubSpot/OMIE dependem de aprovação humana.
 
 ## Objetivo
-Consolidar a virada de foco do Genius Support OS: pausar a curadoria editorial refinada da Knowledge Base e priorizar a construcao funcional da plataforma interna CX B2B tecnica.
+Consolidar a virada de foco do ConfiOne: pausar a curadoria editorial refinada da Knowledge Base e priorizar a construcao funcional da plataforma interna CX B2B tecnica.
 
 Este documento organiza o estado atual do produto, as lacunas reais por dominio, os quick wins seguros e o backlog faseado para evoluir Knowledge, Tickets, Clientes e Central Publica sem criar feature falsa e sem mover regra de negocio para o frontend.
 
 ## Premissas vigentes
-- Genius Support OS e plataforma interna CX B2B tecnica.
+- ConfiOne e plataforma interna CX B2B tecnica.
 - Nao e SAC B2C, CRM generico ou dashboard generico.
 - Backend e source of truth.
 - Frontend nao inventa regra de negocio.
@@ -36,7 +170,7 @@ Este documento organiza o estado atual do produto, as lacunas reais por dominio,
 ## Mudanca de foco
 A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos candidatos permanecem como corpus/documentacao inicial, sem necessidade de nova validacao humana neste momento. O foco atual passa a ser buildout funcional da plataforma: telas, contratos, fluxos operacionais, navegacao, estados e continuidade diaria entre suporte, clientes, Knowledge e Central Publica.
 
-## Checkpoint corrente 2026-06-09
+## COMPLETED / HISTORICAL — Checkpoint corrente 2026-06-09
 
 Os checkpoints abaixo permanecem como historico de decisao, mas nao definem o
 proximo lote. A retomada pos-formatacao preservou a branch recuperada no remoto,
@@ -58,7 +192,7 @@ O `/cs/portfolio` read-only foi especificado, implementado e validado. Evidencia
 
 Fonte de handoff: `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`.
 
-## Checkpoint de retomada 2026-05-29
+## COMPLETED / HISTORICAL — Checkpoint de retomada 2026-05-29
 
 O lote forense de retomada registrou que este roadmap contém blocos historicos já concluídos e ainda úteis para rastrear decisões, mas não deve ser lido linearmente como "próximo passo" atual. A fonte de retomada corrente é `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`.
 
@@ -68,7 +202,10 @@ Prioridade atual:
 3. Decidir se `supabase_vector` exige ajuste local ou pode permanecer como ruído não bloqueante de observabilidade.
 4. Só depois retomar novo buildout de produto.
 
-## Checkpoint OCP 2026-06-01
+## DEFERRED / HISTORICAL — Checkpoint OCP 2026-06-01
+
+> HISTORICAL / NOT CURRENT EXECUTION ORDER, exceto quando uma dependência for
+> explicitamente absorvida por uma task da Release 1 ou Release 2.
 
 O fechamento P4-F.4D e os lotes OCP V1-A/V1-B deslocaram a prioridade corrente para a fundacao do Operational Control Plane V1.
 
@@ -161,7 +298,10 @@ Backlog tecnico OCP pos-V1-D:
 | Nao transformar Knowledge candidata em publicacao | preservado | candidatos continuam como corpus/documentacao |
 | Nao criar rota nova sem contrato | preservado | roadmap documenta lacunas antes de schema/RPC |
 
-## Backlog faseado
+## HISTORICAL / RECLASSIFIED — Backlog faseado
+
+> Os blocos abaixo preservam o backlog técnico. Sua prioridade atual é definida
+> pela seção `CURRENT PRODUCT EXECUTION ORDER` e pela fila do Control Plane.
 
 ### Fase A: saneamento de navegacao, estados e shell
 - Objetivo: garantir que o usuario interno sempre saiba onde esta, o que esta carregando e o que esta indisponivel.
@@ -244,7 +384,7 @@ Backlog tecnico OCP pos-V1-D:
 - Criterios de aceite: nao iniciar implementacao antes de tickets, clientes, knowledge e access estarem funcionais.
 - Testes esperados: nenhum neste momento.
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Access Administration V3
 
@@ -317,7 +457,7 @@ Status:
   - `rpc_admin_update_tenant_member_status`
 - o portal deixou de exibir contagem enganosa de artigos nos cards resumidos quando nao existe contrato de count autorizada.
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Search And Discoverability V3
 
@@ -337,7 +477,7 @@ Status:
 - `/portal/tickets/:ticketId` agora oferece descoberta contextual segura
 - o Help publico permaneceu fora da boundary autenticada
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Tenant Context And Switching V3
 
@@ -361,7 +501,7 @@ Status:
 - gate de portal habilitado consolidado via `customer_account_features.feature_key = 'returns_portal'`
 - portal multi-tenant passou a trocar contexto sem reaproveitar `contexts[0]`
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Multi-Tab Session Semantics V3
 
@@ -378,7 +518,7 @@ Status:
 - abas stale agora entram em estado honesto e exigem refresh explicito
 - mutacoes customer-facing revalidam contexto antes de operar
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Session Expiry And Recovery Semantics V3
 
@@ -399,7 +539,7 @@ Fechado:
 4. Mutacoes customer-facing bloqueadas fora de `ready`.
 5. Browser real validado com logout, retorno ao login, relogin e regressao admin.
 
-### Proximo lote recomendado
+### HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote recomendado
 
 Lote: Customer Portal Offline And Network Recovery Hardening V3
 
@@ -413,13 +553,13 @@ Status:
 - o portal limpa a superficie local quando a leitura falha por rede
 - o lote nao abriu modo offline, fila local nem fallback visual falso
 
-## Proximo lote tecnico recomendado
+## HISTORICAL / NOT CURRENT EXECUTION ORDER — Proximo lote tecnico recomendado
 
 ### Lote: Customer Portal Host Outage Runbook And Observability V3
 
 Objetivo: documentar e endurecer diagnostico operacional de indisponibilidade do host local/Supabase para o portal cliente, com runbook claro de recuperacao, sinais minimos de observabilidade e validacao de retomada, sem criar infraestrutura realtime nem alterar boundary de auth.
 
-## Decisoes que ainda dependem de Produto
+## DEFERRED / HISTORICAL — Decisoes que ainda dependem de Produto
 - Support, Admin e CS convergiram em App Shell único no redesign fechado em `2026-06-10`.
 - Quais roles podem criar ticket manualmente.
 - Quais status devem aparecer para Suporte e quais sao internos de engenharia.
@@ -442,7 +582,7 @@ Fechado:
 5. Componentes de shell legado sem consumidores removidos.
 6. QA desktop e mobile, typechecks, build e 17 testes aprovados.
 
-Próximo lote recomendado:
+HISTORICAL / NOT CURRENT EXECUTION ORDER — Próximo lote recomendado:
 - hardening visual das superfícies internas não nomeadas neste lote, preservando o mesmo sistema canônico;
 - redução do bundle do editor de Knowledge sem trocar contratos ou comportamento.
 

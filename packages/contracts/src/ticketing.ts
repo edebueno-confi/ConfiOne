@@ -1120,6 +1120,122 @@ export interface AdminCustomerAccountAlert extends SupportCustomerAccountAlert {
   canArchive: boolean;
 }
 
+export const CUSTOMER_GROUP_TYPES = [
+  'economic_group',
+  'service_umbrella',
+] as const;
+export type CustomerGroupType = (typeof CUSTOMER_GROUP_TYPES)[number];
+export type CustomerGroupTypeRecord = CustomerGroupType | 'portfolio';
+
+export const CUSTOMER_GROUP_MEMBER_KINDS = ['tenant', 'brand'] as const;
+export type CustomerGroupMemberKind = (typeof CUSTOMER_GROUP_MEMBER_KINDS)[number];
+
+export const CUSTOMER_GROUP_MEMBER_RELATIONSHIPS = [
+  'contract_holder',
+  'served_brand',
+  'operational_member',
+] as const;
+export type CustomerGroupMemberRelationship =
+  (typeof CUSTOMER_GROUP_MEMBER_RELATIONSHIPS)[number];
+
+export interface CustomerAccountGroupRecord {
+  id: Uuid;
+  slug: string;
+  display_name: string;
+  group_type: CustomerGroupTypeRecord;
+  status: 'active' | 'archived';
+  description: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  created_by_user_id: Uuid | null;
+  updated_by_user_id: Uuid | null;
+}
+
+export interface AdminCustomerAccountGroupListRow {
+  id: Uuid;
+  slug: string;
+  display_name: string;
+  group_type: CustomerGroupTypeRecord;
+  status: 'active' | 'archived';
+  description: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  created_by_user_id: Uuid | null;
+  created_by_full_name: string | null;
+  updated_by_user_id: Uuid | null;
+  updated_by_full_name: string | null;
+  active_member_count: number;
+  active_tenant_member_count: number;
+  active_brand_member_count: number;
+}
+
+export interface AdminCustomerAccountGroupMemberRow {
+  id: Uuid;
+  tenant_id: Uuid | null;
+  tenant_slug: string | null;
+  tenant_display_name: string | null;
+  member_kind: CustomerGroupMemberKind;
+  member_name: string;
+  relationship: CustomerGroupMemberRelationship;
+  source_system: string;
+  source_external_id: string | null;
+  is_primary: boolean;
+  status: 'active' | 'archived';
+  notes: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+}
+
+export interface AdminCustomerAccountGroupDetailRow extends AdminCustomerAccountGroupListRow {
+  members: AdminCustomerAccountGroupMemberRow[];
+}
+
+export interface RpcAdminCreateCustomerAccountGroupPayload {
+  p_slug: string;
+  p_display_name: string;
+  p_group_type?: CustomerGroupType;
+  p_description?: string | null;
+}
+
+export type RpcAdminCreateCustomerAccountGroupResponse = CustomerAccountGroupRecord;
+
+export interface RpcAdminAddCustomerAccountGroupMemberPayload {
+  p_group_id: Uuid;
+  p_member_kind: CustomerGroupMemberKind;
+  p_tenant_id?: Uuid | null;
+  p_member_name?: string | null;
+  p_relationship?: CustomerGroupMemberRelationship;
+  p_source_system?: string;
+  p_source_external_id?: string | null;
+  p_is_primary?: boolean;
+  p_notes?: string | null;
+}
+
+export type RpcAdminAddCustomerAccountGroupMemberResponse = {
+  id: Uuid;
+  group_id: Uuid;
+  tenant_id: Uuid | null;
+  member_kind: CustomerGroupMemberKind;
+  member_name: string | null;
+  relationship: CustomerGroupMemberRelationship;
+  source_system: string;
+  source_external_id: string | null;
+  is_primary: boolean;
+  status: 'active' | 'archived';
+  notes: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  created_by_user_id: Uuid | null;
+  updated_by_user_id: Uuid | null;
+};
+
+export interface RpcAdminArchiveCustomerAccountGroupMemberPayload {
+  p_member_id: Uuid;
+}
+
+export type RpcAdminArchiveCustomerAccountGroupMemberResponse =
+  RpcAdminAddCustomerAccountGroupMemberResponse;
+
 export interface RpcAdminUpsertCustomerAccountProfilePayload {
   p_tenant_id: Uuid;
   p_product_line: CustomerProductLine;

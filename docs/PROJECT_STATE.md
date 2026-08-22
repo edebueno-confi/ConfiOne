@@ -1,5 +1,388 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Metodologia e proveniência dos KPIs — 2026-08-22
+
+- O registro canônico `docs/ANALYTICS_KPI_REGISTRY_V1.md` foi auditado contra os
+  RPCs, read models, contratos TypeScript, filtros e testes locais disponíveis.
+- A documentação agora separa fonte, campo/data, coorte ou posição atual,
+  timezone, fórmula, unidade, nulo, cobertura, frescor, filtros, estado e
+  limitações para Visão Geral, Comercial, Suporte, Customer Success e
+  Financeiro.
+- Produto/Desenvolvimento permanece explicitamente indisponível: o contrato
+  local só publica `status`, `source` e `reason`, sem read model ou KPI
+  numérico de GitHub, roadmap, releases, deployments ou pull requests.
+- Nenhum runtime, SQL, migration, contrato executável, integração ou secret foi
+  alterado neste lote documental.
+
+## Governança executável de pipeline, área e operação — 2026-08-22
+
+- A task `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` implementou o inventário server-side do vínculo `pipeline_id -> area_key -> group_company` sobre o catálogo local `analytics_source_config`.
+- O inventário consolida por objeto/pipeline e distingue `confirmed`, `suggested`, `unclassified`, `ambiguous` e `inactive`; somente o estado confirmado é elegível para KPIs de operação. O relatório canônico é `docs/ANALYTICS_PIPELINE_OPERATION_GOVERNANCE_V1.md`.
+- Comercial e Suporte mantêm wrappers por operação. Customer Success passou a usar `rpc_analytics_customer_success_kpis_by_operation`, baseado em pipeline de ticket confirmado e associação ticket-empresa. Produto/Desenvolvimento continua explicitamente indisponível até contrato GitHub; Financeiro fica fora da dimensão.
+- A UI de Customer Success acompanha a operação compartilhada e não infere carteira por nome. Nenhuma chamada externa, escrita em HubSpot/OMIE, produção ou secret foi realizada neste lote.
+- Estado do lote: `DONE`, aprovado pelo Sentinel e finalizado no commit local exclusivo do lote.
+
+## Ordem canônica de releases — 2026-08-21
+
+- **Release 1, agora:** ConfiOne Core Interno em Produção, com autenticação,
+  Meu Espaço, shell e navegação, Dashboard Gerencial, Configurações,
+  Integrações, Governança de Dados, Histórico de Sincronizações, Marcas,
+  Central de Ajuda, Central Pública e gates de QA, segurança, performance e
+  release readiness.
+- **Release 2, depois:** Central de Clientes. A tela já possui implementação
+  parcial e contratos locais, mas continua fora da prioridade de implementação
+  até o gate da R1.
+- **Fonte:** seção `CURRENT PRODUCT EXECUTION ORDER` em
+  `docs/ROADMAP_BUILDOUT_V3.md` e `OD-006` em
+  `docs/engineering/OWNER_DECISIONS.md`.
+- **Estado do lote:** atualização de planejamento e design; nenhum runtime,
+  banco, migration, permissão, integração ou release surface foi alterado.
+
+## Continuidade autônoma da fila — 2026-08-22
+
+- `OD-008` registra a autorização explícita para monitorar continuamente o
+  handoff corrente, executar o próximo passo elegível e promover
+  sequencialmente tasks existentes quando os gates forem satisfeitos.
+- A task corrente é `AUTH-MODEL-INVENTORY-2026-08-21`, em
+  `READY_FOR_IMPLEMENTATION/APPROVED`, com Forge como executor e Sentinel como
+  reviewer independente obrigatório.
+- A autorização é sequencial, não em massa. Ambiguidade material, risco de
+  segurança, dependência não satisfeita, contaminação do worktree ou ação
+  externa exigem `OWNER_DECISION_REQUIRED`.
+- Push, merge, deploy, produção, secrets, migrations remotas, escritas externas
+  e ações destrutivas permanecem proibidos.
+- A coordenação entre agentes agora exige estado explícito em
+  `handoffs/current/STATUS.md`: `HOLD` pausa o escopo indicado por Forge;
+  `REVIEW_ACTIVE` mantém a revisão independente em andamento. A ausência de
+  HOLD não substitui a leitura de `State`, `Owner`, `Approval` e allowlist.
+- A comunicação primária passa a ser por evento: Forge e Sentinel atualizam o
+  handoff e avisam diretamente o próximo papel e o Codex. Os três heartbeats
+  ativos, de Forge, Sentinel e Codex Orquestrador, ficam como fallback de
+  recuperação em intervalo de 30 minutos, sem duplicar uma transição já
+  notificada.
+
+## Modelo de trabalho para apresentação executiva — 2026-08-22
+
+- Foi criado o briefing conceitual
+  `docs/reports/CONFIONE_AGENT_OPERATING_MODEL_PRESENTATION_BRIEF_2026-08-22.md`
+  para a reunião de 25/08/2026.
+- O documento descreve somente o formato de construção da aplicação: papéis,
+  plataformas, Codex Orquestrador, Forge, Sentinel, camada Cloud/Claude,
+  repositório, handoffs, comunicação por evento, heartbeats e controles.
+- Lotes, findings e detalhes de fila permanecem nos handoffs técnicos e não
+  fazem parte do material executivo.
+
+## Inventário factual do modelo de autorização — 2026-08-22
+
+- A task `AUTH-MODEL-INVENTORY-2026-08-21` foi executada dentro da allowlist
+  documental e o inventário corrente está em
+  `docs/specs/AUTHORIZATION_MODEL_INVENTORY_V1.md`.
+- O inventário cobre identidade, profile, papel global, contexto interno,
+  tenant, membership, área, tela, capability, override, release, menu, router,
+  backend, estados de ausência/revogação/inatividade e risco de cache stale.
+- O estado do handoff foi entregue para `READY_FOR_REVIEW`, com Owner Sentinel;
+  não houve alteração de código executável, banco, migration, policy, grant,
+  secret ou serviço externo.
+- A próxima task `AUTH-MODEL-AUDIT-2026-08-21` permanece
+  `BACKLOG/PROPOSED` até revisão e integração deste inventário.
+
+## Qualidade de chamadas de integrações e atualização dos painéis — 2026-08-21
+
+- Foi adicionada a task P1 `R1-INTEGRATION-CALL-QUALITY-2026-08-21` ao roadmap e
+  ao Control Plane.
+- O escopo cobre a cadeia OMIE Financeiro e as integrações consumidas pelo
+  Dashboard: configuração/credencial, endpoint, método, headers, payload,
+  paginação, timeout, retry, rate limit, resposta, normalização, persistência,
+  `sync_run`, read model, frescor e atualização dos painéis.
+- A verificação deve separar erro de credencial de erro de chamada, contrato,
+  persistência ou refresh. Também deve testar loading, erro, vazio, stale,
+  concorrência, duplicidade, filtros e invalidação do Dashboard.
+- Dependências: `FINANCE-DOMAIN-AUDIT-2026-08-21` e `KPI-REGISTRY-2026-08-21`.
+  O gate `R1-DASHBOARD-RELEASE-GATE-2026-08-21` depende desta verificação.
+- Estado: `BACKLOG/PROPOSED`. Nenhum sync, rotação de credencial, escrita
+  externa, alteração de produção ou fallback para planilha foi executado.
+
+## Diversidade e adequação das visualizações do Dashboard — 2026-08-22
+
+- `OD-011` incorporou ao `R1-DASHBOARD-RELEASE-GATE-2026-08-21` a diretriz de
+  escolher visualizações conforme a pergunta operacional, evitando repetir
+  barras, pizzas e KPIs por padrão.
+- A revisão deve considerar linha, área, faixa, dispersão, funil, heatmap,
+  treemap, waterfall, bullet, tabela analítica e composições híbridas quando
+  forem mais explicativas, sem usar variedade como decoração.
+- Todo gráfico precisa manter título, unidade, período, fonte, cobertura e
+  estados honestos de loading, vazio, erro e stale. Nenhum código ou biblioteca
+  foi alterado neste registro.
+
+## Governança de pipelines HubSpot por área e operação — 2026-08-21
+
+- Foi adicionada a task P1 `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` ao
+  roadmap e ao Control Plane.
+- O problema observado é: com todas as operações, os valores aparecem; ao
+  filtrar `After Sales`, os valores não são carregados corretamente, embora a
+  maioria dos registros pareça pertencer a essa operação.
+- A hipótese de trabalho é uma divergência no vínculo ou na aplicação do
+  escopo `pipeline -> área -> operação`, mas ela ainda não é causa confirmada.
+  Também precisam ser descartadas falhas de objeto, pipeline ativo,
+  associações, filtros server-side, coorte temporal e reconciliação dos
+  read models.
+- O aceite exige inventário por `pipeline_id` e objeto no HubSpot, mapa canônico
+  para After Sales, Conf e Neo Trust, estados explícitos para pipelines sem
+  vínculo/ambíguos e reconciliação entre `Todas` e a soma das operações.
+- Estado: `BACKLOG/PROPOSED`. Nenhuma alteração de pipeline no HubSpot, escrita
+  externa ou correção de código foi executada neste registro.
+
+## Cobertura do filtro de operação por aba e integridade UTF-8 — 2026-08-21
+
+- O filtro de operação deverá ser consistente na Visão Geral, Comercial,
+  Customer Success, Suporte e Produto e Desenvolvimento. Financeiro permanece
+  fora enquanto a fonte financeira não tiver distinção confiável de área ou
+  operação.
+- A task `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` foi ampliada para
+  validar essa cobertura sem inventar dimensão no Financeiro.
+- Foi adicionada a task P1 `R1-UTF8-ENCODING-INTEGRITY-2026-08-21` para
+  reproduzir e corrigir caracteres acentuados e especiais corrompidos.
+- A investigação deve localizar a fronteira da falha entre origem, transporte,
+  banco, read model, JSON, headers e renderização. Não é aceitável mascarar o
+  defeito removendo ou transliterando acentos.
+- Estado das duas tasks: `BACKLOG/PROPOSED`. Nenhum código ou dado externo foi
+  alterado neste registro.
+
+## Continuidade autônoma da frente de autorização — 2026-08-22
+
+- O Owner autorizou a continuidade autônoma do próximo item elegível, sem
+  aprovar o backlog inteiro. Essa autorização foi persistida como `OD-007` em
+  `docs/engineering/OWNER_DECISIONS.md`.
+- `AUTH-MODEL-INVENTORY-2026-08-21` foi promovida para `READY/APPROVED` e aberta
+  no handoff corrente para Forge, com Sentinel como reviewer obrigatório.
+- As tasks 31 a 37 permanecem `BACKLOG/PROPOSED`.
+- O escopo atual é inventário e descoberta factual. Não inclui simplificação,
+  migration, RLS, RPC, escrita remota, secrets, deploy, push ou merge.
+
+## Planejamento de cadastro, liberação e autorização de usuários — 2026-08-21
+
+- O Owner registrou uma frente P1 para reproduzir e corrigir o caso de
+  administrador válido recebendo `Acesso negado`, seguida de auditoria e
+  simplificação progressiva para `Usuário -> Nível -> Área -> Tela -> READ /
+  WRITE`.
+- A fila canônica contém `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` concluída e
+  `AUTH-MODEL-INVENTORY-2026-08-21` em `READY/APPROVED`; as tasks estruturais
+  seguintes permanecem `BACKLOG/PROPOSED`.
+- O modelo atual não foi substituído: papéis globais, contexto interno,
+  áreas, perfis, capabilities, overrides, release allowlist, views, RPCs e RLS
+  permanecem evidência vigente até o inventário e o de-para das tasks.
+- A regra de produto registrada para a frente é que negação de rota não inativa
+  usuário nem encerra sessão. O fallback autenticado é `/inicio`, exibido como
+  `Meu espaço`, quando a recepção estiver autorizada; ausência total de
+  workspace deve produzir estado explícito, não acesso falso.
+- Fonte do plano: `docs/specs/AUTHORIZATION_ADMIN_ACCESS_SIMPLIFICATION_PLAN_V1.md`.
+  Não houve alteração de código, banco, migration, RLS, RPC, integração,
+  release surface ou serviço externo neste registro.
+
+## Handoff multiagente — reconciliação do protocolo — 2026-08-20
+
+- `handoffs/current/IMPLEMENTATION.md`, `REVIEW.md` e `STATUS.md` são a interface canônica do ciclo entre Codex e Claude. `.review/` permanece complemento técnico opcional; `.review/state.json` contém somente metadados de automação.
+
+## Semântica de conversão comercial — 2026-08-21
+
+- `rpc_analytics_commercial_kpis_v2`, `rpc_analytics_commercial_snapshot` e a
+  view legada de KPIs comerciais publicam a conversão em pontos percentuais
+  (0 a 100), com ganhos sobre negócios fechados no período.
+- Denominador zero, datas de fechamento ausentes, negócios reabertos e entradas
+  aritmeticamente inválidas não produzem zero ou percentual impossível; o valor
+  fica nulo/indisponível. A regra está coberta pelo teste pgTAP 123.
+- O frontend converte a unidade somente na fronteira de apresentação legada;
+  a tabela por responsável renderiza diretamente os pontos percentuais do read
+  model para evitar multiplicação dupla.
+- A escala corrente de findings é `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` e `INFO`, com mapa de compatibilidade para os termos históricos `BLOCKER`, `MAJOR`, `MINOR` e `NIT`.
+- Os vereditos correntes são `APPROVED`, `REQUEST_CHANGES` e `BLOCKED`. D-01 classifica o trabalho de produto preexistente como `BASELINE_LEGACY / PREEXISTING_WORK`, fora da máquina de estados de uma TASK retroativa. D-02 estabelece `IMPLEMENTED != RELEASE_AUTHORIZED`: `/inicio`, `/admin/tenants` e mudanças de landing/release surface exigem TASK e autorização explícita próprias.
+
+## Fundação de metas financeiras e MRR — 2026-08-21
+
+- O Analytics publica MRR como posição atual de Customer Success por
+  `company_recurring_revenue_now`, condicionado a `mrr_source`, regra de
+  cliente ativo e cobertura. Não há contrato publicado de meta financeira,
+  quota, forecast, atingimento, gap ou distribuição de MRR.
+- O lote documental separa período da meta, janela histórica e data de corte
+  (`as_of`) e impede usar `mrr_total`, `won_amount`, OMIE ou planilhas como meta
+  implícita. A ausência de fonte permanece `unavailable`/`PROPOSED`, não zero.
+- Fonte de continuidade: `docs/ANALYTICS_MRR_GOALS_FOUNDATION_V1.md`. Nenhum
+  código, SQL, migration, RPC, UI ou serviço externo foi alterado neste lote.
+
+## Auditoria do domínio Financeiro — 2026-08-21
+
+- O Financeiro possui contrato local de Contas a Receber com fonte publicada
+  somente na API OMIE (`omie_receivables_api` e `is_current = true`). Planilhas
+  históricas permanecem preservadas, mas não são fallback do Dashboard.
+- A posição atual, vencido, aging e projeção usam `current_date`. O recorte
+  `p_from`/`p_to` usa `coalesce(due_date, issued_date)`; o campo
+  `last_received_date` não delimita o KPI chamado “Recebido no período”. Essa
+  semântica precisa de contrato local antes de ser explicada como pagamento no
+  período.
+- O gate financeiro atual é `app_private.can_read_analytics()` e o esquema
+  auditado não expõe `tenant_id` no read model financeiro. Isolamento por tenant
+  e histórico `as_of` são pendências próprias, não capacidades implícitas.
+- A documentação oficial do OMIE também expõe o caminho `ListarMovimentos` no
+  endpoint `financas/mf`, com data de pagamento e valores pagos, abertos e
+  líquidos. O ConfiOne ainda não possui read model local dessa fonte; ela exige
+  nova ingestão e validação de escopo antes de publicar “Recebido no período”.
+- `docs/specs/analytics-finance-omie-v1.md` descreve tenant/RLS, mas o contrato
+  executável auditado não confirma essa proteção: não há `tenant_id` nem filtro
+  tenant-aware nas RPCs financeiras. A afirmação fica registrada como intenção
+  não reconciliada até um lote próprio de autorização e RLS.
+- Fonte de continuidade: `docs/ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md`. Este lote
+  foi documental; não alterou código, SQL, migration, RPC, RLS, UI, integração,
+  credencial ou serviço externo.
+
+## Fundação de predição comercial explicável — 2026-08-21
+
+- O backend já publica pipeline ponderado, conversão, ticket e ciclo com
+  semânticas diferentes. Esses sinais descrevem estado atual ou coortes
+  observadas; não são um forecast dedicado.
+- Histórico de transição de etapa, data prevista, probabilidade calibrada e
+  intervalo de confiança não estão publicados. O frontend não deve combinar os
+  sinais localmente para criar uma regra de predição.
+- Fonte de continuidade: `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`. O lote
+  permanece documental até existir contrato server-side e método validado.
+
+## Auditoria do domínio Produto e Desenvolvimento — 2026-08-21
+
+- Não existe contrato analítico publicado para Produto e Desenvolvimento. A
+  rota `product-development` permanece em espera explícita: GitHub é fonte
+  futura, sem chamada, token, secret, contrato ou métrica nesta etapa.
+- O Engineering Workspace possui `engineering_work_items`, updates, links,
+  views e RPCs reais para demandas técnicas originadas de tickets. O contrato é
+  tenant-aware, auditável e útil para fila/status atual, mas não é backlog de
+  Produto, sprint, release, pull request, throughput ou lead time.
+- O Development Control Plane local lê handoffs, fila e Git para governança do
+  repositório. Commit, `DONE` e dirty count não são prova de entrega publicada,
+  deploy ou estabilidade de ambiente.
+- Roadmap, releases, pull requests, lead time, throughput, incidentes e
+  ambientes permanecem `REQUIRES_SCOPE` e/ou `REQUIRES_NEW_INGESTION`, conforme
+  a fonte; não há evidência para `API_LIMITATION`.
+- Fonte de continuidade: `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`.
+  Nenhum código, SQL, migration, RPC, RLS, integração ou UI foi alterado neste
+  lote.
+
+## Fundação de contratos próximos do vencimento — 2026-08-21
+
+- Existem `renewal_at`, `ended_at`, status e owners de Customer Success nas
+  fontes de assinatura e carteira, mas não há janela canônica de alerta nem
+  contrato de vencimento próximo.
+- O MRR financeiro e o sinal `contract_not_current` pertencem a fontes e
+  semânticas distintas; não existe vínculo publicado entre MRR e assinatura
+  para calcular MRR em risco por renovação futura.
+- Fonte de continuidade: `docs/ANALYTICS_CONTRACT_EXPIRY_FOUNDATION_V1.md`.
+  O lote permanece documental até decisão de produto e contrato server-side.
+
+## Auditoria do domínio de Customer Success — 2026-08-21
+
+- A carteira corrente é `vw_cs_customer_portfolio`, com tenant, assinaturas
+  ativas/suspensas, owner de CS, tickets atuais, atribuição operacional e
+  `renewalAt` quando preenchido. O acesso é tenant-aware e governado por
+  membership na área `customer_success`.
+- `health_summary_status` permanece `unavailable`. `portfolio_health_status` é
+  um atributo manual de atribuição com histórico, não um health score calculado
+  ou versionado. Churn e expansão não possuem série canônica publicada; os
+  indicadores analíticos correspondentes permanecem `awaiting_history` quando
+  não há snapshots suficientes.
+- O Health Score/Health Status nativo do HubSpot é premissa do fluxo-alvo:
+  configuração e cálculo ficam no HubSpot; o ConfiOne deve ler pela API oficial
+  e futuramente ingerir o valor em read model com tenant, proveniência,
+  cobertura, frescor, permissões e estados de ausência, sem recalcular
+  localmente. O portal, os nomes internos das propriedades, scopes, plano, seat,
+  permissões e retenção histórica ainda não foram verificados. A capacidade
+  alvo é suportada, mas o estado atual é `REQUIRES_NEW_INGESTION`, possivelmente
+  `REQUIRES_SCOPE`; não é `API_LIMITATION`.
+- Risco operacional, atraso financeiro, tickets e ausência de atividade são
+  sinais separados e não formam uma probabilidade de churn ou renovação. A
+  fonte de continuidade é `docs/ANALYTICS_CS_DOMAIN_AUDIT_V1.md`.
+- Nenhum código, migration, view, RPC, RLS, contrato executável, integração ou
+  UI foi alterado neste lote.
+
+## Auditoria do domínio de Suporte — 2026-08-21
+
+- O Support Workspace local possui contrato operacional de tickets, mensagens,
+  eventos, atribuições, fila, detalhe e timeline, todos com `tenant_id` e
+  governança server-side. A fila paginada aplica filtros, contagens e limite de
+  50 itens; status, prioridade, severidade, categoria, motivo e SLA são
+  dimensões separadas.
+- `conversation_type_key` é classificação do ticket. `ticket_source = chat`,
+  e-mail e API existem como origem/canal, mas a resposta direta é marcada como
+  futura/indisponível. A especificação local de Conversations API confirma a
+  capacidade oficial de ler inboxes, canais, threads, mensagens e atores, mas
+  ainda não existe read model ou ingestão local dessa fonte.
+- O contrato analítico de Suporte é separado: `rpc_analytics_support_kpis_v2`
+  usa `hubspot_tickets`, coortes por `hs_created_at`, resolução, atividade,
+  frescor `synced_at` e histórico de snapshots. Não se deve misturar sua
+  semântica com `public.tickets` ou assumir `closed_at` universal.
+- SLA, aging, ausência de histórico e cobertura são estados explícitos. O
+  calendário de negócio existe, mas o comportamento integral de horas úteis e
+  feriados é `PENDING_LOCAL_CONTRACT_VALIDATION`, não ausência de scope. A
+  capacidade Conversations API usa `REQUIRES_SCOPE` somente para confirmar
+  `conversations.read` e permissões efetivas do portal, e `REQUIRES_NEW_INGESTION`
+  para o read model local.
+- Fonte de continuidade: `docs/ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md`. Nenhum
+  código, migration, view, RPC, RLS, contrato executável, integração ou UI foi
+  alterado neste lote.
+
+## Protocolo de revisão por agente revisor — 2026-08-19
+
+- O repositório passou a ter um contrato explícito de revisão entre agente implementador e agente revisor em `docs/CODE_REVIEW_PROTOCOL_V1.md`, com área de trabalho versionada em `.review/`.
+- `npm run review:gates` executa doze verificações determinísticas sobre documentação, contratos backend, cobertura pgTAP, higiene de frontend e de QA. O gate é somente leitura e falha apenas em regressão contra `.review/baseline.json`.
+- O débito histórico foi congelado no baseline em 2026-08-19: 7 links de documentação quebrados, 16 scripts npm sem arquivo, 64 RPCs e 23 views sem menção em pgTAP, 19 tabelas com RLS habilitada e sem policy, 7 estados React descartados, 9 `catch` vazios, 4 asserções pgTAP posicionais, 1 smoke acoplado a contagem literal, 3 documentos acima de 120KB. Nenhum item foi corrigido, removido ou silenciado neste lote.
+- `npm run review:context` monta o pacote de revisão de um lote: frentes tocadas, objetos de banco alterados com marcação de cobertura pgTAP, resultado dos gates e `git diff --stat`. Os pacotes são artefato e não são versionados.
+- Decisão de domínio: objeto backend sem consumidor no repositório é classificado como `SURFACE_PENDING_UI`, ou seja, funcionalidade pronta aguardando UI ou release surface. Customer Operations V1 é o caso explícito, com sete RPCs nessa condição por decisão registrada. Isso não é código morto e não autoriza remoção.
+- Nada foi removido, movido ou renomeado. O lote é aditivo: `scripts/review/`, `.review/`, `docs/CODE_REVIEW_PROTOCOL_V1.md`, quatro scripts npm, uma linha de `.gitignore` e as seções documentais correspondentes.
+
+## Navegação operacional da Central de Clientes e do espaço pessoal — 2026-08-16
+
+- A Central de Clientes foi retirada do agrupamento visual de Configurações e passou a aparecer na área operacional `Minha área`.
+- A rota técnica continua sendo `/admin/tenants`; IDs, grants, contratos e permissões não foram alterados.
+- O item de entrada `/inicio` passou a usar o nome visível `Meu espaço`, mantendo a recepção como conceito técnico de sessão.
+- Breadcrumbs, subtítulos e estados de carregamento foram alinhados ao novo texto, sem alterar a lógica de autenticação ou redirecionamento.
+
+## Customer Relationship Groups V1 — 2026-08-16
+
+- A Central de Clientes agora possui uma camada aditiva de agrupamento interno em `customer_account_groups` e `customer_account_group_members`.
+- O modelo preserva `tenants` como conta operacional e permite membros do tipo `tenant` ou `brand`, com relacoes `contract_holder`, `served_brand` e `operational_member`.
+- `economic_group` e `service_umbrella` sao classificacoes internas de relacionamento. `portfolio` ficou legado apenas para leitura de registros antigos e nao pode ser criado nesta camada. Carteira de Customer Success usa `cs_customer_portfolio_assignments`.
+- O backend expoe `vw_admin_customer_account_groups_list`, `vw_admin_customer_account_group_detail` e `vw_admin_tenant_group_context`, todos restritos a `platform_admin` e com `security_barrier`.
+- As escritas passam por RPCs administrativas auditaveis. Nenhuma sincronizacao ou escrita foi executada no HubSpot, OMIE/OME ou outro servico externo.
+- As migrations locais `20260816110000_customer_relationship_groups_v1.sql`, `20260816112000_customer_central_release_activation_v1.sql`, `20260816113000_customer_central_screen_capability_v1.sql` e `20260816114000_customer_relationship_groups_scope_fix.sql` foram aplicadas sem reset. O pgTAP focado `115_customer_relationship_groups_v1.sql` passou com 24 testes e o teste de escopo `116_customer_relationship_groups_scope_fix.sql` cobre a separacao da carteira CS.
+- A Central agora possui o painel `CustomerGroupsPanel`, com criacao de agrupamento, vinculo de tenants ou marcas e arquivamento de membros por RPC. A tela continua fora de Configuracoes, na area operacional `Minha area`.
+
+## Customer Operations and Migration Domain V1 — 2026-08-16
+
+- O backend agora possui origens distintas After Sale V1 e Genius, lojas individualizadas, snapshots de inventário, observações de funcionalidades, evidências privadas, projetos genéricos e especialização de migração para After Sale V2.
+- O escopo de lojas é explícito e validado por trigger; um projeto não pode misturar cliente ou origem. A carteira CS não participa deste agrupamento e continua em `cs_customer_portfolio_assignments`.
+- Decisão de domínio reforçada: carteira de CS não é agrupamento de marcas, full commerce, guarda-chuva de serviço ou grupo econômico. Esses relacionamentos são contexto comercial separado e não definem atribuição operacional de CSM.
+- Elegibilidade, aprovação, solicitação de executor e validação pós-save são entidades auditáveis. Nenhum executor externo ou escrita em origem/destino foi acionado.
+- Read models, RPCs e a leitura operacional aditiva da Central estão documentados em `docs/CUSTOMER_OPERATIONS_MIGRATION_DOMAIN_V1.md`. A superfície não cria carteira CS nem executa escrita externa.
+
+## Diretório local de clientes HubSpot — 2026-08-16
+
+- Foram importadas localmente 264 empresas `COMPANY` do HubSpot filtradas por `e_cliente_aftersale_ = Sim`.
+- Cada registro possui tenant canônico e vínculo `customer_account_sources` com `source_system = hubspot`, `source_product = after_sale` e `source_version = current`; 247 fontes estão `confirmed` e 17 `inactive` por status Churn/Bloqueado.
+- A carga não criou lojas, grupos, projetos ou carteiras de CS. Omie não foi consultado nem alterado.
+- A leitura autenticada da Central retornou 264 tenants importados dentro de 267 linhas do diretório local, sem duplicidade. A migration local `20260816152000_customer_operations_read_acl_fix_v2.sql` restaura o `EXECUTE` necessário à policy de leitura.
+- O código do Admin Console deixou de montar filtros REST `in` com centenas de UUIDs para o contexto de grupos, evitando falha de preflight CORS quando a base cresce.
+- O sincronizador automático do dashboard teve a causa raiz do 502 corrigida: o worker recebia 403 ao ler `hubspot_sync_runs` com `service_role` porque a ACL havia sido revogada. A migration local `20260816153000_hubspot_orchestrator_service_acl_fix_v1.sql` restaura apenas `SELECT/UPDATE` para o runner, mantendo a escrita interativa bloqueada.
+- A nova execução local concluiu com status `success`, 48 itens `succeeded`, 61.843 registros recebidos e 62.066 promovidos ao snapshot local. Nenhum serviço externo recebeu escrita.
+- Relatório: `docs/reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md`.
+
+## Support Workspace V1 — contrato de autorização e ativação controlada — 2026-08-16
+
+- A primeira fatia de evolução do suporte corrigiu a lacuna entre grants de tela e capacidade efetiva. A migration `20260816100000_support_screen_capability_grants_v1.sql` concede `screen.support.view` somente a `platform_admin`, `support_manager` e `support_agent`.
+- O teste pgTAP `114_support_screen_capability_grants_v1.sql` valida capacidade, grants de fila/tickets e ausência da capacidade para `dashboard_viewer`.
+- A validação autenticada local em `VITE_RELEASE_SURFACE=full` confirmou fila e tickets para os três perfis autorizados, com read models/RPCs de suporte em HTTP 200. `dashboard_viewer` e `customer_user` permaneceram negados.
+- O smoke versionado `npm.cmd run local:qa:support-release-smoke` registra 10 combinações de rota/perfil, bloqueia requests de tabela-base sensível e restaura o catálogo local após o teste.
+- O smoke `npm.cmd run local:qa:support-operational-writes` confirmou persistência de atribuição, status, notas, respostas, anexo e reload na fixture local, além de isolamento entre tenants e invisibilidade de notas internas no Portal. O harness somente recebeu espera assíncrona e tolerância a fixture já em `in_progress`.
+- Após a migration local, pgTAP passou com 116 arquivos e 1.788 testes; a segunda rodada passou com 262 focados, 549 amplos, typechecks, build, smoke Playwright, autenticação, secret scan e quality gate. Lint segue com 0 erros e 159 avisos legados; lint SQL segue com 19 avisos não bloqueantes.
+- O release surface padrão continua sem as rotas Support. A publicação definitiva aguarda aceite operacional de ações, escrita, tenant, timeline, mensagens, classificação, SLA, Knowledge e handoff. Não houve migration remota, push ou deploy.
+
+# Estado anterior — Interface High-Density V1 — 2026-08-03
+
 ## Atualização corrente — Recharts 3 e reconciliação de suíte — 2026-08-11
 
 - `apps/web` usa `recharts` `3.10.1`; a migração a partir de `2.15.4` foi
@@ -31,7 +414,7 @@
 - As concessões de telas por perfil e colaborador ficam em painéis compactos lado a lado, com rolagem interna por grupo. O frontend continua consumindo read models e RPCs reais, sem calcular permissões.
 - Runtime local oficial: `npm run dev` em `http://127.0.0.1:4173`, sem fallback de porta. Sem push, deploy, migration remota ou alteração de secret.
 
-## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
+## Atualização corrente — ConfiOne V1 Blueprint Alignment & Handoff Claude — 2026-08-10
 
 - **Brand Migration ConfiOne**: Nome público do sistema alterado de GeniusOS para ConfiOne em todas as telas visíveis do frontend.
 - **Fidelidade Visual aos Blueprints**: Ordem dos blocos padronizada (Header → Summary Rail → Abas → Filtros compactos → Tabela dominante + Paginação).
@@ -40,7 +423,7 @@
 - **Remoção de Elementos Obsoletos**: Aba `Convites / Histórico` removida do painel de Acessos; imagens legadas de blueprint excluídas.
 - **Governança & QA**: Typecheck (0 erros), Vite Build (0 erros), Playwright QA de 22 rotas executado. Handoff documentado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
 
-## Atualização corrente — Confi One V1 Global Surface Sweep & Remoção do Cockpit — 2026-08-09
+## Atualização corrente — ConfiOne V1 Global Surface Sweep & Remoção do Cockpit — 2026-08-09
 
 - **Brand System Canônico**: `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções) é a única fonte canônica de Brand System. O contrato `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` permanece classificado como SUPERSEDED para histórico.
 - **Cockpit Gerencial Removido**: A superfície independente `Cockpit gerencial` (`/admin/cockpit`) foi removida da navegação e o componente frontend órfão `ManagementCockpitPage.tsx` excluído. A rota antiga redireciona diretamente para `/admin/settings/dashboard-sources`.
@@ -717,7 +1100,7 @@ este bloco, este estado canônico atual prevalece; pendências antigas sobre
 - Evidência: `docs/reports/ANALYTICS_FINANCE_READMODEL_2026-07-18.md`.
 
 ## Produto
-Genius Support OS
+ConfiOne
 
 ## Objetivo
 Construir uma plataforma interna para centralizar suporte B2B, base de conhecimento, tickets, comunicação entre suporte, CS, times técnicos e tecnologia, gestão de bugs, melhorias, SLAs, auditoria e IA operacional.
@@ -793,7 +1176,7 @@ Documentos históricos:
 - Frontend apenas renderiza dados e envia comandos.
 - Multi-tenant obrigatório desde o início.
 - `organization` é governança, `tenant` é operação e `knowledge_space` é marca/help center público.
-- Genius Support OS é uma plataforma de operação CX B2B técnica, não um SAC B2C.
+- ConfiOne é uma plataforma de operação CX B2B técnica, não um SAC B2C.
 - Permissões, auth, RLS, auditoria e logs são fundação, não etapa posterior.
 - IA só pode responder com base oficial, versionada e citável.
 - Tickets, suporte, cliente B2B, engenharia e conhecimento são domínios separados.

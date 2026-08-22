@@ -20,7 +20,7 @@ const sourcePriority: Record<AnalyticsOperationOption['source'], number> = {
 export function dedupeAnalyticsOperationOptions(options: AnalyticsOperationOption[]) {
   const unique = new Map<string, AnalyticsOperationOption>();
 
-  for (const option of options) {
+  for (const option of options.filter((candidate) => candidate.source === 'confirmed')) {
     const value = option.value.trim().replace(/\s+/g, ' ');
     if (!value || value === 'a_definir') continue;
 

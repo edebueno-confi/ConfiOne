@@ -31,6 +31,19 @@ export function AccessDeniedPage() {
     return <Navigate replace to="/login" />;
   }
 
+  if (phase === 'authenticated' && !sessionExpired) {
+    return (
+      <Navigate
+        replace
+        state={{
+          fromAccessDenied: true,
+          reason: (location.state as { reason?: unknown } | null)?.reason,
+        }}
+        to="/inicio"
+      />
+    );
+  }
+
   return (
     <MinimalPage>
       <MinimalState

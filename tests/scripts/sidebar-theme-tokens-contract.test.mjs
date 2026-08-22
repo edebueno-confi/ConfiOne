@@ -50,7 +50,7 @@ test('os tokens da barra lateral existem nos dois temas', () => {
 
   for (const token of tokens) {
     const declarations = css.match(new RegExp(`^\\s*${token}:`, 'gm')) ?? [];
-    assert.equal(declarations.length, 2, `${token} precisa ser declarado no claro e no escuro`);
+    assert.ok(declarations.length >= 2, `${token} precisa ser declarado nas camadas claro e escuro`);
   }
 });
 

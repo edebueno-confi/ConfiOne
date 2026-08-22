@@ -5,7 +5,7 @@ import type {
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
 } from '@genius-support-os/contracts';
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getCommercialKpisV2, getCsSnapshot, getExecutiveKpisV2, getSupportKpisV2, listAnalyticsSourceConfig } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getCommercialKpisV2ForOverview, getCsSnapshotForOverview, getExecutiveKpisV2, getSupportKpisV2ForOverview, listAnalyticsSourceConfig } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
@@ -35,6 +35,7 @@ import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./
 import { AnalyticsDataCoveragePanel, analyticsCoverageStatus, type AnalyticsCoverageItem } from './AnalyticsDataCoveragePanel';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 import { readKpi } from './analytics-kpi-contract.mjs';
+import { buildOperationPeriodMetrics, buildUnavailableOperationKpiPayload, getOverviewQueueMetricDefinitions, mergeOperationKpiPayload } from './analytics-ceo-snapshot.mjs';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -57,6 +58,20 @@ type MetricDelta = {
   label: string;
   tone: "positive" | "negative" | "neutral";
 } | null;
+
+type OperationCurrentAvailability = {
+  commercialPipeline: boolean;
+  commercialDeals: boolean;
+  supportOpen: boolean;
+};
+
+type OperationPeriodAvailability = {
+  commercialWonDeals: boolean;
+  commercialLostDeals: boolean;
+  commercialWonRevenue: boolean;
+  commercialConversion: boolean;
+  supportCreated: boolean;
+};
 // O Resumo reusa os read models de cada area em vez de recalcular. Isso impede
 // que a mesma metrica apareca com valores diferentes entre a visao geral e a
 // tela da area, que e a falha classica de dashboards executivos.
@@ -82,8 +97,8 @@ const EXECUTIVE_BANDS: BoardBand[] = [
     ],
   },
   {
-    title: 'Atenção',
-    note: 'Sinais que costumam exigir ação antes do próximo ciclo.',
+    title: 'Atenção executiva',
+    note: 'Riscos financeiros e de retenção que pedem decisão.',
     dense: true,
     items: [
       { key: 'overdue_receivables', kind: 'currency', note: 'Vencido e não recebido', alertWhenPositive: true },
@@ -93,9 +108,36 @@ const EXECUTIVE_BANDS: BoardBand[] = [
   },
 ];
 
+const OVERVIEW_QUEUE_METRICS = getOverviewQueueMetricDefinitions();
+
+const EMPTY_OPERATION_SNAPSHOT: CsSnapshot = {
+  kpis: { totalTickets: 0, openTickets: 0, closedTickets: 0, closedRate: 0 },
+  byStatus: [],
+  monthly: [],
+  bySource: [],
+  byPipeline: [],
+  byOwner: [],
+  latestTicketCreatedAt: null,
+};
+
+const EMPTY_OPERATION_KPIS = {
+  period: {
+    commercial: buildUnavailableOperationKpiPayload(),
+    support: buildUnavailableOperationKpiPayload(),
+    supportSnapshot: EMPTY_OPERATION_SNAPSHOT,
+  },
+  current: {
+    commercial: buildUnavailableOperationKpiPayload(),
+    support: buildUnavailableOperationKpiPayload(),
+    supportSnapshot: EMPTY_OPERATION_SNAPSHOT,
+  },
+};
+
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
+  sharedOperation,
+  onSharedOperationChange,
   onRetry,
   isDashboardViewer = false,
   sourceStatus,
@@ -117,10 +159,24 @@ export function AnalyticsCeoPage({
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
   const [executiveKpis, setExecutiveKpis] = useState<unknown>(null);
-  const [operationKpis, setOperationKpis] = useState<{ commercial: unknown; support: unknown; supportSnapshot: CsSnapshot } | null>(null);
+  const [operationKpis, setOperationKpis] = useState<{
+    period: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot };
+    current: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot };
+  } | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
-  const [groupCompany, setGroupCompany] = useState<string>('');
+  const [groupCompany, setGroupCompany] = useState<string>(sharedOperation ?? '');
+
+  useEffect(() => {
+    if (sharedOperation !== undefined && sharedOperation !== groupCompany) {
+      setGroupCompany(sharedOperation);
+    }
+  }, [groupCompany, sharedOperation]);
+
+  const handleGroupCompanyChange = (value: string) => {
+    setGroupCompany(value);
+    onSharedOperationChange?.(value);
+  };
 
   useEffect(() => {
     listAnalyticsSourceConfig()
@@ -147,12 +203,17 @@ export function AnalyticsCeoPage({
 
     if (groupCompany) {
       void Promise.all([
-        getCommercialKpisV2(filters, groupCompany),
-        getSupportKpisV2(filters, groupCompany),
-        getCsSnapshot(filters, [], groupCompany),
+        getCommercialKpisV2ForOverview(filters, groupCompany),
+        getSupportKpisV2ForOverview(filters, groupCompany),
+        getCsSnapshotForOverview(filters, [], groupCompany),
       ])
         .then(([commercial, support, supportSnapshot]) => {
-          if (!cancelled) setOperationKpis({ commercial, support, supportSnapshot });
+          if (!cancelled) {
+            setOperationKpis({
+              period: { commercial: commercial.period, support: support.period, supportSnapshot: supportSnapshot.period },
+              current: { commercial: commercial.current, support: support.current, supportSnapshot: supportSnapshot.current },
+            });
+          }
         })
         .catch(() => {
           if (!cancelled) setOperationKpis(null);
@@ -193,11 +254,37 @@ export function AnalyticsCeoPage({
       />
     );
 
-  const scopedExecutiveKpis = operationKpis ? mergeOperationKpis(executiveKpis, operationKpis) : executiveKpis;
-  const data = operationKpis ? applyOperationScope(result.data, operationKpis) : result.data;
+  const operationScoped = Boolean(groupCompany);
+  const operationViewKpis = operationScoped ? operationKpis ?? EMPTY_OPERATION_KPIS : operationKpis;
+  const scopedExecutiveKpis = operationScoped
+    ? maskUnscopedOperationKpis(mergeOperationKpis(executiveKpis, operationViewKpis ?? EMPTY_OPERATION_KPIS))
+    : executiveKpis;
+  const operationCurrentAvailability = operationScoped && operationKpis
+    ? {
+        commercialPipeline: isPublishedKpiAvailable(operationKpis.current.commercial, 'open_pipeline_amount'),
+        commercialDeals: isPublishedKpiAvailable(operationKpis.current.commercial, 'open_deals'),
+        supportOpen: isPublishedKpiAvailable(operationKpis.current.support, 'open_backlog'),
+      }
+    : operationScoped
+      ? { commercialPipeline: false, commercialDeals: false, supportOpen: false }
+      : { commercialPipeline: true, commercialDeals: true, supportOpen: true };
+  const operationPeriodAvailability = operationScoped && operationKpis
+    ? {
+        commercialWonDeals: isPublishedKpiAvailable(operationKpis.period.commercial, 'won_deals'),
+        commercialLostDeals: isPublishedKpiAvailable(operationKpis.period.commercial, 'lost_deals'),
+        commercialWonRevenue: isPublishedKpiAvailable(operationKpis.period.commercial, 'won_amount'),
+        commercialConversion: isPublishedKpiAvailable(operationKpis.period.commercial, 'win_rate'),
+        supportCreated: isPublishedKpiAvailable(operationKpis.period.support, 'created_tickets'),
+      }
+    : operationScoped
+      ? { commercialWonDeals: false, commercialLostDeals: false, commercialWonRevenue: false, commercialConversion: false, supportCreated: false }
+      : { commercialWonDeals: true, commercialLostDeals: true, commercialWonRevenue: true, commercialConversion: true, supportCreated: true };
+  const data = operationScoped
+    ? applyOperationScope(result.data, operationViewKpis ?? EMPTY_OPERATION_KPIS)
+    : result.data;
   const currentSourceStatus = result.sourceStatus ?? sourceStatus;
   const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
-  const exceptions = buildExecutiveExceptions(data);
+  const exceptions = buildExecutiveExceptions(data, { operationScoped });
   const pipelines = rankExecutivePipelines(data.support.byPipeline);
   const snapshotUnavailable = [
     "empty",
@@ -224,13 +311,17 @@ export function AnalyticsCeoPage({
             history.previous.commercial.wonDeals,
             "count",
           ),
-          conversion: buildPercentagePointDelta(
-            data.commercial.conversionRate,
-            history.previous.commercial.conversionRate,
-            data.commercial.wonDeals + data.commercial.lostDeals,
-            history.previous.commercial.wonDeals +
-              history.previous.commercial.lostDeals,
-          ),
+          conversion:
+            data.commercial.conversionRate === null ||
+            history.previous.commercial.conversionRate === null
+              ? null
+              : buildPercentagePointDelta(
+                  data.commercial.conversionRate,
+                  history.previous.commercial.conversionRate,
+                  data.commercial.wonDeals + data.commercial.lostDeals,
+                  history.previous.commercial.wonDeals +
+                    history.previous.commercial.lostDeals,
+                ),
           tickets: buildDelta(
             data.support.createdTickets,
             history.previous.support.createdTickets,
@@ -246,8 +337,11 @@ export function AnalyticsCeoPage({
   const domainCards = buildDomainCards(
     data,
     hubspotUnavailable,
-    omieUnavailable,
+    omieUnavailable || operationScoped,
     currentSourceStatus,
+    operationScoped,
+    operationCurrentAvailability,
+    operationPeriodAvailability,
   );
 
   return (
@@ -261,7 +355,10 @@ export function AnalyticsCeoPage({
       pipelines={pipelines}
       comparison={comparison}
       unavailable={hubspotUnavailable}
-      financeUnavailable={omieUnavailable}
+      financeUnavailable={omieUnavailable || Boolean(groupCompany)}
+      operationScoped={operationScoped}
+      operationCurrentAvailability={operationCurrentAvailability}
+      operationPeriodAvailability={operationPeriodAvailability}
       refreshing={refreshing}
       mobileFiltersOpen={mobileFiltersOpen}
       setMobileFiltersOpen={setMobileFiltersOpen}
@@ -272,7 +369,7 @@ export function AnalyticsCeoPage({
       syncBusy={syncBusy}
       configuredPipelines={configuredPipelines}
       groupCompany={groupCompany}
-      setGroupCompany={setGroupCompany}
+      onGroupCompanyChange={handleGroupCompanyChange}
       coverageItems={buildCoverageItems(data, hubspotUnavailable, omieUnavailable, currentSourceStatus)}
       canOpenGovernance={canSyncSources}
     />
@@ -284,40 +381,59 @@ function publishedKpiValue(payload: unknown, key: string): number | null {
   return entry.value;
 }
 
-function mergeOperationKpis(base: unknown, scoped: { commercial: unknown; support: unknown }): unknown {
-  const baseObject = base && typeof base === 'object' ? base as Record<string, unknown> : {};
-  const baseKpis = baseObject.kpis && typeof baseObject.kpis === 'object' ? baseObject.kpis as Record<string, unknown> : {};
-  const mergedKpis = { ...baseKpis } as Record<string, unknown>;
-  const replace = (payload: unknown, keys: string[]) => {
-    const source = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
-    const sourceKpis = source.kpis && typeof source.kpis === 'object' ? source.kpis as Record<string, unknown> : {};
-    for (const key of keys) {
-      if (sourceKpis[key] && typeof sourceKpis[key] === 'object') mergedKpis[key] = sourceKpis[key];
-    }
-  };
-  replace(scoped.commercial, ['open_pipeline_amount', 'open_deals', 'won_deals', 'lost_deals', 'won_amount', 'win_rate']);
-  replace(scoped.support, ['open_backlog', 'created_tickets', 'resolved_tickets']);
-  return { ...baseObject, kpis: mergedKpis };
+function isPublishedKpiAvailable(payload: unknown, key: string): boolean {
+  const entry = readKpi(payload, key);
+  return (entry.state === 'available' || entry.state === 'partial') && entry.value !== null;
 }
 
-function applyOperationScope(data: CeoSnapshot, scoped: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot }): CeoSnapshot {
+function mergeOperationKpis(base: unknown, scoped: {
+  period: { commercial: unknown; support: unknown };
+  current: { commercial: unknown; support: unknown };
+}): unknown {
+  return mergeOperationKpiPayload(
+    base,
+    { commercial: scoped.period.commercial, support: scoped.period.support },
+    { commercial: scoped.current.commercial, support: scoped.current.support },
+  );
+}
+
+function maskUnscopedOperationKpis(payload: unknown): unknown {
+  const base = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
+  const rawKpis = base.kpis && typeof base.kpis === 'object' ? base.kpis as Record<string, unknown> : {};
+  const maskedKeys = new Set(['mrr_total', 'active_customers', 'received_amount', 'overdue_receivables', 'mrr_overdue', 'nrr']);
+  const kpis = Object.fromEntries(Object.entries(rawKpis).map(([key, entry]) => {
+    if (!maskedKeys.has(key) || !entry || typeof entry !== 'object') return [key, entry];
+    return [key, { ...(entry as Record<string, unknown>), state: 'unavailable', value: null, reason: 'operation_dimension_unavailable' }];
+  }));
+  return { ...base, kpis };
+}
+
+function applyOperationScope(data: CeoSnapshot, scoped: {
+  period: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot };
+  current: { commercial: unknown; support: unknown; supportSnapshot: CsSnapshot };
+}): CeoSnapshot {
+  const periodCommercial = scoped.period.commercial;
+  const currentCommercial = scoped.current.commercial;
+  const periodSupport = scoped.period.support;
+  const currentSupport = scoped.current.support;
+  const periodMetrics = buildOperationPeriodMetrics(periodCommercial, periodSupport);
   const commercial = {
     ...data.commercial,
-    openPipelineValue: publishedKpiValue(scoped.commercial, 'open_pipeline_amount') ?? data.commercial.openPipelineValue,
-    openDeals: publishedKpiValue(scoped.commercial, 'open_deals') ?? data.commercial.openDeals,
-    wonDeals: publishedKpiValue(scoped.commercial, 'won_deals') ?? data.commercial.wonDeals,
-    lostDeals: publishedKpiValue(scoped.commercial, 'lost_deals') ?? data.commercial.lostDeals,
-    wonRevenue: publishedKpiValue(scoped.commercial, 'won_amount') ?? data.commercial.wonRevenue,
-    conversionRate: publishedKpiValue(scoped.commercial, 'win_rate') ?? data.commercial.conversionRate,
+    openPipelineValue: publishedKpiValue(currentCommercial, 'open_pipeline_amount') ?? 0,
+    openDeals: publishedKpiValue(currentCommercial, 'open_deals') ?? 0,
+    wonDeals: periodMetrics.commercial.wonDeals ?? 0,
+    lostDeals: periodMetrics.commercial.lostDeals ?? 0,
+    wonRevenue: periodMetrics.commercial.wonRevenue ?? 0,
+    conversionRate: periodMetrics.commercial.conversionRate,
   };
   const support = {
     ...data.support,
-    openTickets: publishedKpiValue(scoped.support, 'open_backlog') ?? data.support.openTickets,
-    createdTickets: publishedKpiValue(scoped.support, 'created_tickets') ?? data.support.createdTickets,
-    bySource: scoped.supportSnapshot.bySource,
-    byPipeline: scoped.supportSnapshot.byPipeline,
-    byOwner: scoped.supportSnapshot.byOwner,
-    latestTicketCreatedAt: scoped.supportSnapshot.latestTicketCreatedAt,
+    openTickets: publishedKpiValue(currentSupport, 'open_backlog') ?? 0,
+    createdTickets: periodMetrics.support.createdTickets ?? 0,
+    bySource: scoped.period.supportSnapshot.bySource,
+    byPipeline: scoped.period.supportSnapshot.byPipeline,
+    byOwner: scoped.period.supportSnapshot.byOwner,
+    latestTicketCreatedAt: scoped.period.supportSnapshot.latestTicketCreatedAt,
   };
   return { ...data, commercial, support };
 }
@@ -338,6 +454,9 @@ function buildDomainCards(
   hubspotUnavailable: boolean,
   omieUnavailable: boolean,
   sourceStatus?: AnalyticsSourceStatusPayload,
+  operationScoped = false,
+  operationCurrentAvailability: OperationCurrentAvailability = { commercialPipeline: true, commercialDeals: true, supportOpen: true },
+  operationPeriodAvailability: OperationPeriodAvailability = { commercialWonDeals: true, commercialLostDeals: true, commercialWonRevenue: true, commercialConversion: true, supportCreated: true },
 ): DomainCard[] {
   const hubspotState = sourceStatus
     ? analyticsSourceToBlockState(sourceStatus.hubspot)
@@ -352,11 +471,13 @@ function buildDomainCards(
       title: "Comercial",
       description: "Pipeline e conversão",
       value: hubspotUnavailable
+        || (operationScoped && (!operationCurrentAvailability.commercialPipeline || !operationCurrentAvailability.commercialDeals))
         ? "Indisponível"
         : formatCurrency(data.commercial.openPipelineValue),
       details: hubspotUnavailable
+        || (operationScoped && (!operationCurrentAvailability.commercialPipeline || !operationCurrentAvailability.commercialDeals))
         ? "Dados comerciais indisponíveis"
-        : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
+        : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${operationScoped ? "ciclo do recorte indisponível" : data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
       href: analyticsHref("commercial"),
       state: hubspotState,
       tone: "blue",
@@ -374,17 +495,15 @@ function buildDomainCards(
     {
       key: "support",
       title: "Suporte",
-      description: "Volume e risco da fila",
+      description: OVERVIEW_QUEUE_METRICS.received.label,
       value: hubspotUnavailable
+        || (operationScoped && !operationPeriodAvailability.supportCreated)
         ? "Indisponível"
-        : formatCountLabel(
-            data.support.highPriorityOpen,
-            "alta prioridade",
-            "altas prioridades",
-          ),
+        : formatCountLabel(data.support.createdTickets, "atendimento recebido", "atendimentos recebidos"),
       details: hubspotUnavailable
+        || (operationScoped && !operationPeriodAvailability.supportCreated)
         ? "Dados de suporte indisponíveis"
-        : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
+        : `${OVERVIEW_QUEUE_METRICS.received.source} · ${operationScoped ? "recorte selecionado" : "período selecionado"}`,
       href: analyticsHref("support"),
       state: hubspotState,
       tone: "cyan",
@@ -419,6 +538,9 @@ function ExecutiveHdCanvas({
   comparison,
   unavailable,
   financeUnavailable,
+  operationScoped,
+  operationCurrentAvailability,
+  operationPeriodAvailability,
   refreshing,
   mobileFiltersOpen,
   setMobileFiltersOpen,
@@ -429,7 +551,7 @@ function ExecutiveHdCanvas({
   syncBusy,
   configuredPipelines,
   groupCompany,
-  setGroupCompany,
+  onGroupCompanyChange,
   coverageItems,
   canOpenGovernance,
 }: {
@@ -448,6 +570,9 @@ function ExecutiveHdCanvas({
   };
   unavailable: boolean;
   financeUnavailable: boolean;
+  operationScoped: boolean;
+  operationCurrentAvailability: OperationCurrentAvailability;
+  operationPeriodAvailability: OperationPeriodAvailability;
   refreshing: boolean;
   mobileFiltersOpen: boolean;
   setMobileFiltersOpen: (value: boolean) => void;
@@ -458,7 +583,7 @@ function ExecutiveHdCanvas({
   syncBusy: boolean;
   configuredPipelines: AnalyticsSourceConfig[];
   groupCompany: string;
-  setGroupCompany: (value: string) => void;
+  onGroupCompanyChange: (value: string) => void;
   coverageItems: AnalyticsCoverageItem[];
   canOpenGovernance: boolean;
 }) {
@@ -525,9 +650,9 @@ function ExecutiveHdCanvas({
             extraFields={
               configuredPipelines.length > 0 ? (
                 <AnalyticsOperationScope
-                  storageKey="analytics-overview-operation"
+                  storageKey="analytics-operation-scope"
                   value={groupCompany}
-                  onChange={setGroupCompany}
+                  onChange={onGroupCompanyChange}
                   options={configuredPipelines.map((pipeline) => ({
                     value: pipeline.groupCompany,
                     source: pipeline.groupCompanySource,
@@ -539,7 +664,7 @@ function ExecutiveHdCanvas({
         </div>
       </div>
 
-      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte foi espelhado nos read models de Comercial e Suporte. Customer Success e Financeiro permanecem consolidados porque seus contratos atuais não publicam dimensão de operação; nenhum valor desses domínios é atribuído artificialmente.</p> : null}
+      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte é aplicado server-side aos read models publicados de Comercial e Suporte. Customer Success só publica o recorte quando há pipeline de ticket confirmado e associação ticket-empresa; Financeiro permanece consolidado e fora desta dimensão.</p> : null}
 
       {executiveKpis ? (
         <>
@@ -570,12 +695,14 @@ function ExecutiveHdCanvas({
           <HdMetric
             label="Receita ganha"
             value={
-              unavailable
+              unavailable || (operationScoped && !operationPeriodAvailability.commercialWonRevenue)
                 ? "Indisponível"
                 : formatCurrency(data.commercial.wonRevenue)
             }
-            detail={unavailable
-              ? data.commercial.wonDeals > 0
+            detail={unavailable || (operationScoped && !operationPeriodAvailability.commercialWonRevenue)
+              ? operationScoped && !operationPeriodAvailability.commercialWonDeals
+                ? "Receita e negócios ganhos indisponíveis"
+                : data.commercial.wonDeals > 0
                 ? `${formatCountLabel(data.commercial.wonDeals, "negócio ganho", "negócios ganhos")}; valor não disponível`
                 : "Valor da receita indisponível"
               : formatCountLabel(data.commercial.wonDeals, "negócio ganho", "negócios ganhos")}
@@ -584,11 +711,11 @@ function ExecutiveHdCanvas({
           <HdMetric
             label="Negócios ganhos"
             value={
-              unavailable
+              unavailable || (operationScoped && !operationPeriodAvailability.commercialWonDeals)
                 ? "Indisponível"
                 : data.commercial.wonDeals.toLocaleString("pt-BR")
             }
-            detail={unavailable
+            detail={unavailable || (operationScoped && (!operationPeriodAvailability.commercialWonDeals || !operationPeriodAvailability.commercialLostDeals))
               ? "Dados comerciais indisponíveis"
               : formatCountLabel(data.commercial.lostDeals, "negócio perdido", "negócios perdidos")}
             comparison={comparison.deals?.label}
@@ -597,23 +724,27 @@ function ExecutiveHdCanvas({
             label="Conversão"
             value={
               unavailable ||
+              (operationScoped && !operationPeriodAvailability.commercialConversion) ||
+              data.commercial.conversionRate === null ||
               data.commercial.wonDeals + data.commercial.lostDeals === 0
                 ? "Indisponível"
                 : formatPercent(data.commercial.conversionRate)
             }
-            detail={unavailable ? "Dados comerciais indisponíveis" : "Ganhos sobre ganhos e perdas"}
+            detail={unavailable || (operationScoped && !operationPeriodAvailability.commercialConversion) ? "Dados comerciais indisponíveis" : "Ganhos sobre ganhos e perdas"}
             comparison={comparison.conversion?.label}
           />
           <HdMetric
-            label="Atendimentos recebidos"
+            label={OVERVIEW_QUEUE_METRICS.received.label}
             value={
-              unavailable
+              unavailable || (operationScoped && !operationPeriodAvailability.supportCreated)
                 ? "Indisponível"
                 : data.support.createdTickets.toLocaleString("pt-BR")
             }
-            detail={unavailable
+            detail={unavailable || (operationScoped && !operationPeriodAvailability.supportCreated)
               ? "Contagem de tickets indisponível"
-              : formatCountLabel(data.support.closedTickets, "ticket encerrado", "tickets encerrados")}
+              : operationScoped
+                ? "Encerramentos do recorte indisponíveis"
+                : formatCountLabel(data.support.closedTickets, "ticket encerrado", "tickets encerrados")}
             comparison={comparison.tickets?.label}
           />
         </div>
@@ -650,15 +781,17 @@ function ExecutiveHdCanvas({
             detail={financeUnavailable || unavailable ? "Reconciliação financeira indisponível" : "Inadimplência reconciliada"}
           />
           <HdMetric
-            label="Fila atual"
+            label={OVERVIEW_QUEUE_METRICS.current.label}
             value={
-              unavailable
+              unavailable || (operationScoped && !operationCurrentAvailability.supportOpen)
                 ? "Indisponível"
                 : data.support.openTickets.toLocaleString("pt-BR")
             }
-            detail={unavailable
+            detail={unavailable || (operationScoped && !operationCurrentAvailability.supportOpen)
               ? "Contagem de tickets indisponível"
-              : formatCountLabel(data.support.highPriorityOpen, "alta prioridade aberta", "altas prioridades abertas")}
+              : operationScoped
+                ? "Prioridade do recorte indisponível"
+                : formatCountLabel(data.support.highPriorityOpen, "alta prioridade aberta", "altas prioridades abertas")}
           />
         </div>
       </section>
@@ -683,11 +816,12 @@ function ExecutiveHdCanvas({
         <section
           className="gso-hd-integrity"
           aria-labelledby="integrity-heading"
+          data-testid="overview-governance-coverage"
         >
           <HdSectionHeading
             id="integrity-heading"
-            title="Trilho de integridade"
-            description="Qualidade e cobertura sem uma caixa administrativa separada."
+            title="Governança e cobertura"
+            description="Cobertura, reconciliação e responsáveis que afetam a confiança nos dados."
           />
           <div className="gso-hd-integrity-line">
             <div>
@@ -713,11 +847,12 @@ function ExecutiveHdCanvas({
         <section
           className="gso-hd-exceptions"
           aria-labelledby="exceptions-heading"
+          data-testid="overview-operational-attention"
         >
           <HdSectionHeading
             id="exceptions-heading"
-            title="Sinais gerenciais"
-            description="Sinais operacionais separados da qualidade e do frescor dos dados."
+            title="Atenção operacional"
+            description="Exceções determinísticas que pedem acompanhamento ou ação."
           />
           {exceptions.length ? (
             <div className="gso-hd-signal-list">
@@ -745,12 +880,12 @@ function ExecutiveHdCanvas({
         </section>
       </div>
 
-      <section className="gso-hd-pipelines" aria-labelledby="pipelines-heading">
+      <section className="gso-hd-pipelines" aria-labelledby="pipelines-heading" data-testid="overview-operational-queue">
         <div className="gso-hd-section-heading-inline">
           <HdSectionHeading
             id="pipelines-heading"
-            title="Pipelines de Suporte prioritários"
-            description="Composição do volume no período selecionado."
+            title="Fila operacional"
+            description="Concentração de atendimentos por fila no período selecionado."
           />
           <span>
             {pipelines.length
@@ -791,9 +926,9 @@ function ExecutiveHdCanvas({
           description="Séries publicadas pelas fontes, com coorte, unidade e estado de cobertura explícitos."
         />
         <div className="grid gap-4 lg:grid-cols-3">
-          <AnalyticsTrendPanel domain="commercial" />
-          <AnalyticsTrendPanel domain="support" />
-          <AnalyticsTrendPanel domain="finance" />
+          <AnalyticsTrendPanel domain="commercial" groupCompany={groupCompany} />
+          <AnalyticsTrendPanel domain="support" groupCompany={groupCompany} />
+          <AnalyticsTrendPanel domain="finance" groupCompany={groupCompany} />
         </div>
       </section>
 

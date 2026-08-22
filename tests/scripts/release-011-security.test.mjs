@@ -23,7 +23,7 @@ test('correção forward-only mantém dashboard_viewer fora do gate editorial', 
   assert.match(viewerMigration, /platform_admin/);
   assert.match(viewerMigration, /knowledge_manager/);
   assert.match(routeAccess, /dashboard_viewer/);
-  assert.match(routeAccess, /matchesRoute\(redirectTo, '\/admin\/analytics'\)/);
+  assert.match(routeAccess, /matchesRoute\(routePathname, '\/admin\/analytics'\)/);
 });
 
 test('reconciliação de assets não contém operação destrutiva', () => {

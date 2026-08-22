@@ -86,6 +86,32 @@ function buildReleaseNavigation({
 
   const sections: MinimalNavigationSection[] = [];
 
+  if (isScreenPublishedInRelease('home')) {
+    sections.push({
+      id: 'workspace',
+      label: 'Minha área',
+      items: [
+        {
+          id: 'user-reception',
+          label: 'Meu espaço',
+          to: '/inicio',
+          icon: 'users',
+          matches: (path) => matchesBase(path, '/inicio'),
+        },
+      ],
+    });
+
+    if (allows('tenants')) {
+      sections[sections.length - 1].items.push({
+        id: 'admin-tenants',
+        label: 'Central de Clientes',
+        to: '/admin/tenants',
+        icon: 'users',
+        matches: (path) => matchesBase(path, '/admin/tenants'),
+      });
+    }
+  }
+
   if (allows('analytics')) {
     sections.push({
       id: 'intelligence',
@@ -244,7 +270,7 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/settings', 'Configurações'],
     ['/admin/internal-areas', 'Usuários e acessos'],
     ['/admin/access', 'Usuários e acessos'],
-    ['/inicio', 'Início'],
+    ['/inicio', 'Meu espaço'],
     ['/support/inbox', 'Atendimento'],
     ['/support/queue', 'Fila operacional'],
     ['/support/tickets', 'Tickets'],
@@ -254,7 +280,7 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/internal-actions', 'Acionamentos'],
     ['/engineering', 'Produto'],
     ['/admin/visao-geral', 'Visão geral'],
-    ['/admin/tenants', 'Contas B2B'],
+    ['/admin/tenants', 'Central de Clientes'],
     ['/admin/customer-portal', 'Portal do cliente'],
     ['/admin/system', 'Sistema'],
     ['/admin/build-journal', 'Diário de construção'],

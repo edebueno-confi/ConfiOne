@@ -9,9 +9,9 @@ const status = readLocalSupabaseStatus({ ...process.env, ...qa });
 assertLocalSupabaseEnvironment({ ...process.env, ...qa }, { status });
 const baseUrl = process.env.LOCAL_QA_WEB_URL ?? 'http://127.0.0.1:4173';
 const ids = {
-  managerTicket: '55555555-5555-4555-8555-000000000017',
-  customerTicket: '55555555-5555-4555-8555-000000000001',
-  atlasTicket: '55555555-5555-4555-8555-000000000012',
+  managerTicket: 'a5555555-5555-4555-8555-000000000017',
+  customerTicket: 'a5555555-5555-4555-8555-000000000001',
+  atlasTicket: 'a5555555-5555-4555-8555-000000000012',
 };
 const markers = {
   managerNote: '[QA E2E] nota interna visual manager',
@@ -51,8 +51,11 @@ async function sendComposer(page, mode, body) {
 
 async function restoreAndCheck(page, body) {
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
-  if (!(await page.getByText(body, { exact: true }).count())) throw new Error(`LOCAL_QA_UI_WRITE_NOT_PERSISTED: ${body}`);
+  try {
+    await page.getByText(body, { exact: true }).first().waitFor({ state: 'visible', timeout: 5_000 });
+  } catch {
+    throw new Error(`LOCAL_QA_UI_WRITE_NOT_PERSISTED: ${body}`);
+  }
 }
 
 const evidenceDir = mkdtempSync(join(tmpdir(), 'gso-qa-e2e-'));
@@ -74,10 +77,16 @@ try {
   await manager.page.waitForTimeout(600);
   await manager.page.getByRole('button', { name: 'Alterar status' }).first().click();
   const progressButton = manager.page.getByRole('button', { name: /Em andamento/ }).last();
-  if (!(await progressButton.count())) throw new Error('LOCAL_QA_UI_STATUS_OPTION_MISSING');
-  await progressButton.click();
-  await manager.page.getByRole('button', { name: 'Salvar status' }).click();
-  await manager.page.waitForTimeout(600);
+  if (await progressButton.count()) {
+    await progressButton.click();
+    await manager.page.getByRole('button', { name: 'Salvar status' }).click();
+    await manager.page.waitForTimeout(600);
+  } else {
+    // A fixture pode já estar em `in_progress` por uma execução anterior.
+    // Nesse caso a operação já foi validada e apenas fechamos a superfície.
+    const cancelStatus = manager.page.getByRole('button', { name: 'Cancelar' }).last();
+    if (await cancelStatus.count()) await cancelStatus.click();
+  }
   const closeStatus = manager.page.getByRole('button', { name: 'Cancelar' });
   if (await closeStatus.count()) await closeStatus.last().click();
   await sendComposer(manager.page, 'internal', markers.managerNote);

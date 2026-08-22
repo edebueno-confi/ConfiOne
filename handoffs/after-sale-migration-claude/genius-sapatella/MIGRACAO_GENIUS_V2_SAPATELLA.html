@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Migração Genius para After Sale V2 | Sapatella</title>
+  <style>
+    :root{--ink:#172033;--muted:#5d687a;--line:#d9dfeb;--brand:#cd2159;--ok:#087443;--warn:#946200;--soft:#f5f7fb}
+    body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);margin:0;background:#fff;line-height:1.45}
+    header{background:linear-gradient(120deg,#35104d,#cd2159);color:#fff;padding:34px 48px}
+    h1{margin:0 0 8px;font-size:28px} h2{margin:28px 0 10px;font-size:20px;border-bottom:2px solid var(--line);padding-bottom:6px} h3{font-size:16px;margin:18px 0 6px}
+    main{max-width:1180px;margin:auto;padding:18px 42px 50px}.meta{display:flex;gap:22px;flex-wrap:wrap;font-size:14px}.meta span{background:#ffffff22;padding:7px 10px;border-radius:7px}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--soft)}.card strong{display:block;font-size:22px}.ok{color:var(--ok)}.warn{color:var(--warn)}
+    table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0 18px}th{background:#f0f3f8;text-align:left}th,td{border:1px solid var(--line);padding:8px;vertical-align:top}.status{font-weight:700;white-space:nowrap}.tag{display:inline-block;padding:3px 7px;border-radius:12px;background:#e6f6ed;color:var(--ok);font-size:12px}.tag.warn{background:#fff3d9;color:var(--warn)}
+    .note{border-left:4px solid var(--brand);background:#fff5f8;padding:12px 15px;margin:12px 0}.small{font-size:13px;color:var(--muted)} ul{margin-top:6px}
+    @media(max-width:800px){main{padding:14px}.cards{grid-template-columns:repeat(2,1fr)}header{padding:24px 18px}}
+  </style>
+</head>
+<body>
+<header><h1>Migração da Genius para After Sale V2</h1><div>Sapatella, SOMOS SONHO LTDA</div><div class="meta"><span>CNPJ 28.445.729/0001-90</span><span>Origem: Genius</span><span>Destino: After Sale V2</span><span>Operação de origem: apenas devoluções</span></div></header>
+<main>
+  <h2>Resumo do resultado</h2>
+  <div class="cards"><div class="card"><strong class="ok">Aplicado</strong>Regras, voucher, motivos e textos principais</div><div class="card"><strong>11</strong>motivos ativos configurados</div><div class="card"><strong>27</strong>lojas físicas identificadas na origem</div><div class="card"><strong class="warn">Aguardando</strong>Cadastro das lojas e CNPJ no destino</div></div>
+  <div class="note"><b>Situação atual:</b> a configuração funcional principal está pronta na V2. O cadastro das lojas físicas ainda depende da confirmação para inserir os endereços empresariais e o CNPJ no ambiente de destino. As credenciais não foram transportadas.</div>
+
+  <h2>Checklist por módulo</h2>
+  <table><thead><tr><th>Módulo da Genius</th><th>Como estava na origem</th><th>Resultado na V2</th><th>Observação</th></tr></thead><tbody>
+    <tr><td>Operação</td><td>Apenas devoluções</td><td class="status ok">Adaptado</td><td>Todos os motivos foram deixados disponíveis somente para devolução, evitando expor troca ao consumidor.</td></tr>
+    <tr><td>Motivos</td><td>11 motivos ativos, com prazos, fotos e restrições administrativas</td><td class="status ok">Migrado</td><td>Seis cadastros padrão foram ajustados e cinco motivos foram acrescentados. Total atual: 11 ativos.</td></tr>
+    <tr><td>Regras de devolução</td><td>Segunda solicitação do mesmo pedido bloqueada</td><td class="status ok">Migrado</td><td>Regra de bloqueio já estava ativa; a mensagem foi personalizada com o texto da origem.</td></tr>
+    <tr><td>Voucher</td><td>Restrito ao comprador, código visível, validade de 90 dias</td><td class="status ok">Migrado</td><td>Validade da V2 ajustada para 90 dias. Restrição e visualização do código mantidas.</td></tr>
+    <tr><td>Estorno</td><td>Conta bancária e Pix, na confirmação de recebimento, frete proporcional</td><td class="status">Compatível</td><td>A integração de VTEX e Correios já aparece válida na V2. Não foram alteradas credenciais.</td></tr>
+    <tr><td>Retenção</td><td>Fique com o item sem valor ou quantidade mensal</td><td class="status ok">Mantido inativo</td><td>Retenção física e financeira permanecem desligadas, coerente com a origem.</td></tr>
+    <tr><td>Coleta domiciliar</td><td>Inativa</td><td class="status ok">Mantido inativo</td><td>Agendamento de coleta e faixas de CEP permanecem desligados.</td></tr>
+    <tr><td>Score de clientes</td><td>Não informado na Genius</td><td class="status ok">Padrão ativo</td><td>O módulo já estava ativo na V2; pontuações padrão foram preservadas.</td></tr>
+    <tr><td>Customização</td><td>Título inicial e mensagem de bloqueio personalizados</td><td class="status ok">Migrado</td><td>Título da abertura e mensagem da segunda solicitação foram salvos.</td></tr>
+    <tr><td>Integrações</td><td>VTEX e Correios ativos</td><td class="status ok">Conferido</td><td>Ambas aparecem como credenciais válidas e serviço disponível na V2. Nenhuma credencial foi substituída.</td></tr>
+    <tr><td>Lojas físicas e sellers</td><td>27 lojas, 26 sellers</td><td class="status warn">Não concluído</td><td>Cadastro depende de inserir endereços e CNPJ no destino e validar a associação com sellers.</td></tr>
+    <tr><td>E-mails</td><td>Modelos e eventos personalizados</td><td class="status">Fora do bloqueio</td><td>A V2 possui editor próprio mais completo. Recomenda-se a personalização diretamente no painel da V2.</td></tr>
+  </tbody></table>
+
+  <h2>Motivos configurados na V2</h2>
+  <table><thead><tr><th>Motivo</th><th>Prazo</th><th>Configuração aplicada</th><th>Status</th></tr></thead><tbody>
+    <tr><td>Arrependimento</td><td>7 dias</td><td>Devolução, sem foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Produto Apresentou Defeito</td><td>30 dias</td><td>Devolução, foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Recebi Produto Errado</td><td>30 dias</td><td>Devolução, foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Produto Ficou Pequeno</td><td>1 dia</td><td>Devolução, sem foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Produto Ficou Grande</td><td>30 dias</td><td>Devolução, sem foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Recebi Produto avariado</td><td>30 dias</td><td>Devolução, foto obrigatória</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Casos Críticos</td><td>365 dias</td><td>Devolução, administrativo, sem logística reversa</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Devolução ao Remetente</td><td>365 dias</td><td>Devolução, administrativo, sem logística reversa</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Extravio</td><td>90 dias</td><td>Devolução, administrativo, sem logística reversa</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Frete</td><td>365 dias</td><td>Devolução, administrativo</td><td><span class="tag">Migrado</span></td></tr>
+    <tr><td>Ruptura Parcial</td><td>365 dias</td><td>Devolução, administrativo, sem logística reversa</td><td><span class="tag">Migrado</span></td></tr>
+  </tbody></table>
+
+  <h2>Pendências que não impedem a configuração funcional</h2>
+  <ol><li>Cadastrar as 27 lojas físicas, mantendo as 25 ativas e as 2 inativas conforme a origem.</li><li>Confirmar o CNPJ no cadastro da V2.</li><li>Conferir a associação de cada loja ao seller correspondente. Endereços repetidos foram mantidos como registros distintos na extração.</li><li>Personalizar os modelos de e-mail diretamente no editor da V2, caso o cliente deseje reproduzir o conteúdo visual da Genius.</li><li>Revisar a cor principal da interface, pois a origem usa #cd2159 e o painel da V2 ainda exibe a cor padrão.</li></ol>
+
+  <h2>Segurança e limites</h2>
+  <p class="small">Tokens de VTEX, chave do Google Maps e senha dos Correios foram apenas conferidos na origem. Não foram copiados para arquivos, relatórios ou para a V2.</p>
+  <p class="small">A integração não foi substituída: a V2 já apresentava VTEX e Correios como válidos. A confirmação final da conta é Sapatella, domínio administrativo sapatella.troquefacil.com.br.</p>
+</main>
+</body></html>

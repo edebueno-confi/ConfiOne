@@ -39,17 +39,26 @@ import {
   type AmbiguousOverdueTitle,
   mapReconciliationQuality,
   mapAnalyticsSourceConfig,
+  mapAnalyticsPipelineInventory,
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
+  type AnalyticsPipelineInventory,
   mapAnalyticsSyncHistory,
   type AnalyticsSyncHistoryRow,
   mapAnalyticsSourceStatus,
 } from './analytics-model';
+import { resolveAnalyticsTimeseriesPeriod } from './analytics-periods';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { analyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
+import { applyCommercialStageScope } from './analytics-stage-scope.mjs';
+import {
+  buildOverviewSnapshotQueryPlan,
+  composeCeoSnapshot,
+  mergeExecutiveKpiPayload,
+} from './analytics-ceo-snapshot.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -228,7 +237,7 @@ export async function getCommercialSnapshot(filters: AnalyticsFilters, excludedP
     p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise comercial filtrada.');
-  return mapCommercialSnapshot(data);
+  return applyCommercialStageScope(mapCommercialSnapshot(data), data) as CommercialSnapshot;
 }
 
 export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = [], groupCompany: string | null = null): Promise<CsSnapshot> {
@@ -242,6 +251,30 @@ export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineI
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise de suporte filtrada.');
   return mapCsSnapshot(data);
+}
+
+export async function getCsSnapshotForOverview(filters: AnalyticsFilters, excludedPipelineIds: string[] = [], groupCompany: string | null = null): Promise<{ period: CsSnapshot; current: CsSnapshot }> {
+  const client = requireSupabaseBrowserClient();
+  const plan = buildOverviewSnapshotQueryPlan(filters);
+  const [periodResponse, currentResponse] = await Promise.all([
+    client.rpc('rpc_analytics_cs_snapshot_by_operation', {
+      ...rpcFilters(plan.period),
+      p_stage_id: plan.period.stageId || null,
+      p_priority: plan.period.priority || null,
+      p_excluded_pipeline_ids: excludedPipelineIds,
+      p_group_company: groupCompany,
+    }),
+    client.rpc('rpc_analytics_cs_snapshot_by_operation', {
+      ...rpcFilters(plan.current),
+      p_stage_id: plan.current.stageId || null,
+      p_priority: plan.current.priority || null,
+      p_excluded_pipeline_ids: excludedPipelineIds,
+      p_group_company: groupCompany,
+    }),
+  ]);
+  if (periodResponse.error) throw toAppError(periodResponse.error, 'Falha ao carregar o snapshot de atendimento do período.');
+  if (currentResponse.error) throw toAppError(currentResponse.error, 'Falha ao carregar a posição atual do atendimento.');
+  return { period: mapCsSnapshot(periodResponse.data), current: mapCsSnapshot(currentResponse.data) };
 }
 
 export async function getCustomerSuccessSnapshot(): Promise<CustomerSuccessSnapshot> {
@@ -266,6 +299,26 @@ export async function getCommercialKpisV2(filters: AnalyticsFilters, groupCompan
   return data;
 }
 
+export async function getCommercialKpisV2ForOverview(filters: AnalyticsFilters, groupCompany: string | null = null): Promise<{ period: unknown; current: unknown }> {
+  const client = requireSupabaseBrowserClient();
+  const plan = buildOverviewSnapshotQueryPlan(filters);
+  const [periodResponse, currentResponse] = await Promise.all([
+    client.rpc('rpc_analytics_commercial_kpis_by_operation', {
+      ...rpcFilters(plan.period),
+      p_owner_id: plan.period.ownerId || null,
+      p_group_company: groupCompany,
+    }),
+    client.rpc('rpc_analytics_commercial_kpis_by_operation', {
+      ...rpcFilters(plan.current),
+      p_owner_id: plan.current.ownerId || null,
+      p_group_company: groupCompany,
+    }),
+  ]);
+  if (periodResponse.error) throw toAppError(periodResponse.error, 'Falha ao carregar os indicadores comerciais do período.');
+  if (currentResponse.error) throw toAppError(currentResponse.error, 'Falha ao carregar a posição comercial atual.');
+  return { period: periodResponse.data, current: currentResponse.data };
+}
+
 export async function getSupportKpisV2(filters: AnalyticsFilters, groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_support_kpis_by_operation', {
@@ -277,18 +330,54 @@ export async function getSupportKpisV2(filters: AnalyticsFilters, groupCompany: 
   return data;
 }
 
-export async function getCustomerSuccessKpisV2(): Promise<unknown> {
+export async function getSupportKpisV2ForOverview(filters: AnalyticsFilters, groupCompany: string | null = null): Promise<{ period: unknown; current: unknown }> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_customer_success_kpis_v2');
+  const plan = buildOverviewSnapshotQueryPlan(filters);
+  const [periodResponse, currentResponse] = await Promise.all([
+    client.rpc('rpc_analytics_support_kpis_by_operation', {
+      ...rpcFilters(plan.period),
+      p_priority: plan.period.priority || null,
+      p_group_company: groupCompany,
+    }),
+    client.rpc('rpc_analytics_support_kpis_by_operation', {
+      ...rpcFilters(plan.current),
+      p_priority: plan.current.priority || null,
+      p_group_company: groupCompany,
+    }),
+  ]);
+  if (periodResponse.error) throw toAppError(periodResponse.error, 'Falha ao carregar os indicadores de atendimento do período.');
+  if (currentResponse.error) throw toAppError(currentResponse.error, 'Falha ao carregar a posição atual do atendimento.');
+  return { period: periodResponse.data, current: currentResponse.data };
+}
+
+export async function getCustomerSuccessKpisV2(groupCompany: string | null = null): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_customer_success_kpis_by_operation', {
+    p_group_company: groupCompany,
+  });
   if (error) throw toAppError(error, 'Falha ao carregar os indicadores da carteira.');
   return data;
 }
 
+export async function getAnalyticsPipelineInventory(objectType: 'deal' | 'ticket' = 'ticket'): Promise<AnalyticsPipelineInventory[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_pipeline_inventory', { p_object_type: objectType });
+  if (error) throw toAppError(error, 'Falha ao carregar o inventário canônico de pipelines.');
+  const payload = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const rows = Array.isArray(payload.pipelines) ? payload.pipelines : [];
+  return rows.map((row) => mapAnalyticsPipelineInventory((row && typeof row === 'object' ? row : {}) as Row));
+}
+
 export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(filters));
-  if (error) throw toAppError(error, 'Falha ao carregar o resumo executivo.');
-  return data;
+  const plan = buildOverviewSnapshotQueryPlan(filters);
+  const [periodResponse, currentResponse] = await Promise.all([
+    client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(plan.period)),
+    client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(plan.current)),
+  ]);
+  if (periodResponse.error) throw toAppError(periodResponse.error, 'Falha ao carregar o resumo executivo do período.');
+  if (currentResponse.error) throw toAppError(currentResponse.error, 'Falha ao carregar a posição atual do resumo executivo.');
+  return mergeExecutiveKpiPayload(periodResponse.data, currentResponse.data);
 }
 
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
@@ -434,9 +523,14 @@ export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'succe
 
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_ceo_snapshot', { ...rpcFilters(filters) });
-  if (error) throw toAppError(error, 'Falha ao carregar a visão executiva.');
-  return mapCeoSnapshot(data);
+  const plan = buildOverviewSnapshotQueryPlan(filters);
+  const [periodResponse, currentResponse] = await Promise.all([
+    client.rpc('rpc_analytics_ceo_snapshot', rpcFilters(plan.period)),
+    client.rpc('rpc_analytics_ceo_snapshot', rpcFilters(plan.current)),
+  ]);
+  if (periodResponse.error) throw toAppError(periodResponse.error, 'Falha ao carregar a visão executiva do período.');
+  if (currentResponse.error) throw toAppError(currentResponse.error, 'Falha ao carregar a posição atual da visão executiva.');
+  return composeCeoSnapshot(mapCeoSnapshot(periodResponse.data), mapCeoSnapshot(currentResponse.data)) as CeoSnapshot;
 }
 
 export async function getCeoHistory(filters: AnalyticsFilters): Promise<CeoHistory> {
@@ -781,28 +875,23 @@ export type TimeseriesGrain = 'day' | 'week' | 'month';
  * sugerir tendência que o dado não sustenta.
  */
 function defaultTimeseriesWindow(grain: TimeseriesGrain): { from: string; to: string } {
-  const to = new Date();
-  const from = new Date(to);
-  if (grain === 'day') from.setDate(from.getDate() - 60);
-  else if (grain === 'week') from.setDate(from.getDate() - 26 * 7);
-  else from.setMonth(from.getMonth() - 11);
-  from.setDate(1);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(from), to: iso(to) };
+  return resolveAnalyticsTimeseriesPeriod(grain);
 }
 
 export async function getAnalyticsTimeseries(
   domain: TimeseriesDomain,
   grain: TimeseriesGrain = 'month',
   window?: { from?: string | null; to?: string | null },
+  groupCompany: string | null = null,
 ): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
   const fallback = defaultTimeseriesWindow(grain);
-  const { data, error } = await client.rpc('rpc_analytics_timeseries', {
+  const { data, error } = await client.rpc('rpc_analytics_timeseries_by_operation', {
     p_domain: domain,
     p_from: window?.from || fallback.from,
     p_to: window?.to || fallback.to,
     p_grain: grain,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a evolução do período.');
   return data;

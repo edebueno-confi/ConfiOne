@@ -8,9 +8,9 @@ assertLocalSupabaseEnvironment({ ...process.env, ...qa }, { status });
 const apiUrl = status.API_URL;
 const anonKey = status.ANON_KEY;
 const ids = {
-  horizonTicket: '55555555-5555-4555-8555-000000000017',
-  atlasTicket: '55555555-5555-4555-8555-000000000012',
-  auroraTicket: '55555555-5555-4555-8555-000000000001',
+  horizonTicket: 'a5555555-5555-4555-8555-000000000017',
+  atlasTicket: 'a5555555-5555-4555-8555-000000000012',
+  auroraTicket: 'a5555555-5555-4555-8555-000000000001',
 };
 
 const personas = [

@@ -34,9 +34,10 @@ test('navegação visível do dashboard_viewer contém somente o Dashboard geren
 
 test('shell do dashboard viewer mostra apenas a Visão executiva e não expõe comandos administrativos', () => {
   assert.match(analyticsShell, /DOMAINS\.filter/);
-  assert.match(analyticsShell, /domain\.key === 'ceo'/);
+  assert.match(analyticsShell, /isAnalyticsDomainPublishedInRelease/);
+  assert.match(analyticsShell, /activeKey === 'ceo'/);
   assert.match(analyticsShell, /isPlatformAdmin/);
-  assert.match(analyticsShell, /onRetry|retry|Tentar novamente/);
+  assert.match(analyticsShell, /onRetry/);
   assert.match(adminGate, /canOpenInternalRoute/);
 });
 
@@ -50,5 +51,6 @@ test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px
 });
 
 test('status de sincronização distingue delta processado do snapshot acumulado', () => {
-  assert.match(analyticsShell, /Última sincronização/);
+  assert.match(analyticsShell, /hasValidSnapshot/);
+  assert.match(ceoPage, /última atualização válida/);
 });

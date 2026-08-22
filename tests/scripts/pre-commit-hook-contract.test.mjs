@@ -6,12 +6,13 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const hook = readFileSync(new URL('../../.githooks/pre-commit', import.meta.url), 'utf8');
+let hookRuntimeEnv = {};
 
 function runGit(cwd, args, env = {}) {
   const result = spawnSync('git', args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...hookRuntimeEnv, ...env },
     windowsHide: true,
   });
   assert.equal(result.error, undefined, result.error?.message);
@@ -34,6 +35,18 @@ test('pre-commit valida mudanças suportadas sem bypass e preserva falha real', 
   const cwd = mkdtempSync(join(tmpdir(), 'gso-pre-commit-'));
   try {
     const hookDir = join(cwd, '.githooks');
+    const npmShimDir = join(cwd, '.bin');
+    mkdirSync(npmShimDir, { recursive: true });
+    writeFileSync(
+      join(npmShimDir, 'npm.cmd'),
+      `@echo off\nif /I "%1"=="run" if /I "%2"=="quality:staged" "${process.execPath}" quality-probe.mjs\n`,
+    );
+    writeFileSync(
+      join(npmShimDir, 'npm'),
+      `#!/bin/sh\nexec "${process.execPath.replaceAll('\\\\', '/')}" quality-probe.mjs\n`,
+    );
+    chmodSync(join(npmShimDir, 'npm'), 0o755);
+    hookRuntimeEnv = { PATH: `${npmShimDir}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH ?? ''}` };
     const probe = `import { appendFileSync } from 'node:fs';
 appendFileSync('.quality-log', 'run\\n');
 if (process.env.GSO_HOOK_QUALITY_FAIL === '1') process.exit(9);\n`;
@@ -48,7 +61,8 @@ if (process.env.GSO_HOOK_QUALITY_FAIL === '1') process.exit(9);\n`;
     assert.equal(runGit(cwd, ['config', 'user.email', 'gso-hook-test@example.invalid']).status, 0);
     assert.equal(runGit(cwd, ['config', 'core.hooksPath', '.githooks']).status, 0);
     assert.equal(runGit(cwd, ['add', '.']).status, 0);
-    assert.equal(commit(cwd, 'initial').status, 0);
+    const initialCommit = commit(cwd, 'initial');
+    assert.equal(initialCommit.status, 0, initialCommit.stderr || initialCommit.stdout);
     assert.equal(qualityRuns(cwd), 1);
     writeFileSync(join(cwd, '.quality-log'), '');
 
@@ -91,6 +105,7 @@ if (process.env.GSO_HOOK_QUALITY_FAIL === '1') process.exit(9);\n`;
     assert.equal(commit(cwd, 'quality recovered').status, 0);
     assert.equal(qualityRuns(cwd), 6);
   } finally {
+    hookRuntimeEnv = {};
     rmSync(cwd, { recursive: true, force: true });
   }
 });

@@ -46,13 +46,13 @@ values
 
 insert into public.hubspot_deals (deal_id, pipeline_id, dealstage, owner_id, amount_home, hs_created_at, hs_closed_at, synced_at)
 values
-  ('kd-open-1', 'kpi-pipe', 'st-open-40', 'kpi-owner', 5000, '2026-03-01', null, timezone('utc', now())),
-  ('kd-open-2', 'kpi-pipe', 'st-open-60', 'kpi-owner', 5000, '2026-03-01', null, timezone('utc', now())),
-  ('kd-won-1',  'kpi-pipe', 'st-won',     'kpi-owner', 1000, '2026-03-01', '2026-03-03', timezone('utc', now())),
-  ('kd-won-2',  'kpi-pipe', 'st-won',     'kpi-owner', 2000, '2026-03-01', '2026-03-05', timezone('utc', now())),
-  ('kd-won-3',  'kpi-pipe', 'st-won',     'kpi-owner', 9000, '2026-03-01', '2026-03-31', timezone('utc', now())),
-  ('kd-lost-1', 'kpi-pipe', 'st-lost',    'kpi-owner', 4000, '2026-03-01', '2026-03-10', timezone('utc', now())),
-  ('kd-out-1',  'kpi-pipe', 'st-won',     'kpi-owner', 99000, '2025-01-01', '2025-01-05', timezone('utc', now()));
+  ('kd-open-1', 'kpi-pipe', 'st-open-40', 'kpi-owner', 5000, '2026-03-01T03:00:00Z', null, timezone('utc', now())),
+  ('kd-open-2', 'kpi-pipe', 'st-open-60', 'kpi-owner', 5000, '2026-03-01T03:00:00Z', null, timezone('utc', now())),
+  ('kd-won-1',  'kpi-pipe', 'st-won',     'kpi-owner', 1000, '2026-03-01T03:00:00Z', '2026-03-03T03:00:00Z', timezone('utc', now())),
+  ('kd-won-2',  'kpi-pipe', 'st-won',     'kpi-owner', 2000, '2026-03-01T03:00:00Z', '2026-03-05T03:00:00Z', timezone('utc', now())),
+  ('kd-won-3',  'kpi-pipe', 'st-won',     'kpi-owner', 9000, '2026-03-01T03:00:00Z', '2026-03-31T03:00:00Z', timezone('utc', now())),
+  ('kd-lost-1', 'kpi-pipe', 'st-lost',    'kpi-owner', 4000, '2026-03-01T03:00:00Z', '2026-03-10T03:00:00Z', timezone('utc', now())),
+  ('kd-out-1',  'kpi-pipe', 'st-won',     'kpi-owner', 99000, '2025-01-01T03:00:00Z', '2025-01-05T03:00:00Z', timezone('utc', now()));
 
 create temporary table kpi_commercial as
 select public.rpc_analytics_commercial_kpis_v2('2026-03-01', '2026-03-31', null, 'kpi-pipe') as payload;

@@ -8,10 +8,10 @@ const commercialPage = fs.readFileSync('apps/web/src/features/analytics/Analytic
 const articlePage = fs.readFileSync('apps/web/src/features/help-center/HelpCenterArticlePage.tsx', 'utf8');
 const markdown = fs.readFileSync('apps/web/src/features/help-center/markdown.tsx', 'utf8');
 
-test('contadores quantitativos usam regra compartilhada de singular e plural', () => {
+test('contadores quantitativos usam regra compartilhada quando exibem substantivo', () => {
   assert.match(analyticsUi, /export function formatCountLabel/);
   assert.match(ceoPage, /formatCountLabel\(\s*data\.commercial\.wonDeals,\s*"negócio ganho",\s*"negócios ganhos"/s);
-  assert.match(commercialPage, /formatCountLabel\(kpis\.lostDeals, 'perdido', 'perdidos'\)/);
+  assert.match(commercialPage, /owner\.lostDeals\.toLocaleString\('pt-BR'\)/);
   assert.doesNotMatch(ceoPage, /\$\{c\.wonDeals\.toLocaleString\('pt-BR'\)\} ganhos/);
 });
 

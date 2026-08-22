@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Development Control Plane</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ConfiOne / Engineering</p>
+        <h1>Development Control Plane</h1>
+      </div>
+      <div class="topbar-actions">
+        <span id="refresh-state" class="muted">Carregando snapshot...</span>
+        <button id="refresh-button" type="button">Atualizar</button>
+      </div>
+    </header>
+
+    <main id="app" aria-live="polite">
+      <div id="load-state" class="load-state" role="status">Carregando snapshot local...</div>
+      <section class="overview-grid" id="overview"></section>
+
+      <section class="split-grid">
+        <article class="panel current-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Agora</p>
+              <h2>Tarefa corrente</h2>
+            </div>
+            <span id="current-state" class="state-pill">—</span>
+          </div>
+          <div id="current-task" class="current-task"></div>
+        </article>
+
+        <article class="panel decisions-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Atenção humana</p>
+              <h2>Decisões e bloqueios</h2>
+            </div>
+          </div>
+          <div id="decisions"></div>
+        </article>
+      </section>
+
+      <section class="split-grid lower-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Coordenação</p>
+              <h2>Forge, Sentinel e Codex</h2>
+            </div>
+            <span id="agent-coordination" class="muted">—</span>
+          </div>
+          <div id="agents" class="agents-list"></div>
+        </article>
+
+        <article class="panel" id="task-detail" aria-live="polite">
+          <p class="muted">Selecione uma task para inspecionar detalhes.</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Fluxo</p>
+            <h2>Kanban da fila</h2>
+          </div>
+          <span id="queue-count" class="muted">—</span>
+        </div>
+        <div id="kanban" class="kanban"></div>
+      </section>
+
+      <section class="split-grid lower-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Validações</p>
+              <h2>Resultados declarados</h2>
+            </div>
+            <span id="gates-source" class="muted"></span>
+          </div>
+          <ul id="gates" class="evidence-list"></ul>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Linha do tempo</p>
+              <h2>Handoffs, reviews e commits</h2>
+            </div>
+          </div>
+          <div id="activity" class="activity-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      Read-only · fontes: handoffs, .review e Git local · atualização automática a cada 10s
+    </footer>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

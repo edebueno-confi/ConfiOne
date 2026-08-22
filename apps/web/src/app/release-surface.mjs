@@ -37,7 +37,7 @@ const INTERNAL_ROUTE_FAMILIES = [
 ];
 
 /** Screens published in the first release. */
-const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access'];
+const FIRST_RELEASE_SCREEN_KEYS = ['home', 'analytics', 'knowledge', 'settings', 'access', 'tenants'];
 
 /**
  * Internal routes published in the first release.
@@ -48,6 +48,11 @@ const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access
  * a separate release decision.
  */
 const FIRST_RELEASE_ROUTES = [
+  {
+    path: '/inicio',
+    screenKey: 'home',
+    rationale: 'Recepção autenticada neutra, sem exigir acesso a uma área operacional.',
+  },
   {
     path: '/admin/analytics',
     screenKey: 'analytics',
@@ -77,6 +82,12 @@ const FIRST_RELEASE_ROUTES = [
     rationale:
       'Administracao de usuarios, convites, areas e permissoes para perfis autorizados.',
   },
+  {
+    path: '/admin/tenants',
+    screenKey: 'tenants',
+    rationale:
+      'Central de Clientes: carteira administrativa tenant-aware publicada com a tela tenants existente.',
+  },
 ];
 
 /**
@@ -87,12 +98,11 @@ const FIRST_RELEASE_ROUTES = [
  * redirected — they resolve to an explicit denial.
  */
 const FIRST_RELEASE_REDIRECTS = [
-  ['/inicio', '/admin/analytics'],
   ['/admin', '/admin/analytics'],
 ];
 
 /** Landing route after a successful login while the reduced surface is active. */
-const FIRST_RELEASE_LANDING_ROUTE = '/admin/analytics';
+const FIRST_RELEASE_LANDING_ROUTE = '/inicio';
 
 /**
  * Sub-superfícies dentro de telas publicadas.

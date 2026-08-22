@@ -9,12 +9,18 @@ const domains = fs.readFileSync('apps/web/src/features/analytics/analytics-domai
 const commercialPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCommercialPage.tsx', 'utf8');
 const supportPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCsPage.tsx', 'utf8');
 const customerSuccessPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCustomerSuccessPage.tsx', 'utf8');
+const unavailablePages = fs.readFileSync('apps/web/src/features/analytics/AnalyticsUnavailablePages.tsx', 'utf8');
 const financePage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsFinancePage.tsx', 'utf8');
+const trendPanel = fs.readFileSync('apps/web/src/features/analytics/AnalyticsTrendPanel.tsx', 'utf8');
+const analyticsApi = fs.readFileSync('apps/web/src/features/analytics/analytics-api.ts', 'utf8');
+const operationScope = fs.readFileSync('apps/web/src/features/analytics/AnalyticsOperationScope.tsx', 'utf8');
+const operationGovernanceMigration = fs.readFileSync('supabase/migrations/20260822073000_analytics_pipeline_operation_governance_findings_v1.sql', 'utf8');
+const timeseriesScopeMigration = fs.readFileSync('supabase/migrations/20260821090000_analytics_timeseries_operation_scope_v1.sql', 'utf8');
 
 test('visão executiva expõe evolução real por domínio sem misturar unidades', () => {
-  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" \/>/);
-  assert.match(executive, /<AnalyticsTrendPanel domain="support" \/>/);
-  assert.match(executive, /<AnalyticsTrendPanel domain="finance" \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="finance" groupCompany=\{groupCompany\} \/>/);
   assert.match(executive, /Evolução por domínio/);
 });
 
@@ -47,10 +53,35 @@ test('domínios exibem performance por pessoa sem fabricar atividades', () => {
 });
 
 test('escopo de operação é espelhado nos read models HubSpot e limita domínios sem dimensão publicada', () => {
-  assert.match(executive, /getCommercialKpisV2\(filters, groupCompany\)/);
-  assert.match(executive, /getSupportKpisV2\(filters, groupCompany\)/);
-  assert.match(executive, /getCsSnapshot\(filters, \[\], groupCompany\)/);
+  assert.match(executive, /getCommercialKpisV2ForOverview\(filters, groupCompany\)/);
+  assert.match(executive, /getSupportKpisV2ForOverview\(filters, groupCompany\)/);
+  assert.match(executive, /getCsSnapshotForOverview\(filters, \[\], groupCompany\)/);
   assert.match(executive, /applyOperationScope/);
-  assert.match(executive, /Financeiro permanecem consolidados/);
+  assert.match(executive, /Financeiro permanece consolidado e fora desta dimensão/);
+  assert.match(executive, /maskUnscopedOperationKpis/);
+  assert.match(financePage, /Financeiro consolidado fora do recorte/);
   assert.match(financePage, /Abrir Governança/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(executive, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(commercialPage, /<AnalyticsTrendPanel domain="commercial" groupCompany=\{groupCompany\} \/>/);
+  assert.match(supportPage, /<AnalyticsTrendPanel domain="support" groupCompany=\{groupCompany\} \/>/);
+  assert.match(trendPanel, /getAnalyticsTimeseries\(domain, grain, undefined, groupCompany\)/);
+  assert.match(analyticsApi, /rpc_analytics_timeseries_by_operation/);
+  assert.match(timeseriesScopeMigration, /operation_dimension_unavailable/);
+});
+
+test('Customer Success usa inventário confirmado, RPC server-side e cobertura explícita', () => {
+  assert.match(customerSuccessPage, /sharedOperation/);
+  assert.match(customerSuccessPage, /getAnalyticsPipelineInventory/);
+  assert.match(customerSuccessPage, /AnalyticsOperationScope/);
+  assert.match(customerSuccessPage, /ticket-empresa/);
+  assert.match(customerSuccessPage, /getCustomerSuccessKpisV2\(groupCompany \|\| null\)/);
+  assert.match(analyticsApi, /rpc_analytics_customer_success_kpis_by_operation/);
+  assert.match(analyticsApi, /rpc_analytics_pipeline_inventory/);
+  assert.match(operationScope, /source === 'confirmed'/);
+  assert.match(operationGovernanceMigration, /analytics_pipeline_operation_eligible/);
+  assert.match(operationGovernanceMigration, /ticket_company_association_missing/);
+  assert.match(operationGovernanceMigration, /ticket_company_association_partial/);
+  assert.match(unavailablePages, /sem dimensão publicada/);
+  assert.doesNotMatch(unavailablePages, /getAnalytics|fetch\(/);
 });

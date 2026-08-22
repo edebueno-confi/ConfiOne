@@ -37,15 +37,15 @@ values
 insert into public.hubspot_tickets
   (ticket_id, pipeline_id, pipeline_stage, hs_created_at, hs_closed_at, first_response_ms, synced_at)
 values
-  ('nat-1', 'nat-pipe', 'ns-closed', '2026-03-01T00:00:00Z', '2026-03-03T00:00:00Z', 3600000, timezone('utc', now())),
-  ('nat-2', 'nat-pipe', 'ns-closed', '2026-03-01T00:00:00Z', null,                    null,    timezone('utc', now())),
-  ('nat-3', 'nat-pipe', 'ns-closed', '2026-03-01T00:00:00Z', '2026-03-04T00:00:00Z', 1800000, timezone('utc', now())),
-  ('nat-4', 'nat-pipe', 'ns-closed', '2026-03-01T00:00:00Z', null,                    null,    timezone('utc', now()));
+  ('nat-1', 'nat-pipe', 'ns-closed', '2026-03-01T03:00:00Z', '2026-03-03T03:00:00Z', 3600000, timezone('utc', now())),
+  ('nat-2', 'nat-pipe', 'ns-closed', '2026-03-01T03:00:00Z', null,                    null,    timezone('utc', now())),
+  ('nat-3', 'nat-pipe', 'ns-closed', '2026-03-01T03:00:00Z', '2026-03-04T03:00:00Z', 1800000, timezone('utc', now())),
+  ('nat-4', 'nat-pipe', 'ns-closed', '2026-03-01T03:00:00Z', null,                    null,    timezone('utc', now()));
 
 insert into public.analytics_hubspot_stage_events (object_type, object_id, changed_at, stage_id, pipeline_id)
 values
-  ('ticket', 'nat-2', '2026-03-06T00:00:00Z', 'ns-closed', 'nat-pipe'),
-  ('ticket', 'nat-3', '2026-03-20T00:00:00Z', 'ns-closed', 'nat-pipe');
+  ('ticket', 'nat-2', '2026-03-06T03:00:00Z', 'ns-closed', 'nat-pipe'),
+  ('ticket', 'nat-3', '2026-03-20T03:00:00Z', 'ns-closed', 'nat-pipe');
 
 -- ---------------------------------------------------------------------------
 -- Precedência
@@ -78,7 +78,7 @@ select is(
 -- A propriedade nativa é a fonte oficial e vence o histórico em divergência.
 select is(
   (select resolved_at from public.vw_analytics_ticket_resolution where ticket_id = 'nat-3'),
-  '2026-03-04T00:00:00Z'::timestamptz,
+  '2026-03-04T03:00:00Z'::timestamptz,
   'em divergência a data nativa prevalece sobre o histórico'
 );
 

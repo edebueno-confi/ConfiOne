@@ -11,4 +11,5 @@ test('seletor de operacao publica cada operacao somente uma vez', () => {
   assert.match(component, /dedupeAnalyticsOperationOptions/);
   assert.match(component, /new Map/);
   assert.match(component, /toLocaleLowerCase\('pt-BR'\)/);
+  assert.match(component, /options\.filter\(\(candidate\) => candidate\.source === 'confirmed'\)/);
 });

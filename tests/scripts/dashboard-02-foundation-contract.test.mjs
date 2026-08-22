@@ -2,15 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyAnalyticsState, createAnalyticsMetricResult, hasInvalidAnalyticsNumber, parseAnalyticsNumber } from '../../apps/web/src/features/analytics/analytics-state.ts';
 
-test('zero real permanece fresh e diferente de null', () => {
+test('zero real e ausencia de snapshot permanecem estados distintos', () => {
   assert.equal(parseAnalyticsNumber(0), 0);
-  assert.equal(classifyAnalyticsState({ source: 'HubSpot', queried: true, received: 0 }), 'empty');
+  assert.equal(classifyAnalyticsState({ source: 'HubSpot', queried: true, received: 0 }), 'never_synced');
   assert.equal(classifyAnalyticsState({ source: 'HubSpot', queried: true, received: 1, zeroReal: true }), 'zero');
   assert.equal(createAnalyticsMetricResult(0, { source: 'HubSpot', queried: true, received: 1 }).value, 0);
+  assert.equal(createAnalyticsMetricResult(0, { source: 'HubSpot', queried: true, received: 1 }).status, 'zero');
 });
 
-test('ausência de configuração e indisponibilidade não viram empty', () => {
-  assert.equal(classifyAnalyticsState({ source: 'OMIE', sourceConfigured: false }), 'not_configured');
+test('ausência de configuração e indisponibilidade usam estado indisponível', () => {
+  assert.equal(classifyAnalyticsState({ source: 'OMIE', sourceConfigured: false }), 'unavailable');
   assert.equal(classifyAnalyticsState({ source: 'OMIE', unavailable: true }), 'unavailable');
 });
 

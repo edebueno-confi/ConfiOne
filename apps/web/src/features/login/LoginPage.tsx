@@ -17,10 +17,11 @@ import {
   resolvePostLoginRedirect,
   type PostLoginDenialReason,
 } from '../auth/post-login-redirect';
+import { buildPostLoginNavigation } from '../auth/post-login-navigation';
 
 type RedirectResolverState =
   | { phase: 'idle' | 'loading' }
-  | { phase: 'resolved'; destination: string }
+  | { phase: 'resolved'; destination: string; reason: PostLoginDenialReason | null }
   | { phase: 'denied'; reason: PostLoginDenialReason }
   | { phase: 'error'; message: string };
 
@@ -66,6 +67,7 @@ export function LoginPage() {
           setRedirectResolver({
             phase: 'resolved',
             destination: resolution.destination,
+            reason: resolution.denialReason,
           });
           return;
         }
@@ -122,15 +124,28 @@ export function LoginPage() {
   }
 
   if (phase === 'authenticated' && redirectResolver.phase === 'resolved') {
-    return <Navigate replace to={redirectResolver.destination} />;
-  }
+    const navigation = buildPostLoginNavigation(
+      redirectResolver.destination,
+      redirectResolver.reason,
+    );
 
-  if (phase === 'authenticated' && redirectResolver.phase === 'denied') {
     return (
       <Navigate
         replace
-        state={{ reason: redirectResolver.reason }}
-        to="/access-denied"
+        state={navigation.state}
+        to={navigation.destination}
+      />
+    );
+  }
+
+  if (phase === 'authenticated' && redirectResolver.phase === 'denied') {
+    const navigation = buildPostLoginNavigation(null, redirectResolver.reason);
+
+    return (
+      <Navigate
+        replace
+        state={navigation.state}
+        to={navigation.destination}
       />
     );
   }

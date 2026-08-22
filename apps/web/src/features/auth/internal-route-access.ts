@@ -2,6 +2,7 @@ import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-cont
 import {
   getReleaseLandingRoute,
   isRoutePublishedInRelease,
+  resolveReleaseRedirect,
 } from '../../app/release-surface.mjs';
 
 export interface InternalRouteContext {
@@ -10,6 +11,8 @@ export interface InternalRouteContext {
   hasCustomerPortalAccess: boolean;
   hasInternalActionAreaAccess: boolean;
   hasCsPortfolioAccess: boolean;
+  /** Sessão autenticada pode sempre abrir a recepção, mesmo sem área operacional. */
+  hasReceptionAccess?: boolean;
 }
 
 function matchesRoute(pathname: string, basePath: string) {
@@ -36,12 +39,13 @@ export function canOpenInternalRoute(
   // Step 1 of the validation order: a surface that is not published in the
   // current release is never reachable, regardless of the profile. This keeps
   // `platform_admin` inside the reduced surface during the release phase.
-  if (!isRoutePublishedInRelease(routePathname)) {
+  if (!isRoutePublishedInRelease(routePathname) && !resolveReleaseRedirect(routePathname)) {
     return false;
   }
 
   if (matchesRoute(routePathname, '/inicio')) {
     return (
+      context.hasReceptionAccess === true ||
       context.roles.includes('platform_admin') ||
       hasAnyRole(context.roles, [
         'support_manager',
@@ -59,6 +63,14 @@ export function canOpenInternalRoute(
   }
 
   if (matchesRoute(routePathname, '/admin')) {
+    // A valid platform_admin is authorized for the published Admin Console
+    // even when no per-screen grant has been materialized yet. The backend
+    // auth context already establishes this role; screen grants remain
+    // relevant for non-platform roles and do not replace deny by default.
+    if (context.roles.includes('platform_admin')) {
+      return true;
+    }
+
     if (routePathname === '/admin') {
       return (context.screenKeys ?? []).some((key) =>
         ['analytics', 'settings', 'knowledge', 'access'].includes(key),
@@ -134,6 +146,10 @@ export function canOpenInternalRoute(
 }
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
+  if (context.hasReceptionAccess === true && isRoutePublishedInRelease('/inicio')) {
+    return '/inicio';
+  }
+
   // While a reduced surface is published, the post-login destination must be a
   // published route. The candidate list below stays intact for the full mode.
   const releaseLanding = getReleaseLandingRoute();

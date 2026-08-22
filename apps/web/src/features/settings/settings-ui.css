@@ -216,7 +216,7 @@
   place-items: center;
   border-radius: 0.5rem;
   background: var(--ui-primary);
-  color: #fff;
+   color: var(--ui-primary-ink, #fff);
   font-size: 0.65rem;
 }
 .gso-po-v2-access .gso-access-list-icon--shield { background: var(--ui-primary); }
@@ -603,11 +603,11 @@
 .gso-ui-button:focus-visible { outline: 2px solid var(--one-action-primary, #2D7CFF); outline-offset: 1px; }
 .gso-ui-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .gso-ui-button > svg { flex: 0 0 auto; width: 16px; height: 16px; }
-.gso-ui-button--primary { border-color: var(--one-action-primary, #2D7CFF); background: var(--one-action-primary, #2D7CFF); color: #FFFFFF; }
+.gso-ui-button--primary { border-color: var(--one-action-primary, #2D7CFF); background: var(--one-action-primary, #2D7CFF); color: var(--one-action-primary-ink, #FFFFFF); }
 .gso-ui-button--primary:not(:disabled):hover { border-color: var(--one-action-primary-hover, #428AFF); background: var(--one-action-primary-hover, #428AFF); }
-.gso-ui-button--primary:not(:disabled):active { background: #246FE8; }
-.gso-ui-button--secondary { border-color: #29405F; background: transparent; color: var(--one-text-primary, #E6ECF5); }
-.gso-ui-button--secondary:not(:disabled):hover { border-color: #3A557A; background: var(--one-surface-2, #18263F); }
+.gso-ui-button--primary:not(:disabled):active { background: var(--one-action-primary-active, #246FE8); }
+.gso-ui-button--secondary { border-color: var(--one-border-strong, #29405F); background: transparent; color: var(--one-text-primary, #E6ECF5); }
+.gso-ui-button--secondary:not(:disabled):hover { border-color: var(--one-border-strong-hover, #3A557A); background: var(--one-surface-2, #18263F); }
 .gso-ui-button--ghost { border-color: transparent; background: transparent; color: var(--one-text-secondary, #A6B2C7); }
 .gso-ui-button--ghost:not(:disabled):hover { background: var(--one-surface-2, #18263F); color: var(--one-text-primary, #E6ECF5); }
 .gso-ui-button--danger { border-color: var(--one-danger, #EF4444); background: transparent; color: var(--one-danger, #EF4444); }

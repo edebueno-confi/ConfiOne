@@ -22,8 +22,8 @@ if (Number(row.users) !== 5 || Number(row.tenants) !== 3 || Number(row.tickets) 
 }
 const isolation = runSql(`
 select
-  (select count(*) from public.tenant_memberships tm join public.profiles p on p.id=tm.user_id where p.email='${qa.LOCAL_QA_CLIENT_EMAIL}' and tm.tenant_id='11111111-1111-4111-8111-111111111111' and tm.role='customer_user')::int as client_membership,
-  (select count(*) from public.tenant_memberships tm join public.profiles p on p.id=tm.user_id where p.email='${qa.LOCAL_QA_CLIENT_EMAIL}' and tm.tenant_id<>'11111111-1111-4111-8111-111111111111')::int as client_other_memberships,
+  (select count(*) from public.tenant_memberships tm join public.profiles p on p.id=tm.user_id where p.email='${qa.LOCAL_QA_CLIENT_EMAIL}' and tm.tenant_id='a1111111-1111-4111-8111-111111111111' and tm.role='customer_user')::int as client_membership,
+  (select count(*) from public.tenant_memberships tm join public.profiles p on p.id=tm.user_id where p.email='${qa.LOCAL_QA_CLIENT_EMAIL}' and tm.tenant_id<>'a1111111-1111-4111-8111-111111111111')::int as client_other_memberships,
   (select count(*) from public.analytics_finance_receivables where source_key='omie_receivables_api' and raw_payload->>'fixture'='true')::int as fake_omie_rows;
 `);
 const isolationRow = isolation.rows?.[0] ?? {};

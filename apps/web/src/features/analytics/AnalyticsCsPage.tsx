@@ -29,6 +29,7 @@ import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 import { readStageBreakdown } from './analytics-stage-breakdown.mjs';
 import { AnalyticsQueueHealth } from './AnalyticsQueueHealth';
+import { hasCompatibleAnalyticsStage, readAnalyticsStageScope, selectedAnalyticsPipelineIds } from './analytics-stage-scope.mjs';
 
 // Resolucao, tempo de resolucao e primeira resposta passaram a existir depois
 // que a ingestao foi corrigida para pedir os campos que a conta realmente
@@ -86,7 +87,7 @@ type State =
 
 type PipelineFilterOption = AnalyticsSourceConfig & Pick<CsPipelinePoint, 'ticketCount' | 'sourceSummary'>;
 
-export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
+export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, sharedOperation, onSharedOperationChange, onRetry }: AnalyticsPageProps) {
   const [state, setState] = useState<State>({ phase: 'loading' });
   // Referência estável: sem o memo, `resolveAnalyticsPeriod` devolve um objeto
   // novo a cada render e a dependência do Effect precisaria ser desmembrada em
@@ -98,11 +99,20 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
-  const [groupCompany, setGroupCompany] = useState('');
+  const [groupCompany, setGroupCompany] = useState(sharedOperation ?? '');
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
   const [stagePayload, setStagePayload] = useState<unknown>(null);
   const [queuePayload, setQueuePayload] = useState<unknown>(null);
   const [subTab, setSubTab] = useState('posicao');
+
+  useEffect(() => {
+    if (sharedOperation !== undefined && sharedOperation !== groupCompany) setGroupCompany(sharedOperation);
+  }, [groupCompany, sharedOperation]);
+
+  const handleGroupCompanyChange = (value: string) => {
+    setGroupCompany(value);
+    onSharedOperationChange?.(value);
+  };
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -162,7 +172,9 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const { byStatus, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
   const supportOwnerPerformance = readSupportOwnerPerformance(kpiPayload);
   const stages = readStageBreakdown(stagePayload);
-  const stageOptions = byStatus.map((status) => ({ value: status.stageId, label: status.label }));
+  const selectedPipelineIds = selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, excludedPipelineIds);
+  const stageScope = readAnalyticsStageScope(byStatus, selectedPipelineIds);
+  const stageOptions = stageScope.options;
   const priorityOptions = [{ value: 'HIGH', label: 'Alta' }, { value: 'MEDIUM', label: 'Média' }, { value: 'LOW', label: 'Baixa' }];
   const pipelineOptions: PipelineFilterOption[] = configuredPipelines.map((pipeline) => {
     const observed = byPipeline.find((item) => item.pipelineId === pipeline.pipelineId);
@@ -258,14 +270,15 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
       id: 'evolucao',
       label: 'Evolução',
       question: 'Como a fila se comportou ao longo do tempo: se o time está ganhando ou perdendo terreno.',
-      content: <AnalyticsTrendPanel domain="support" />,
+      content: <AnalyticsTrendPanel domain="support" groupCompany={groupCompany} />,
     },
   ];
 
   return (
     <AnalyticsHdDomainFrame title="Suporte" description="Fila, tempo de resposta e distribuição dos atendimentos." source="HubSpot" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-cs-operation" value={groupCompany} onChange={setGroupCompany} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /></> : null} />
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={(value) => { handleGroupCompanyChange(value); setFilters((current) => ({ ...current, stageId: '' })); }} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={(next) => { setExcludedPipelineIds(next); setFilters((current) => hasCompatibleAnalyticsStage(byStatus, selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, next), current.stageId) ? current : { ...current, stageId: '' }); }} /></> : null} />
+      {stageScope.notice ? <p role="status" className="text-xs text-[color:var(--minimal-text-tertiary)]">{stageScope.notice}</p> : null}
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       <AnalyticsDomainTabs tabs={subTabs} activeId={subTab} onChange={setSubTab} />
     </div>

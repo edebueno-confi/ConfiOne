@@ -44,17 +44,17 @@ const users = {
 };
 
 const tenantIds = {
-  aurora: '11111111-1111-4111-8111-111111111111',
-  horizonte: '22222222-2222-4222-8222-222222222222',
-  atlas: '33333333-3333-4333-8333-333333333333',
+  aurora: 'a1111111-1111-4111-8111-111111111111',
+  horizonte: 'a2222222-2222-4222-8222-222222222222',
+  atlas: 'a3333333-3333-4333-8333-333333333333',
 };
 const contactIds = {
-  aurora: '11111111-aaaa-4aaa-8aaa-111111111111',
-  horizonte: '22222222-aaaa-4aaa-8aaa-222222222222',
-  atlas: '33333333-aaaa-4aaa-8aaa-333333333333',
+  aurora: 'a1111111-aaaa-4aaa-8aaa-111111111111',
+  horizonte: 'a2222222-aaaa-4aaa-8aaa-222222222222',
+  atlas: 'a3333333-aaaa-4aaa-8aaa-333333333333',
 };
-const productId = '44444444-4444-4444-8444-444444444444';
-const planIds = { basic: '44444444-aaaa-4aaa-8aaa-444444444441', growth: '44444444-aaaa-4aaa-8aaa-444444444442', enterprise: '44444444-aaaa-4aaa-8aaa-444444444443' };
+const productId = 'a4444444-4444-4444-8444-444444444444';
+const planIds = { basic: 'a4444444-aaaa-4aaa-8aaa-444444444441', growth: 'a4444444-aaaa-4aaa-8aaa-444444444442', enterprise: 'a4444444-aaaa-4aaa-8aaa-444444444443' };
 const ticketSeed = [
   ['aurora', 'new', 'low', 'Dentro do prazo'], ['aurora', 'in_progress', 'normal', 'Dentro do prazo'], ['aurora', 'waiting_customer', 'high', 'Próximo do vencimento'], ['aurora', 'resolved', 'normal', 'Dentro do prazo'], ['aurora', 'closed', 'low', 'Dentro do prazo'],
   ['horizonte', 'triage', 'high', 'Próximo do vencimento'], ['horizonte', 'waiting_engineering', 'urgent', 'Vencido'], ['horizonte', 'in_progress', 'high', 'Próximo do vencimento'], ['horizonte', 'waiting_support', 'normal', 'Dentro do prazo'], ['horizonte', 'resolved', 'normal', 'Vencido'],
@@ -62,7 +62,7 @@ const ticketSeed = [
   ['aurora', 'new', 'normal', 'Dentro do prazo'], ['horizonte', 'waiting_customer', 'low', 'Próximo do vencimento'], ['atlas', 'resolved', 'high', 'Vencido'],
 ];
 const ticketRows = ticketSeed.map(([tenant, state, priority, sla], index) => {
-  const id = `55555555-5555-4555-8555-${String(index + 1).padStart(12, '0')}`;
+  const id = `a5555555-5555-4555-8555-${String(index + 1).padStart(12, '0')}`;
   const closed = state === 'closed';
   const assignee = index % 3 === 0 ? users.manager : index % 3 === 1 ? users.agent : null;
   const persistedPriority = priority === 'critical' ? 'urgent' : priority;
@@ -114,16 +114,16 @@ on conflict (tenant_id) do update set operational_status = excluded.operational_
 insert into public.customer_account_features (tenant_id, feature_key, enabled, source, notes, created_by_user_id, updated_by_user_id)
 select t.id, 'returns_portal', true, 'local_qa', '[QA LOCAL] Portal habilitado para teste.', '${users.admin}', '${users.admin}' from public.tenants t where t.id = '${tenantIds.aurora}' and not exists (select 1 from public.customer_account_features f where f.tenant_id=t.id and lower(f.feature_key)='returns_portal');
 insert into public.customer_account_alerts (id, tenant_id, severity, title, description, active, created_by_user_id, updated_by_user_id)
-values ('66666666-6666-4666-8666-666666666661', '${tenantIds.horizonte}', 'warning', '[QA LOCAL] SLA próximo do vencimento', 'Fixture local para validar alerta de atendimento.', true, '${users.admin}', '${users.admin}'), ('66666666-6666-4666-8666-666666666662', '${tenantIds.atlas}', 'critical', '[QA LOCAL] Pendência financeira', 'Fixture local para validar alerta crítico.', true, '${users.admin}', '${users.admin}')
+values ('a6666666-6666-4666-8666-666666666661', '${tenantIds.horizonte}', 'warning', '[QA LOCAL] SLA próximo do vencimento', 'Fixture local para validar alerta de atendimento.', true, '${users.admin}', '${users.admin}'), ('a6666666-6666-4666-8666-666666666662', '${tenantIds.atlas}', 'critical', '[QA LOCAL] Pendência financeira', 'Fixture local para validar alerta crítico.', true, '${users.admin}', '${users.admin}')
 on conflict (id) do update set active=true, updated_by_user_id=excluded.updated_by_user_id;
 
 insert into public.tickets (id, tenant_id, requester_contact_id, title, description, source, status, priority, severity, created_by_user_id, assigned_to_user_id, resolved_at, closed_at, close_reason)
 values ${ticketRows.join(',\n')}
 on conflict (id) do update set tenant_id=excluded.tenant_id, title=excluded.title, status=excluded.status, priority=excluded.priority, severity=excluded.severity, assigned_to_user_id=excluded.assigned_to_user_id, resolved_at=excluded.resolved_at, closed_at=excluded.closed_at, close_reason=excluded.close_reason, updated_by_user_id='${users.admin}';
 insert into public.ticket_messages (id, tenant_id, ticket_id, visibility, body, created_by_user_id, metadata)
-select ('77777777-7777-4777-8777-' || lpad(row_number() over (order by t.id)::text, 12, '0'))::uuid, t.tenant_id, t.id, 'customer'::public.message_visibility, '[QA LOCAL] Mensagem pública sintética para validar histórico.', coalesce(t.assigned_to_user_id, '${users.admin}'), '{"fixture":true}'::jsonb from public.tickets t where t.id in (${ticketRows.map((_, index) => `'55555555-5555-4555-8555-${String(index + 1).padStart(12, '0')}'`).join(',')}) and not exists (select 1 from public.ticket_messages m where m.ticket_id=t.id and m.metadata->>'fixture'='true');
+select ('a7777777-7777-4777-8777-' || lpad(row_number() over (order by t.id)::text, 12, '0'))::uuid, t.tenant_id, t.id, 'customer'::public.message_visibility, '[QA LOCAL] Mensagem pública sintética para validar histórico.', coalesce(t.assigned_to_user_id, '${users.admin}'), '{"fixture":true}'::jsonb from public.tickets t where t.id in (${ticketRows.map((_, index) => `'a5555555-5555-4555-8555-${String(index + 1).padStart(12, '0')}'`).join(',')}) and not exists (select 1 from public.ticket_messages m where m.ticket_id=t.id and m.metadata->>'fixture'='true');
 
-insert into public.commercial_products (id, product_key, display_name, description, status, created_by_user_id, updated_by_user_id) values ('${productId}', 'genius_returns', 'Genius Returns', 'Produto sintético para QA local.', 'active', '${users.admin}', '${users.admin}') on conflict (id) do update set status='active', updated_by_user_id=excluded.updated_by_user_id;
+insert into public.commercial_products (id, product_key, display_name, description, status, created_by_user_id, updated_by_user_id) values ('${productId}', 'genius_returns_local_qa', 'Genius Returns', 'Produto sintético para QA local.', 'active', '${users.admin}', '${users.admin}') on conflict (id) do update set status='active', updated_by_user_id=excluded.updated_by_user_id;
 insert into public.commercial_product_plans (id, product_id, plan_key, display_name, description, status, sort_order, created_by_user_id, updated_by_user_id) values ('${planIds.basic}', '${productId}', 'basic', 'Plano básico QA', 'Fixture local.', 'active', 1, '${users.admin}', '${users.admin}'), ('${planIds.growth}', '${productId}', 'growth', 'Plano intermediário QA', 'Fixture local.', 'active', 2, '${users.admin}', '${users.admin}'), ('${planIds.enterprise}', '${productId}', 'enterprise', 'Plano enterprise QA', 'Fixture local.', 'active', 3, '${users.admin}', '${users.admin}') on conflict (id) do update set status='active', updated_by_user_id=excluded.updated_by_user_id;
 insert into public.customer_product_subscriptions (id, tenant_id, product_id, plan_id, status, started_at, renewal_at, contract_reference, source, notes_internal, metadata, created_by_user_id, updated_by_user_id) values ('88888888-8888-4888-8888-888888888881', '${tenantIds.aurora}', '${productId}', '${planIds.basic}', 'active', current_date - 30, current_date + 335, 'qa-local-aurora', 'local_qa', '[QA LOCAL] Subscription ativa.', '{"fixture":true}', '${users.admin}', '${users.admin}'), ('88888888-8888-4888-8888-888888888882', '${tenantIds.horizonte}', '${productId}', '${planIds.growth}', 'suspended', current_date - 45, current_date + 320, 'qa-local-horizonte', 'local_qa', '[QA LOCAL] Subscription em atenção.', '{"fixture":true}', '${users.admin}', '${users.admin}'), ('88888888-8888-4888-8888-888888888883', '${tenantIds.atlas}', '${productId}', '${planIds.enterprise}', 'active', current_date - 60, current_date + 305, 'qa-local-atlas', 'local_qa', '[QA LOCAL] Subscription ativa com alerta.', '{"fixture":true}', '${users.admin}', '${users.admin}') on conflict (id) do update set status=excluded.status, renewal_at=excluded.renewal_at, updated_by_user_id=excluded.updated_by_user_id;
 

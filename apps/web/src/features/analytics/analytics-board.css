@@ -172,6 +172,37 @@
   color: var(--minimal-text-tertiary);
 }
 
+.gso-board-item__context {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--minimal-text-tertiary);
+}
+
+.gso-board-item__context summary {
+  cursor: pointer;
+  width: fit-content;
+  color: var(--minimal-text-secondary);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.18em;
+}
+
+.gso-board-item__context summary:focus-visible,
+.gso-board-limits__summary:focus-visible {
+  outline: 2px solid var(--selection-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.gso-board-item__context-body {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+  max-width: 32rem;
+}
+
+.gso-board-item__context-body p { margin: 0; }
+
 .gso-board-item__coverage {
   font-size: 0.68rem;
   font-weight: 600;

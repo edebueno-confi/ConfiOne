@@ -66,7 +66,7 @@ function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: {
   </div>;
 }
 
-export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourceStatus: unifiedSourceStatus }: AnalyticsPageProps) {
+export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sharedOperation, onSharedOperationChange, sourceStatus: unifiedSourceStatus }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<FinanceFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period, clientQuery: '' });
   const [draft, setDraft] = useState(filters);
@@ -84,12 +84,16 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
 
   useEffect(() => {
     let cancelled = false;
+    if (sharedOperation) {
+      setState({ phase: 'error', message: 'O Financeiro ainda não publica dimensão de operação.' });
+      return () => { cancelled = true; };
+    }
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
     getFinanceSnapshot(filters, filters.clientQuery)
       .then((snapshot) => { if (!cancelled) setState({ phase: 'ready', snapshot }); })
       .catch((error) => { if (!cancelled) setState({ phase: 'error', message: error instanceof Error ? error.message : 'Falha ao carregar o financeiro.' }); });
     return () => { cancelled = true; };
-  }, [filters]);
+  }, [filters, sharedOperation]);
 
   useEffect(() => { getFinanceSourceStatus().then(setFinanceSourceStatus).catch(() => setFinanceSourceStatus(null)); }, []);
   useEffect(() => { listOmieSyncRuns().then((runs) => setLatestOmieRun(runs[0] ?? null)).catch(() => setLatestOmieRun(null)); }, []);
@@ -102,6 +106,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   };
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) return; setFilters(draft); onSharedPeriodChange?.({ from: draft.from, to: draft.to }); };
 
+  if (sharedOperation) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState title={`Financeiro consolidado fora do recorte ${sharedOperation}`} description="A fonte OMIE ainda não publica a operação associada a cada título. Para evitar atribuição incorreta, o consolidado fica oculto enquanto uma operação estiver selecionada." actions={<button type="button" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-2 text-sm font-medium text-[color:var(--minimal-text)]" onClick={() => onSharedOperationChange?.('')}>Ver Financeiro consolidado</button>} /></AnalyticsHdDomainFrame>;
   if (state.phase === 'loading') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." /></AnalyticsHdDomainFrame>;
   if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
   const { snapshot } = state;

@@ -9,6 +9,9 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCustomerAccountGroupListRow,
+  AdminCustomerAccountGroupMemberRow,
+  AdminCustomerAccountGroupDetailRow,
   AdminCommercialProduct,
   AdminCommercialProductDetail,
   AdminCommercialProductDetailFeature,
@@ -37,6 +40,17 @@ import type {
   CustomerProductInternalOwnerStatus,
   CustomerProductLine,
   CustomerProductSubscriptionStatus,
+  CustomerGroupType,
+  CustomerGroupTypeRecord,
+  CustomerGroupMemberKind,
+  CustomerGroupMemberRelationship,
+  CustomerAccountGroupRecord,
+  RpcAdminCreateCustomerAccountGroupPayload,
+  RpcAdminCreateCustomerAccountGroupResponse,
+  RpcAdminAddCustomerAccountGroupMemberPayload,
+  RpcAdminAddCustomerAccountGroupMemberResponse,
+  RpcAdminArchiveCustomerAccountGroupMemberPayload,
+  RpcAdminArchiveCustomerAccountGroupMemberResponse,
   CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES,
   InternalAreaMembershipRecord,
   InternalAreaMembershipRole,
@@ -63,6 +77,12 @@ import type {
   Uuid,
 } from '@genius-support-os/contracts';
 
+export {
+  CUSTOMER_GROUP_TYPES,
+  CUSTOMER_GROUP_MEMBER_KINDS,
+  CUSTOMER_GROUP_MEMBER_RELATIONSHIPS,
+} from '@genius-support-os/contracts';
+
 export type {
   AdminInternalAccessProfile,
   AdminCustomerAccountAlert,
@@ -70,6 +90,9 @@ export type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCustomerAccountGroupListRow,
+  AdminCustomerAccountGroupMemberRow,
+  AdminCustomerAccountGroupDetailRow,
   AdminCommercialProduct,
   AdminCommercialProductDetail,
   AdminCommercialProductDetailFeature,
@@ -96,6 +119,17 @@ export type {
   CustomerProductInternalOwnerStatus,
   CustomerProductLine,
   CustomerProductSubscriptionStatus,
+  CustomerGroupType,
+  CustomerGroupTypeRecord,
+  CustomerGroupMemberKind,
+  CustomerGroupMemberRelationship,
+  CustomerAccountGroupRecord,
+  RpcAdminCreateCustomerAccountGroupPayload,
+  RpcAdminCreateCustomerAccountGroupResponse,
+  RpcAdminAddCustomerAccountGroupMemberPayload,
+  RpcAdminAddCustomerAccountGroupMemberResponse,
+  RpcAdminArchiveCustomerAccountGroupMemberPayload,
+  RpcAdminArchiveCustomerAccountGroupMemberResponse,
   InternalAreaMembershipRecord,
   InternalAreaMembershipRole,
   InternalAreaMembershipStatus,
@@ -403,6 +437,11 @@ export interface AdminTenantsListItemRow extends AdminTenantRecordRow {
   primary_contact_email: string | null;
   primary_contact_phone: string | null;
   primary_contact_job_title: string | null;
+  primary_group_id: Uuid | null;
+  primary_group_display_name: string | null;
+  primary_group_type: CustomerGroupTypeRecord | null;
+  primary_group_relationship: 'contract_holder' | 'served_brand' | 'operational_member' | null;
+  group_count: number;
 }
 
 export interface AdminTenantDetailRow extends AdminTenantRecordRow {
@@ -415,6 +454,11 @@ export interface AdminTenantDetailRow extends AdminTenantRecordRow {
   contact_count: number;
   active_contact_count: number;
   contacts: AdminTenantContactViewRow[];
+  primary_group_id: Uuid | null;
+  primary_group_display_name: string | null;
+  primary_group_type: CustomerGroupTypeRecord | null;
+  primary_group_relationship: 'contract_holder' | 'served_brand' | 'operational_member' | null;
+  group_count: number;
 }
 
 export interface AdminTenantMembershipRow {

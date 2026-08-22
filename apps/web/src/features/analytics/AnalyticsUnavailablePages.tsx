@@ -17,14 +17,14 @@ const PRODUCT_DEVELOPMENT: WaitingArea = {
   decision: 'Definir a fonte GitHub e o contrato de leitura antes de publicar indicadores reais.',
 };
 
-export function AnalyticsProductDevelopmentPage(_props: AnalyticsPageProps) {
-  return <WaitingAreaPage area={PRODUCT_DEVELOPMENT} />;
+export function AnalyticsProductDevelopmentPage({ sharedOperation }: AnalyticsPageProps) {
+  return <WaitingAreaPage area={PRODUCT_DEVELOPMENT} operation={sharedOperation || null} />;
 }
 
 export const AnalyticsProductPage = AnalyticsProductDevelopmentPage;
 export const AnalyticsDevelopmentPage = AnalyticsProductDevelopmentPage;
 
-function WaitingAreaPage({ area }: { area: WaitingArea }) {
+function WaitingAreaPage({ area, operation }: { area: WaitingArea; operation: string | null }) {
   return (
     <AnalyticsHdDomainFrame title={area.title} description={area.description} source="Integração futura">
       <div className="gso-hd-domain-surface gso-waiting-domain space-y-3">
@@ -32,7 +32,7 @@ function WaitingAreaPage({ area }: { area: WaitingArea }) {
           <div className="gso-waiting-domain-hero-copy">
             <span className="gso-waiting-domain-kicker">Modo de espera por integração</span>
             <h3 id={`${area.title.toLowerCase()}-waiting-title`}>A estrutura está pronta; os dados ainda não foram publicados.</h3>
-            <p>O painel não chama GitHub neste lote e não cria números ilustrativos. Quando a fonte e o contrato forem aprovados, esta área poderá organizar {area.value.toLowerCase()} em uma leitura gerencial.</p>
+            <p>O painel não chama GitHub neste lote e não cria números ilustrativos. {operation ? `O recorte ${operation} também permanece sem dimensão publicada.` : ''} Quando a fonte e o contrato forem aprovados, esta área poderá organizar {area.value.toLowerCase()} em uma leitura gerencial.</p>
           </div>
           <span className="gso-waiting-domain-status">Indisponível</span>
         </section>

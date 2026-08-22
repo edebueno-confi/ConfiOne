@@ -71,6 +71,23 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - O contexto de área interna precisa diferenciar membership ativo sem acionamentos de ausência real de acesso. A fila `vw_internal_action_queue_by_area` continua sendo read model operacional de itens, mas não deve ser usada como prova única de workspace autorizado.
 - Nenhum redirect pode inferir permissão por e-mail, `localStorage`, texto de UI ou mock.
 
+## Regra de rota negada e recepção autenticada — 2026-08-21
+
+- Negação de uma rota ou tela não inativa o usuário, não altera `profiles.is_active`
+  e não encerra a sessão por efeito colateral.
+- Quando a sessão está autenticada e a recepção está publicada e autorizada,
+  `/inicio` é o fallback seguro. A superfície é apresentada ao usuário como
+  **Meu espaço**.
+- O usuário pode voltar ao ambiente autenticado mesmo quando a rota solicitada
+  foi inválida, não publicada ou não autorizada. O aviso deve explicar a
+  negativa sem expor claims, policies ou IDs internos.
+- Usuário autenticado não significa automaticamente que exista um workspace
+  operacional autorizado. Se nenhum workspace estiver disponível, o sistema
+  deve mostrar um estado explícito de acesso não configurado, sem desativar a
+  conta e sem conceder acesso falso.
+- `inactive-profile`, sessão expirada e revogação real de contexto continuam
+  estados distintos, resolvidos pelo backend e tratados com bloqueio adequado.
+
 ## Estado da Fase 1.2
 - Bootstrap do primeiro `platform_admin` implementado em `app_private.bootstrap_first_platform_admin(...)`.
 - Verificação de status de bootstrap em `app_private.platform_admin_bootstrap_status()`.

@@ -2,6 +2,7 @@ import './analytics-board.css';
 import {
   describeKpiBasis,
   describeKpiLimitation,
+  describeKpiState,
   formatKpiValue,
   readKpi,
   readKpiMeta,
@@ -9,6 +10,13 @@ import {
   type KpiValueKind,
 } from './analytics-kpi-contract.mjs';
 import { kpiLabel } from './analytics-vocabulary.mjs';
+
+function formatContextDate(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+}
 
 /**
  * Painel de leitura dos indicadores.
@@ -71,6 +79,7 @@ function Band({
   coverage: number | null;
 }) {
   const entries = band.items.map((item) => ({ item, entry: readKpi(payload, item.key) }));
+  const meta = readKpiMeta(payload);
   // O medidor só aparece quando a faixa tem algo incompleto. Cobertura total não
   // precisa ser anunciada: a ausência do aviso já é a informação.
   const temParcial = entries.some(({ entry }) => entry.state === 'partial');
@@ -99,14 +108,24 @@ function Band({
 
       <div className="gso-board-band__items" data-density={band.dense ? 'support' : undefined}>
         {entries.map(({ item, entry }, index) => (
-          <Item key={item.key} item={item} entry={entry} priority={index === 0 ? 'lead' : 'support'} />
+          <Item key={item.key} item={item} entry={entry} priority={index === 0 ? 'lead' : 'support'} meta={meta} />
         ))}
       </div>
     </section>
   );
 }
 
-function Item({ item, entry, priority }: { item: BoardItem; entry: KpiEntry; priority: 'lead' | 'support' }) {
+function Item({
+  item,
+  entry,
+  priority,
+  meta,
+}: {
+  item: BoardItem;
+  entry: KpiEntry;
+  priority: 'lead' | 'support';
+  meta: ReturnType<typeof readKpiMeta>;
+}) {
   const ausente = entry.value === null || entry.value === undefined;
   const alerta = item.alertWhenPositive === true && (entry.value ?? 0) > 0;
   const limitacao = describeKpiLimitation(entry);
@@ -123,6 +142,19 @@ function Item({ item, entry, priority }: { item: BoardItem; entry: KpiEntry; pri
       {limitacao ? <p className="gso-board-item__meta">{limitacao}</p> : null}
       {!limitacao && item.note ? <p className="gso-board-item__meta">{item.note}</p> : null}
       {!limitacao && !item.note && coorte ? <p className="gso-board-item__meta">{coorte}</p> : null}
+      <details className="gso-board-item__context">
+        <summary>Como interpretar</summary>
+        <div className="gso-board-item__context-body">
+          <p><strong>Estado:</strong> {describeKpiState(entry).toLowerCase() || 'disponível'}</p>
+          {coorte ? <p><strong>Base:</strong> {coorte}</p> : <p><strong>Base:</strong> não informada no contrato.</p>}
+          {meta.periodFrom || meta.periodTo ? (
+            <p><strong>Período:</strong> {formatContextDate(meta.periodFrom) ?? 'início não informado'} até {formatContextDate(meta.periodTo) ?? 'fim não informado'}.</p>
+          ) : null}
+          {meta.coveragePercent !== null ? <p><strong>Cobertura:</strong> {Math.round(meta.coveragePercent)}%.</p> : <p><strong>Cobertura:</strong> não informada.</p>}
+          {meta.freshnessAt ? <p><strong>Atualização:</strong> {formatContextDate(meta.freshnessAt)}.</p> : <p><strong>Atualização:</strong> não informada.</p>}
+          {limitacao ? <p><strong>Ressalva:</strong> {limitacao}</p> : null}
+        </div>
+      </details>
     </div>
   );
 }

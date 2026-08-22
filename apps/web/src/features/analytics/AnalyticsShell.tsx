@@ -45,6 +45,13 @@ export function AnalyticsShell() {
     const fallback = resolveAnalyticsPeriod('month');
     return { ...fallback, from: urlParams.get('from') ?? fallback.from, to: urlParams.get('to') ?? fallback.to };
   });
+  const [sharedOperation, setSharedOperation] = useState<string>(() => {
+    try {
+      return window.localStorage.getItem('analytics-operation-scope') ?? '';
+    } catch {
+      return '';
+    }
+  });
   const [reportOpen, setReportOpen] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<{ source: SyncSource; state: SyncVisualState; detail?: string } | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
@@ -54,6 +61,16 @@ export function AnalyticsShell() {
     const to = urlParams.get('to');
     if (from && to) setSharedPeriod((current) => current.from === from && current.to === to ? current : { from, to });
   }, [urlParams]);
+
+  const handleSharedOperationChange = useCallback((operation: string) => {
+    setSharedOperation(operation);
+    try {
+      if (operation) window.localStorage.setItem('analytics-operation-scope', operation);
+      else window.localStorage.removeItem('analytics-operation-scope');
+    } catch {
+      // Preferência de recorte não bloqueia o Dashboard.
+    }
+  }, []);
 
   const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
   const refreshSourceStatus = useCallback(async () => {
@@ -119,10 +136,10 @@ export function AnalyticsShell() {
       </header>
       <div className="gso-analytics-content min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
         <Suspense fallback={<MinimalState loading title="Carregando área do dashboard" description="Estamos preparando os indicadores deste recorte." />}>
-          {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} sourceStatus={sourceStatus ?? undefined} canSyncSources={activeKey === 'ceo' && canSyncSources && Boolean(sourceStatus)} syncSources={activeKey === 'ceo' ? () => void syncSources() : undefined} syncBusy={syncBusy} /> : null}
+          {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} sharedOperation={sharedOperation} onSharedOperationChange={handleSharedOperationChange} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} sourceStatus={sourceStatus ?? undefined} canSyncSources={activeKey === 'ceo' && canSyncSources && Boolean(sourceStatus)} syncSources={activeKey === 'ceo' ? () => void syncSources() : undefined} syncBusy={syncBusy} /> : null}
         </Suspense>
       </div>
-      <AnalyticsReportExport open={reportOpen} period={sharedPeriod} onClose={() => setReportOpen(false)} />
+      <AnalyticsReportExport open={reportOpen} period={sharedPeriod} groupCompany={sharedOperation} onClose={() => setReportOpen(false)} />
     </div>
   );
 }

@@ -1,5 +1,13 @@
 # VIEW_RPC_CONTRACTS.md
 
+## Analytics: escopo operacional de pipelines — 2026-08-22
+
+- `analytics_source_config` é a fonte canônica do vínculo `pipeline_id -> area_key -> group_company`. O identificador do pipeline é preservado; nome e emoji não são regra de seleção.
+- `rpc_analytics_pipeline_inventory(p_object_type)` consolida por objeto e pipeline, expõe `mapping_state`, mantém pendências/ambiguidade visíveis e reconcilia registros elegíveis de Todas contra cada operação.
+- `rpc_analytics_customer_success_kpis_by_operation(p_group_company)` é o wrapper publicado para Customer Success. O recorte usa pipeline de ticket confirmado e associação ingerida `ticket -> company`; ausência de confirmação ou vínculo retorna estado explícito, sem fallback por nome.
+- Comercial e Suporte continuam usando seus wrappers `*_by_operation`. Financeiro não recebe dimensão de operação. Produto e Desenvolvimento permanece indisponível até contrato GitHub aprovado.
+- Grants dos wrappers são restritos a `authenticated` e `service_role`; `anon` não executa os contratos.
+
 ## ACCESS CONTROL V2 — Ciclo de vida e permissões efetivas — 2026-08-11
 
 - `vw_admin_access_areas` mantém as colunas existentes e acrescenta `dependency_count`,
@@ -880,6 +888,41 @@ Fase 8.2:
   - não vaza detalhe administrativo para `tenant_admin`, `tenant_manager` ou membros comuns;
   - mantém os contatos como payload contratual único para evitar join de frontend em tabelas base;
   - usa `security_barrier = true`.
+
+### `vw_admin_customer_account_groups_list`
+- Finalidade: lista administrativa de agrupamentos internos de relacionamento.
+- Retorna: slug, nome, tipo (`economic_group` ou `service_umbrella` para novos agrupamentos), status, descricao, autoria e contadores de tenants e marcas representadas. O valor legado `portfolio`, se existir em dados antigos, nao representa a carteira de Customer Success.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - nao afirma relacao societaria, juridica ou financeira;
+  - nao depende de leitura direta do frontend nas tabelas de grupos e membros;
+  - usa `security_barrier = true`.
+
+### `vw_admin_customer_account_group_detail`
+- Finalidade: detalhe administrativo de um agrupamento interno.
+- Retorna: metadados do agrupamento e `members` em `jsonb`, com tenants operacionais e marcas representadas, relacao operacional, origem e chave externa sanitizada.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - marcas podem ser representadas sem criar contrato ou entidade juridica ficticia;
+  - nenhuma escrita e feita no HubSpot, OMIE/OME ou outra integracao;
+  - usa `security_barrier = true`.
+
+### `vw_admin_tenant_group_context`
+- Finalidade: contexto resumido do agrupamento principal de cada tenant para a Central de Clientes.
+- Retorna: `tenant_id`, grupo principal, tipo, relacao e quantidade de grupos ativos.
+- Regras:
+  - retorna linhas apenas para `platform_admin` com `profile.is_active = true`;
+  - a escolha do grupo principal respeita `is_primary` e depois ordem deterministica por nome;
+  - nao calcula ou infere grupos por CNPJ, nome ou dados do HubSpot;
+  - usa `security_barrier = true`.
+
+As mutacoes desta camada passam exclusivamente por:
+
+- `rpc_admin_create_customer_account_group`;
+- `rpc_admin_add_customer_account_group_member`;
+- `rpc_admin_archive_customer_account_group_member`.
+
+Essas RPCs exigem `platform_admin`, registram autoria e preservam `source_system`/`source_external_id` apenas como metadados de reconciliacao. Elas nao sincronizam dados para provedores externos.
 
 ### `vw_admin_tenant_memberships`
 - Finalidade: read model global de memberships por tenant.

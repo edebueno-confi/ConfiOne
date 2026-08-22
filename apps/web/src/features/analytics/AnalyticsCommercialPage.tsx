@@ -3,6 +3,7 @@ import { MinimalState } from '../../components/minimal-states';
 import { getCommercialKpisV2, getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
 import {
   formatCurrencyBRL,
+  formatCommercialWinRate,
   type CommercialByOwner,
   type CommercialFunnelStage,
   type CommercialKpis,
@@ -28,6 +29,9 @@ import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDom
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
+import { AnalyticsCommercialComparison } from './AnalyticsCommercialComparison';
+import { resolvePreviousComparablePeriod } from './analytics-commercial-comparison.mjs';
+import { buildCommercialStageQueryPlan, composeCommercialStageView, hasCompatibleAnalyticsStage, selectedAnalyticsPipelineIds } from './analytics-stage-scope.mjs';
 
 // Indicadores com coorte declarada, publicados pelo read model de KPI.
 // Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
@@ -71,20 +75,32 @@ type State =
       byPipeline: CommercialByPipeline[];
       byOwner: CommercialByOwner[];
       monthly: CommercialMonthlyPoint[];
+      stageCatalogFunnel: CommercialFunnelStage[];
       state?: AnalyticsBlockState;
     }
   | { phase: 'error'; message: string };
 
-export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, onRetry, sourceStatus }: AnalyticsPageProps) {
+export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, sharedOperation, onSharedOperationChange, onRetry, sourceStatus }: AnalyticsPageProps) {
   const [state, setState] = useState<State>({ phase: 'loading' });
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
-  const [groupCompany, setGroupCompany] = useState('');
+  const [groupCompany, setGroupCompany] = useState(sharedOperation ?? '');
   const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
+  const [previousKpiPayload, setPreviousKpiPayload] = useState<unknown>(null);
+  const [comparisonPhase, setComparisonPhase] = useState<'loading' | 'ready' | 'error' | 'unavailable'>('loading');
   const [subTab, setSubTab] = useState('posicao');
+
+  useEffect(() => {
+    if (sharedOperation !== undefined && sharedOperation !== groupCompany) setGroupCompany(sharedOperation);
+  }, [groupCompany, sharedOperation]);
+
+  const handleGroupCompanyChange = (value: string) => {
+    setGroupCompany(value);
+    onSharedOperationChange?.(value);
+  };
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -93,18 +109,43 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   useEffect(() => {
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
+    setKpiPayload(null);
+    setPreviousKpiPayload(null);
 
     void getCommercialKpisV2(filters, groupCompany || null)
       .then((payload) => { if (!cancelled) setKpiPayload(payload); })
       .catch(() => { if (!cancelled) setKpiPayload(null); });
 
-    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds, groupCompany || null), listAnalyticsSourceConfig(), listHubspotSyncRuns()])
-      .then(([snapshot, configs, runs]) => {
+    const previousPeriod = resolvePreviousComparablePeriod(filters);
+    if (!previousPeriod) {
+      setComparisonPhase('unavailable');
+    } else {
+      setComparisonPhase('loading');
+      void getCommercialKpisV2({ ...filters, ...previousPeriod }, groupCompany || null)
+        .then((payload) => {
+          if (cancelled) return;
+          setPreviousKpiPayload(payload);
+          setComparisonPhase('ready');
+        })
+        .catch(() => {
+          if (!cancelled) setComparisonPhase('error');
+        });
+    }
+
+    const queryPlan = buildCommercialStageQueryPlan(filters, excludedPipelineIds, groupCompany || null);
+    Promise.all([
+      getCommercialSnapshot(queryPlan.data.filters, queryPlan.data.excludedPipelineIds, queryPlan.data.groupCompany),
+      queryPlan.catalog ? getCommercialSnapshot(queryPlan.catalog.filters, queryPlan.catalog.excludedPipelineIds, queryPlan.catalog.groupCompany) : Promise.resolve(null),
+      listAnalyticsSourceConfig(),
+      listHubspotSyncRuns(),
+    ])
+      .then(([snapshot, stageCatalog, configs, runs]) => {
         if (!cancelled) {
           const activeConfigs = configs.filter((config) => config.domainKey === 'commercial' && config.objectType === 'deal' && config.isActive);
           setConfiguredPipelines(activeConfigs);
           setLatestHubspotRun(runs[0] ?? null);
-          setState({ phase: 'ready', ...applyConfiguredPipelineLabels(snapshot, activeConfigs) });
+          const mappedSnapshot = applyConfiguredPipelineLabels(snapshot, activeConfigs);
+          setState({ phase: 'ready', ...mappedSnapshot, stageCatalogFunnel: stageCatalog?.funnel ?? mappedSnapshot.funnel });
         }
       })
       .catch((error) => {
@@ -130,11 +171,15 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
-  const { funnel, byPipeline, byOwner, state: dataState } = state;
-  const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
+  const { funnel, byPipeline, byOwner } = state;
   const commercialKpiDetails = mapCommercialKpiDetails(kpiPayload);
   const ownersWithPeriodActivity = commercialKpiDetails.byOwner.filter((owner) => owner.openDeals > 0 || owner.wonDeals > 0 || owner.lostDeals > 0);
-  const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
+  const selectedPipelineIds = selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, excludedPipelineIds);
+  const stageView = composeCommercialStageView({ funnel, state: state.state }, { funnel: state.stageCatalogFunnel }, selectedPipelineIds);
+  const dataState = stageView.dataState;
+  const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
+  const stageScope = stageView.stageScope;
+  const stageOptions = stageScope.options;
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
   const pipelineOptions = configuredPipelines.map((pipeline) => {
     const observed = byPipeline.find((item) => item.pipelineId === pipeline.pipelineId);
@@ -152,6 +197,13 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
             <>
               <AnalyticsKpiBoard payload={kpiPayload} bands={COMMERCIAL_BANDS} />
               <AnalyticsBoardLimitations payload={kpiPayload} />
+              <AnalyticsCommercialComparison
+                currentPayload={kpiPayload}
+                previousPayload={previousKpiPayload}
+                currentPeriod={filters}
+                previousPeriod={resolvePreviousComparablePeriod(filters)}
+                phase={comparisonPhase}
+              />
             </>
           ) : null}
           {dataState?.status !== 'empty' ? (
@@ -258,14 +310,15 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
       id: 'evolucao',
       label: 'Evolução',
       question: 'Como ganhos, perdas e taxa de conversão se comportaram ao longo do tempo.',
-      content: <AnalyticsTrendPanel domain="commercial" />,
+      content: <AnalyticsTrendPanel domain="commercial" groupCompany={groupCompany} />,
     },
   ];
 
   return (
     <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState} headerAside={<AnalyticsExecutionMeta provider="HubSpot" run={latestHubspotRun} />}>
     <div className="gso-hd-domain-surface gso-pilot-commercial space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-commercial-operation" value={groupCompany} onChange={setGroupCompany} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /></> : null} />
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={(value) => { handleGroupCompanyChange(value); setFilters((current) => ({ ...current, stageId: '' })); }} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline operation={groupCompany} storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount, groupCompany: configuredPipelines.find((config) => config.pipelineId === pipeline.pipelineId)?.groupCompany ?? null }))} excludedPipelineIds={excludedPipelineIds} onChange={(next) => { setExcludedPipelineIds(next); setFilters((current) => hasCompatibleAnalyticsStage(state.stageCatalogFunnel, selectedAnalyticsPipelineIds(configuredPipelines, groupCompany, next), current.stageId) ? current : { ...current, stageId: '' }); }} /></> : null} />
+      {stageScope.notice ? <p role="status" className="text-xs text-[color:var(--minimal-text-tertiary)]">{stageScope.notice}</p> : null}
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
@@ -281,7 +334,7 @@ function formatCommercialCloseDate(value: string): string {
 }
 
 function formatOwnerRate(value: number | null): string {
-  return value === null ? 'Indisponível' : `${Math.round(value * 100).toLocaleString('pt-BR')}%`;
+  return formatCommercialWinRate(value);
 }
 
 function applyConfiguredPipelineLabels(snapshot: CommercialSnapshot, configs: AnalyticsSourceConfig[]): CommercialSnapshot {
