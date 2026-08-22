@@ -11,13 +11,12 @@
   heartbeats recorrentes de recuperação em 30 minutos.
 - Agent coordination: `IDLE`
 - Approval: `NONE`
-- Base SHA: `76a7b867783c9303d2aca845c5b99b60c268377a`
-- Current SHA: `UNCOMMITTED_WORKTREE`
-- Last finalized task: `AUTH-MODEL-INVENTORY-2026-08-21`
-- Last finalization: `FINALIZE_LOCAL`, aprovado por Sentinel e arquivado.
+- Base SHA: `24dce2e`
+- Current SHA: `24dce2e`
 
-Não há task ativa. O próximo item deve ser promovido somente após verificar
-dependências, autorização, critérios e separação do worktree.
+O handoff corrente está livre. A próxima promoção deve respeitar a fila
+canônica, as dependências satisfeitas, a allowlist e a preservação das
+alterações preexistentes.
 
-Push, merge, deploy, produção, secrets, migrations remotas, escritas externas
-e ações destrutivas continuam proibidos.
+Push, merge, deploy, produção, secrets, migrations remotas e escritas externas
+continuam proibidos.

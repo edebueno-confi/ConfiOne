@@ -5,13 +5,11 @@
 - Owner: `Forge`
 - Reviewer active: `Sentinel`
 - Coordinator: `Codex`
-- Base SHA: `76a7b867783c9303d2aca845c5b99b60c268377a`
-- Implementation SHA: `UNCOMMITTED_WORKTREE`
+- Base SHA: `24dce2e`
+- Implementation SHA: `24dce2e`
 
-Não existe implementação ativa. O último lote, `AUTH-MODEL-INVENTORY-2026-08-21`,
-foi aprovado, arquivado e finalizado localmente. O worktree contém alterações
-preexistentes e outros documentos fora daquele lote, preservados sem stage
-amplo.
+Nenhuma implementação ativa. O lote aprovado anterior foi finalizado
+localmente e arquivado em `handoffs/archive/`.
 
-Push, merge, deploy, produção, secrets, migrations remotas e escritas externas
-continuam proibidos.
+O próximo trabalho só pode ser promovido após leitura da fila, dependências,
+allowlist e estado do worktree.
