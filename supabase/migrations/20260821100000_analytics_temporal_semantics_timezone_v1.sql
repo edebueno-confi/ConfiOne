@@ -76,26 +76,20 @@ begin
     elsif v_function = 'public.rpc_analytics_commercial_kpis_v2(date,date,text,text)' then
       v_old_patterns := array[
         'hs_created_at::date between p_from and p_to',
-        'hs_closed_at::date between p_from and p_to',
-        'sc.hs_closed_at::date between p_from and p_to'
+        'hs_closed_at::date between p_from and p_to'
       ];
       v_new_patterns := array[
         'hs_created_at >= app_private.analytics_period_start(p_from) and hs_created_at < app_private.analytics_period_end_exclusive(p_to)',
-        'hs_closed_at >= app_private.analytics_period_start(p_from) and hs_closed_at < app_private.analytics_period_end_exclusive(p_to)',
-        'sc.hs_closed_at >= app_private.analytics_period_start(p_from) and sc.hs_closed_at < app_private.analytics_period_end_exclusive(p_to)'
+        'hs_closed_at >= app_private.analytics_period_start(p_from) and hs_closed_at < app_private.analytics_period_end_exclusive(p_to)'
       ];
     elsif v_function = 'public.rpc_analytics_support_kpis_v2(date,date,text,text)' then
       v_old_patterns := array[
         'hs_created_at::date between p_from and p_to',
-        'sc.hs_created_at::date between p_from and p_to',
-        'resolved_at::date between p_from and p_to',
-        'sc.resolved_at::date between p_from and p_to'
+        'resolved_at::date between p_from and p_to'
       ];
       v_new_patterns := array[
         'hs_created_at >= app_private.analytics_period_start(p_from) and hs_created_at < app_private.analytics_period_end_exclusive(p_to)',
-        'sc.hs_created_at >= app_private.analytics_period_start(p_from) and sc.hs_created_at < app_private.analytics_period_end_exclusive(p_to)',
-        'resolved_at >= app_private.analytics_period_start(p_from) and resolved_at < app_private.analytics_period_end_exclusive(p_to)',
-        'sc.resolved_at >= app_private.analytics_period_start(p_from) and sc.resolved_at < app_private.analytics_period_end_exclusive(p_to)'
+        'resolved_at >= app_private.analytics_period_start(p_from) and resolved_at < app_private.analytics_period_end_exclusive(p_to)'
       ];
     elsif v_function = 'public.rpc_analytics_commercial_snapshot(date,date,text,text,text[])' then
       v_old_patterns := array[
