@@ -48,6 +48,30 @@
 - Fonte de continuidade: `docs/ANALYTICS_MRR_GOALS_FOUNDATION_V1.md`. Nenhum
   código, SQL, migration, RPC, UI ou serviço externo foi alterado neste lote.
 
+## Auditoria do domínio Financeiro — 2026-08-21
+
+- O Financeiro possui contrato local de Contas a Receber com fonte publicada
+  somente na API OMIE (`omie_receivables_api` e `is_current = true`). Planilhas
+  históricas permanecem preservadas, mas não são fallback do Dashboard.
+- A posição atual, vencido, aging e projeção usam `current_date`. O recorte
+  `p_from`/`p_to` usa `coalesce(due_date, issued_date)`; o campo
+  `last_received_date` não delimita o KPI chamado “Recebido no período”. Essa
+  semântica precisa de contrato local antes de ser explicada como pagamento no
+  período.
+- O gate financeiro atual é `app_private.can_read_analytics()` e o esquema
+  auditado não expõe `tenant_id` no read model financeiro. Isolamento por tenant
+  e histórico `as_of` são pendências próprias, não capacidades implícitas.
+- A documentação oficial do OMIE também expõe o caminho `ListarMovimentos` no
+  endpoint `financas/mf`, com data de pagamento e valores pagos, abertos e
+  líquidos. O ConfiOne ainda não possui read model local dessa fonte; ela exige
+  nova ingestão e validação de escopo antes de publicar “Recebido no período”.
+- `docs/specs/analytics-finance-omie-v1.md` descreve tenant/RLS, mas o contrato
+  executável auditado não confirma essa proteção: não há `tenant_id` nem filtro
+  tenant-aware nas RPCs financeiras. A afirmação fica registrada como intenção
+  não reconciliada até um lote próprio de autorização e RLS.
+- Fonte de continuidade: `docs/ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md`. Este lote
+  foi documental; não alterou código, SQL, migration, RPC, RLS, UI, integração,
+  credencial ou serviço externo.
 ## Fundação de predição comercial explicável — 2026-08-21
 
 - O backend já publica pipeline ponderado, conversão, ticket e ciclo com

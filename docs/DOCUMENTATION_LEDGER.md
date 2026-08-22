@@ -35,6 +35,34 @@
 - **Impacto futuro na FAQ:** documentar a origem e a data considerada de cada
   realizado quando a interface de metodologia for criada.
 
+## Auditoria do domínio Financeiro — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  contrato executável, permissão ou release surface.
+- **Fontes canônicas:** `analytics_finance_receivables`,
+  `analytics_finance_sync_runs`, `rpc_analytics_finance_snapshot`,
+  `rpc_analytics_finance_source_status`, normalizador/cliente OMIE e o contrato
+  `docs/specs/analytics-finance-omie-v1.md`.
+- **Registro:** OMIE API é a única fonte publicada do Dashboard; planilhas
+  permanecem históricas. Recebido, a receber, vencido e aging foram separados,
+  com datas, estados, frescor, proveniência e ausência explícitos.
+- **Reconciliação adicional:** a documentação oficial do OMIE apresenta
+  `ListarMovimentos` em `financas/mf`, com `dDtPagamento`, `nValPago`,
+  `nValAberto` e `nValLiquido`; o ConfiOne ainda não possui read model dessa
+  fonte. A capacidade é `REQUIRES_NEW_INGESTION`, não `API_LIMITATION`.
+- **Risco restante:** o período selecionado filtra vencimento/emissão e não
+  `last_received_date`; tenant-aware e histórico `as_of` não estão publicados.
+  A especificação que afirma tenant/RLS não foi confirmada pelo contrato
+  executável e permanece como intenção documental não reconciliada.
+- **Docs alterados:** `docs/ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas afetadas:** nenhuma; a UI foi auditada como evidência, sem alteração.
+- **Views/RPCs/migrations afetadas:** nenhuma; somente leitura e reconciliação.
+- **Validação:** auditoria documental, `docs:validate`, governance, `review:gates`
+  quando aplicável e `git diff --check` serão registrados no handoff.
+- **Impacto futuro na FAQ:** explicar fonte, campo de data, período, timezone,
+  fórmula, cobertura, ausência e limitação de cada indicador sem leitura do
+  código.
 ## Auditoria do domínio de Customer Success — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
