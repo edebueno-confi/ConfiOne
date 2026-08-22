@@ -17,6 +17,7 @@ test('menu publicado e guard compartilham a fonte de release para administrador'
 
   assert.deepEqual(ids(navigation), [
     'user-reception',
+    'admin-tenants',
     'admin-analytics',
     'admin-knowledge',
     'admin-knowledge-new',
@@ -29,7 +30,7 @@ test('menu publicado e guard compartilham a fonte de release para administrador'
     'admin-settings-help-center',
   ]);
   for (const destination of destinations) assert.equal(canOpenInternalRoute(destination, context), true, destination);
-  assert.equal(destinations.includes('/admin/tenants'), false);
+  assert.equal(destinations.includes('/admin/tenants'), true);
   assert.equal(destinations.includes('/support/queue'), false);
 });
 

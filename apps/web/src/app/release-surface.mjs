@@ -37,7 +37,7 @@ const INTERNAL_ROUTE_FAMILIES = [
 ];
 
 /** Screens published in the first release. */
-const FIRST_RELEASE_SCREEN_KEYS = ['home', 'analytics', 'knowledge', 'settings', 'access'];
+const FIRST_RELEASE_SCREEN_KEYS = ['home', 'analytics', 'knowledge', 'settings', 'access', 'tenants'];
 
 /**
  * Internal routes published in the first release.
@@ -81,6 +81,12 @@ const FIRST_RELEASE_ROUTES = [
     screenKey: 'access',
     rationale:
       'Administracao de usuarios, convites, areas e permissoes para perfis autorizados.',
+  },
+  {
+    path: '/admin/tenants',
+    screenKey: 'tenants',
+    rationale:
+      'Central de Clientes: carteira administrativa tenant-aware publicada com a tela tenants existente.',
   },
 ];
 
