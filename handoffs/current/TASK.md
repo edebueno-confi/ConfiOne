@@ -1,4 +1,4 @@
-# TASK: FINANCE-DOMAIN-AUDIT-2026-08-21
+# TASK: PRODUCT-DEV-DOMAIN-AUDIT-2026-08-21
 
 ## Estado de abertura
 
@@ -8,42 +8,42 @@
 - Reviewer active: Sentinel
 - Review mode: SENTINEL_REQUIRED
 - Approval: APPROVED
-- Base SHA: `55c097e18016ecdcf8d561a8b46980f771e6acf2`
-- Current SHA: `55c097e18016ecdcf8d561a8b46980f771e6acf2`
+- Base SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
+- Current SHA: `f8cb344b7feac2b0dc4bcba42c86b0a28af88f4c`
 
 ## Objetivo
 
-Auditar e documentar a semântica do domínio Financeiro no ConfiOne, com foco em
-recebido, a receber, vencido e aging. O documento deve distinguir posição
-atual, histórico, metas e ausência de dados, deixando explícitos fonte,
-proveniência, tenant, datas consideradas, timezone, frescor e permissões.
+Auditar e documentar a semântica dos indicadores de Produto e Desenvolvimento
+no ConfiOne, mantendo somente sinais ligados a decisões operacionais reais.
+Cada indicador deve declarar fonte, campo de data, período, timezone,
+proveniência, cobertura, frescor, permissões, estados de ausência e limitações.
 
 ## Escopo autorizado
 
-1. Criar `docs/ANALYTICS_FINANCE_DOMAIN_AUDIT_V1.md`.
-2. Atualizar, somente se necessário para refletir esta auditoria,
-   `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
-3. Atualizar os quatro artefatos deste handoff e a linha correspondente da
-   fila em `handoffs/README.md`.
-4. Auditar contratos, especificações e código local para registrar fatos,
-   hipóteses, limitações, estados de ausência e o menor próximo lote.
+1. Criar `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`.
+2. Atualizar, somente se necessário, `docs/PROJECT_STATE.md`,
+   `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+3. Atualizar os quatro artefatos deste handoff e a linha correspondente da fila
+   em `handoffs/README.md`.
+4. Auditar código, contratos, views/RPCs, migrations e testes locais para
+   separar capacidade existente, hipótese, ausência e próximo lote mínimo.
 
 ## Fora de escopo
 
-- Código de produto, SQL, RPC, view, migration, RLS, integração, ingestão ou
-  alteração de contratos executáveis.
-- UI, dashboard, cálculo local, escrita em HubSpot/Omie ou qualquer fonte
-  externa.
-- Push, merge, deploy, migration remota, secrets e release surface.
+- Código de produto, SQL, RPC, view, migration, RLS, ingestão ou integração.
+- UI, dashboard, cálculo local, novos indicadores ou alteração de contratos
+  executáveis.
+- Escrita em serviços externos, push, merge, deploy, secrets e release surface.
 
 ## Critérios de aceite
 
-- Cada métrica documentada possui fonte, campo, recorte temporal, timezone,
-  tenant, proveniência, cobertura, frescor e estado de ausência explicitados.
-- `received`, `receivable`, `overdue` e `aging` não são tratados como
-  equivalentes e ausência não é convertida em zero.
-- A documentação distingue contrato executável, snapshot histórico, hipótese
-  e capacidade que depende de nova ingestão, escopo ou decisão de produto.
-- A menor próxima task autorizada para validação/ingestão fica registrada sem
-  implementar trabalho fora deste lote.
-- `docs:validate`, `review:gates` quando aplicável e `git diff --check` passam.
+- Os indicadores documentados possuem fonte, regra, campo de data, timezone,
+  cobertura, frescor, permissão e estado de ausência explícitos.
+- Produto e Desenvolvimento não são usados como rótulo genérico para sinais sem
+  contrato ou como preenchimento decorativo do Dashboard.
+- A documentação distingue fonte executável, estado atual, histórico,
+  hipótese, nova ingestão, escopo pendente e limitação comprovada.
+- O menor próximo lote fica registrado sem implementar código ou UI fora desta
+  auditoria.
+- `docs:validate`, governance, `review:gates` quando aplicável e
+  `git diff --check` passam.
