@@ -280,6 +280,66 @@ uma referência canônica e testes de integridade, mediante task aprovada.
   estados de sessão/cache após concessão ou remoção; auditoria e contratos de
   leitura/escrita definidos.
 
+#### Contrato-alvo documental, sem implementação
+
+Este contrato é uma especificação de destino para decisão posterior. O código
+atual, RLS, RPCs, grants, migrations e capabilities continuam sendo a fonte
+executável; nenhuma conversão é implícita.
+
+**Objeto lógico:** `Usuário -> Nível -> Área -> Tela -> READ/WRITE`.
+
+- **Usuário:** identidade autenticada com profile ativo. Sessão, tenant e
+  contexto interno são pré-condições, não níveis de acesso.
+- **Nível:** linguagem de produto para alcance operacional, distinta de
+  `platform_admin`, papel de tenant, capability e publicação. O nível não
+  concede acesso a rota não publicada nem substitui RLS/backend.
+- **Área:** escopo funcional e tenant explícito. Ausência ou conflito
+  interrompe a concessão.
+- **Tela:** screen key e rota publicados pelo registry. Menu é descoberta; a
+  tela precisa passar release surface, guard e autorização backend.
+- **READ/WRITE:** `READ` permite consultar a tela/dados autorizados. `WRITE`
+  sempre implica `READ`, mas nunca o contrário. A escrita exige capability ou
+  comando backend compatível e não pode ser fabricada pelo frontend.
+
+**Resolução normativa proposta:** deny by default. Uma decisão `allow` só é
+válida quando usuário ativo, contexto ativo, tenant/área compatíveis, tela
+publicada e capability correspondente estiverem presentes. A precedência
+proposta é: sessão/profile/contexto inválidos negam; deny explícito vigente
+nega; tenant/área incompatíveis negam; publicação ausente nega; então allow
+de nível/área/tela/capability concede o menor escopo comprovado. Expiração,
+revogação ou conflito deixam o estado como `DENIED` ou `PENDING_REVIEW`, nunca
+como allow implícito.
+
+**Escopo e conflitos:** permissões globais não atravessam tenant sem vínculo
+explícito. Um grant de área não cria acesso a outra área. `platform_admin`
+preserva a semântica de console publicado, sem bypass de release, RLS,
+capability ou tenant. Se fontes divergirem ou houver ausência de vínculo, não
+converter silenciosamente; registrar conflito e interromper.
+
+**Ciclo de vida:** profile inativo, actor suspenso/revogado, membership inativa,
+tenant inválido, tela não publicada e sessão expirada resultam em negação
+explicável. Concessão e remoção devem invalidar/revalidar contexto antes de
+refletir novo estado; a cadência browser ainda é decisão pendente, pois o
+cache atual pode manter actor carregado até `refreshGate`.
+
+**Proteções administrativas:** não suspender o próprio administrador nem
+remover o último `platform_admin`; toda mutação passa por backend governado,
+registra actor, alvo, tenant, origem, antes/depois, motivo, timestamp e
+resultado. Falha parcial exige estado explícito e reconciliação.
+
+**De-para conceitual:** `profiles`/Auth são Usuário; papel global e
+`user_actor_contexts` são pré-condições e contexto; `tenant_memberships`
+e `internal_area_memberships` são Área/escopo; screen catalog e grants são
+Tela; role/profile capability grants e overrides são fontes de READ/WRITE;
+`ReleaseSurfaceGate` é publicação; RLS/RPCs são enforcement final. O de-para
+é compatibilidade conceitual, não instrução de migração.
+
+**Decisões pendentes do proprietário:** nomes e ordenação dos níveis; se
+profile screen grants participam da resolução final; precedência formal entre
+role, perfil, área e override; cadência de revalidação stale; auditoria mínima
+obrigatória; e política para registros ambíguos. Recomendações técnicas não
+autorizam tasks de implementação, migração ou consolidação.
+
 ### AUTH-RESOLUTION-GUARDS-NAVIGATION-2026-08-21
 
 - **Título:** Consolidar resolução de autorização, menu e route guards
