@@ -1,6 +1,4 @@
 # IMPLEMENTATION
 
-State: IDLE
-Owner: Forge
-
-Nenhuma implementação corrente.
+Nenhuma implementação corrente. O último lote foi arquivado após
+`FINALIZE_LOCAL` autorizado.
