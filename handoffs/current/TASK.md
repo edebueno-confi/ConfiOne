@@ -1,9 +1,9 @@
 # TASK
 
 - Task ID: `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21`
-- State: `READY_FOR_IMPLEMENTATION`
-- Owner: `Forge`
-- Role: `EXECUTOR`
+- State: `READY_FOR_REVIEW`
+- Owner: `Sentinel`
+- Role: `REVIEWER`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Approval: `APPROVED`
@@ -67,6 +67,7 @@ página, backend e dados.
 - `apps/web/src/features/login/LoginPage.tsx`
 - `tests/scripts/access-denied-feedback.test.mjs`
 - `tests/scripts/access-control-v2-contract.test.mjs`
+- `tests/scripts/auth-admin-denial-root-cause.test.mjs`
 - `tests/scripts/post-login-denial-feedback.test.mjs`
 - `tests/scripts/release-surface.test.mjs`
 - `handoffs/current/TASK.md`

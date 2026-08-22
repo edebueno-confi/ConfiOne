@@ -2,6 +2,7 @@ import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-cont
 import {
   getReleaseLandingRoute,
   isRoutePublishedInRelease,
+  resolveReleaseRedirect,
 } from '../../app/release-surface.mjs';
 
 export interface InternalRouteContext {
@@ -36,7 +37,7 @@ export function canOpenInternalRoute(
   // Step 1 of the validation order: a surface that is not published in the
   // current release is never reachable, regardless of the profile. This keeps
   // `platform_admin` inside the reduced surface during the release phase.
-  if (!isRoutePublishedInRelease(routePathname)) {
+  if (!isRoutePublishedInRelease(routePathname) && !resolveReleaseRedirect(routePathname)) {
     return false;
   }
 
@@ -59,6 +60,14 @@ export function canOpenInternalRoute(
   }
 
   if (matchesRoute(routePathname, '/admin')) {
+    // A valid platform_admin is authorized for the published Admin Console
+    // even when no per-screen grant has been materialized yet. The backend
+    // auth context already establishes this role; screen grants remain
+    // relevant for non-platform roles and do not replace deny by default.
+    if (context.roles.includes('platform_admin')) {
+      return true;
+    }
+
     if (routePathname === '/admin') {
       return (context.screenKeys ?? []).some((key) =>
         ['analytics', 'settings', 'knowledge', 'access'].includes(key),

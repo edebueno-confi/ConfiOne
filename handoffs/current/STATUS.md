@@ -1,7 +1,7 @@
 # STATUS
 
 - Task: `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21`
-- State: `READY_FOR_IMPLEMENTATION`
+- State: `APPROVED`
 - Owner: `Forge`
 - Role: `EXECUTOR`
 - Reviewer active: `Sentinel`
@@ -10,10 +10,13 @@
 - Base SHA: `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1`
 - Current SHA: `UNCOMMITTED_WORKTREE`
 
-Task 26 foi finalizada localmente com APPROVED formal do Sentinel, commit
-exclusivo `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1` e handoff arquivado.
+Sentinel aprovou a correção do falso `Acesso negado` para `platform_admin`:
+o guard agora permite a superfície `/admin` publicada mesmo sem
+`screen_keys`, preservando o gate de release e o deny by default para os
+demais perfis.
 
-Forge abriu a próxima task autorizada da fila: reproduzir e corrigir o caso de
-administrador válido recebendo `Acesso negado`, preservando isolamento,
-deny-by-default, sessão e estados de usuário inativo. Push, merge, deploy,
-migration remota, secrets e release continuam proibidos.
+F-AUTH-001 foi resolvido. A regressão autentica no backend local, confirma o
+role real, valida explicitamente `screenKeys=[]`, mantém sessão e nega usuário
+sem autorização. O lote está aprovado para finalização local pelo Forge.
+
+Push, merge, deploy, migration remota, secrets e release continuam proibidos.
