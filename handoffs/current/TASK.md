@@ -1,16 +1,12 @@
 # TASK
 
-- Task ID: `IDLE`
 - State: `IDLE`
+- Task: nenhuma task ativa
 - Owner: `Codex`
-- Role: `ORCHESTRATOR`
-- Reviewer active: `Sentinel`
-- Review mode: `SENTINEL_REQUIRED`
 - Coordinator: `Codex`
 - Agent coordination: `IDLE`
+- Próxima ação: ler `handoffs/README.md` e promover somente a próxima task elegível, com dependências e aprovação compatíveis.
 
-Nenhum lote ativo. A fila permanece sequencial e somente a próxima task
-autorizada pode ser promovida após conferência de dependências e critérios.
+O último lote finalizado foi arquivado em `handoffs/archive/DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21/`.
 
-Push, merge, deploy, produção, secrets, migrations remotas, chamadas externas
-e comandos de escrita continuam proibidos.
+Continuam proibidos: push, merge, deploy, produção, secrets, migrations remotas, chamadas externas e escritas em integrações.

@@ -1,5 +1,13 @@
 # VIEW_RPC_CONTRACTS.md
 
+## Analytics: escopo operacional de pipelines — 2026-08-22
+
+- `analytics_source_config` é a fonte canônica do vínculo `pipeline_id -> area_key -> group_company`. O identificador do pipeline é preservado; nome e emoji não são regra de seleção.
+- `rpc_analytics_pipeline_inventory(p_object_type)` consolida por objeto e pipeline, expõe `mapping_state`, mantém pendências/ambiguidade visíveis e reconcilia registros elegíveis de Todas contra cada operação.
+- `rpc_analytics_customer_success_kpis_by_operation(p_group_company)` é o wrapper publicado para Customer Success. O recorte usa pipeline de ticket confirmado e associação ingerida `ticket -> company`; ausência de confirmação ou vínculo retorna estado explícito, sem fallback por nome.
+- Comercial e Suporte continuam usando seus wrappers `*_by_operation`. Financeiro não recebe dimensão de operação. Produto e Desenvolvimento permanece indisponível até contrato GitHub aprovado.
+- Grants dos wrappers são restritos a `authenticated` e `service_role`; `anon` não executa os contratos.
+
 ## ACCESS CONTROL V2 — Ciclo de vida e permissões efetivas — 2026-08-11
 
 - `vw_admin_access_areas` mantém as colunas existentes e acrescenta `dependency_count`,

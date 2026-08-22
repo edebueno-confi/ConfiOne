@@ -549,12 +549,24 @@ export interface AnalyticsSourceConfig {
   label: string;
   isActive: boolean;
   areaKey: 'commercial' | 'customer_success' | 'support' | 'chat' | 'a_classificar';
-  classificationSource: 'legacy' | 'admin' | 'pending';
+  classificationSource: 'legacy' | 'admin' | 'confirmed' | 'pending';
   groupCompany: string;
   groupCompanySource: 'pending' | 'suggested' | 'confirmed';
   isArchived: boolean;
   discoveryStatus: 'pending' | 'active' | 'archived';
   lastDiscoveredAt: string | null;
+}
+
+export interface AnalyticsPipelineInventory {
+  pipelineId: string;
+  objectType: 'deal' | 'ticket';
+  domainKeys: string[];
+  areaKeys: string[];
+  groupCompanies: string[];
+  groupCompanySource: 'pending' | 'suggested' | 'confirmed';
+  mappingState: 'inactive' | 'ambiguous' | 'suggested' | 'unclassified' | 'confirmed';
+  isActive: boolean;
+  isArchived: boolean;
 }
 
 export interface AnalyticsSyncHistoryRow {
@@ -852,12 +864,30 @@ export function mapAnalyticsSourceConfig(row: Record<string, unknown>): Analytic
     label: label || hubspotLabel || pipelineId,
     isActive: Boolean(row.is_active),
     areaKey: ['commercial', 'customer_success', 'support', 'chat', 'a_classificar'].includes(areaKey) ? areaKey : 'a_classificar',
-    classificationSource: (['legacy', 'admin', 'pending'].includes(toText(row.classification_source)) ? toText(row.classification_source) : 'pending') as AnalyticsSourceConfig['classificationSource'],
+    classificationSource: (['legacy', 'admin', 'confirmed', 'pending'].includes(toText(row.classification_source)) ? toText(row.classification_source) : 'pending') as AnalyticsSourceConfig['classificationSource'],
     groupCompany: toText(row.group_company) || 'a_definir',
     groupCompanySource: (['pending', 'suggested', 'confirmed'].includes(toText(row.group_company_source)) ? toText(row.group_company_source) : 'pending') as AnalyticsSourceConfig['groupCompanySource'],
     isArchived: Boolean(row.is_archived),
     discoveryStatus: ['pending', 'active', 'archived'].includes(discoveryStatus) ? discoveryStatus : 'pending',
     lastDiscoveredAt: row.last_discovered_at ? toText(row.last_discovered_at) : null,
+  };
+}
+
+export function mapAnalyticsPipelineInventory(row: Record<string, unknown>): AnalyticsPipelineInventory {
+  const objectType = toText(row.object_type);
+  const source = toText(row.group_company_source);
+  const mappingState = toText(row.mapping_state);
+  const values = (value: unknown) => Array.isArray(value) ? value.map(toText).filter(Boolean) : [];
+  return {
+    pipelineId: toText(row.pipeline_id),
+    objectType: objectType === 'deal' ? 'deal' : 'ticket',
+    domainKeys: values(row.domain_keys),
+    areaKeys: values(row.area_keys),
+    groupCompanies: values(row.group_companies),
+    groupCompanySource: (['pending', 'suggested', 'confirmed'].includes(source) ? source : 'pending') as AnalyticsPipelineInventory['groupCompanySource'],
+    mappingState: (['inactive', 'ambiguous', 'suggested', 'unclassified', 'confirmed'].includes(mappingState) ? mappingState : 'unclassified') as AnalyticsPipelineInventory['mappingState'],
+    isActive: row.is_active === true,
+    isArchived: row.is_archived === true,
   };
 }
 

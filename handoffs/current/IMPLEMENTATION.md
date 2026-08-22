@@ -1,13 +1,9 @@
 # IMPLEMENTATION
 
-- Task ID: `IDLE`
 - State: `IDLE`
+- Task: nenhuma task ativa
 - Owner: `Codex`
-- Role: `ORCHESTRATOR`
-- Reviewer active: `Sentinel`
-- Review mode: `SENTINEL_REQUIRED`
 - Coordinator: `Codex`
 - Agent coordination: `IDLE`
 
-Nenhuma implementação ativa. O último lote aprovado foi arquivado no diretório
-correspondente de `handoffs/archive/`.
+O lote `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` foi aprovado pelo Sentinel e arquivado. Consulte o handoff arquivado para implementação, evidências e gates.

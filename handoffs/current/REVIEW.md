@@ -1,11 +1,8 @@
 # REVIEW
 
-- Task ID: `IDLE`
 - State: `IDLE`
-- Owner: `Codex`
-- Reviewer active: `Sentinel`
-- Review mode: `SENTINEL_REQUIRED`
-- Coordinator: `Codex`
+- Task: nenhuma task ativa
+- Último lote: `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`
+- Veredito: `APPROVED` pelo Sentinel; revisão preservada no handoff arquivado.
 
-Não há revisão ativa. O review aprovado do último lote está preservado no
-arquivo correspondente de `handoffs/archive/`.
+Nenhum finding de revisão está ativo no handoff corrente.

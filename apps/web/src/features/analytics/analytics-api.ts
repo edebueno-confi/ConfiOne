@@ -39,8 +39,10 @@ import {
   type AmbiguousOverdueTitle,
   mapReconciliationQuality,
   mapAnalyticsSourceConfig,
+  mapAnalyticsPipelineInventory,
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
+  type AnalyticsPipelineInventory,
   mapAnalyticsSyncHistory,
   type AnalyticsSyncHistoryRow,
   mapAnalyticsSourceStatus,
@@ -348,11 +350,22 @@ export async function getSupportKpisV2ForOverview(filters: AnalyticsFilters, gro
   return { period: periodResponse.data, current: currentResponse.data };
 }
 
-export async function getCustomerSuccessKpisV2(): Promise<unknown> {
+export async function getCustomerSuccessKpisV2(groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_customer_success_kpis_v2');
+  const { data, error } = await client.rpc('rpc_analytics_customer_success_kpis_by_operation', {
+    p_group_company: groupCompany,
+  });
   if (error) throw toAppError(error, 'Falha ao carregar os indicadores da carteira.');
   return data;
+}
+
+export async function getAnalyticsPipelineInventory(objectType: 'deal' | 'ticket' = 'ticket'): Promise<AnalyticsPipelineInventory[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_pipeline_inventory', { p_object_type: objectType });
+  if (error) throw toAppError(error, 'Falha ao carregar o inventário canônico de pipelines.');
+  const payload = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const rows = Array.isArray(payload.pipelines) ? payload.pipelines : [];
+  return rows.map((row) => mapAnalyticsPipelineInventory((row && typeof row === 'object' ? row : {}) as Row));
 }
 
 export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unknown> {

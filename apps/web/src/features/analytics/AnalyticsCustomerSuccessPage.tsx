@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { AnalyticsPageProps } from './analytics-model';
-import { getCustomerSuccessKpisV2 } from './analytics-api';
+import type { AnalyticsPageProps, AnalyticsPipelineInventory } from './analytics-model';
+import { getAnalyticsPipelineInventory, getCustomerSuccessKpisV2 } from './analytics-api';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard } from './analytics-ui';
 import { MinimalState } from '../../components/minimal-states';
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { CustomerSuccessOwnerPerformanceChart } from './charts/OwnerPerformanceCharts';
 import { toAnalyticsBlockState } from './analytics-kpi-contract.mjs';
+import { AnalyticsOperationScope } from './AnalyticsOperationScope';
 
 const CS_BANDS: BoardBand[] = [
   {
@@ -90,17 +91,35 @@ function currency(value: number | null | undefined): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
 
-export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
+export function AnalyticsCustomerSuccessPage({ sharedOperation, onSharedOperationChange, onRetry }: AnalyticsPageProps) {
   const [result, setResult] = useState<{ loading: boolean; data?: unknown; error?: boolean }>({ loading: true });
+  const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsPipelineInventory[]>([]);
+  const [groupCompany, setGroupCompany] = useState(sharedOperation ?? '');
+
+  useEffect(() => {
+    if (sharedOperation !== undefined && sharedOperation !== groupCompany) setGroupCompany(sharedOperation);
+  }, [groupCompany, sharedOperation]);
+
+  const handleGroupCompanyChange = (value: string) => {
+    setGroupCompany(value);
+    onSharedOperationChange?.(value);
+  };
 
   const load = () => {
     setResult((current) => (current.data ? { ...current, loading: true, error: undefined } : { loading: true }));
-    void getCustomerSuccessKpisV2()
-      .then((data) => setResult({ loading: false, data }))
+    void Promise.all([
+      getCustomerSuccessKpisV2(groupCompany || null),
+      getAnalyticsPipelineInventory('ticket'),
+    ])
+      .then(([data, configs]) => {
+        const activeConfigs = configs.filter((config) => config.areaKeys.includes('customer_success') && config.mappingState === 'confirmed' && config.isActive && !config.isArchived);
+        setConfiguredPipelines(activeConfigs);
+        setResult({ loading: false, data });
+      })
       .catch(() => setResult((current) => ({ ...current, loading: false, error: true })));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [groupCompany]);
 
   if (result.loading && !result.data) {
     return (
@@ -134,9 +153,17 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   const financialIdentity = ((payload as Record<string, unknown>).financial_identity ?? {}) as FinancialIdentity;
   const missingIdentityOverdueTitles = Number(financialIdentity.identity_missing_overdue_titles ?? 0);
   const missingIdentityOverdueBalance = Number(financialIdentity.identity_missing_overdue_balance ?? 0);
+  const operationScope = ((payload as Record<string, unknown>).operation_scope ?? {}) as { state?: string; reason?: string; ticket_count?: number; associated_ticket_count?: number };
 
   return (
-    <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE} state={state}>
+    <AnalyticsHdDomainFrame
+      title={TITLE}
+      description={DESCRIPTION}
+      source={SOURCE}
+      state={state}
+      headerAside={configuredPipelines.length > 0 ? <AnalyticsOperationScope storageKey="analytics-operation-scope" value={groupCompany} onChange={handleGroupCompanyChange} options={configuredPipelines.flatMap((pipeline) => pipeline.groupCompanies.map((value) => ({ value, source: pipeline.groupCompanySource })))} /> : null}
+    >
+      {groupCompany && operationScope.state && operationScope.state !== 'available' ? <p role="status" className="mb-4 text-xs text-[color:var(--minimal-text-tertiary)]">Operação <strong>{groupCompany}</strong>: {operationScope.state === 'partial' ? 'a cobertura ticket-empresa é parcial' : 'a cobertura ticket-empresa está indisponível'} ({operationScope.reason ?? 'motivo não informado'}). {operationScope.ticket_count ?? 0} tickets, {operationScope.associated_ticket_count ?? 0} com associação válida. O backend não infere carteira por nome.</p> : null}
       <AnalyticsKpiBoard payload={payload} bands={CS_BANDS} />
 
       <div className="grid gap-4 xl:grid-cols-2">

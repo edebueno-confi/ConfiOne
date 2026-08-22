@@ -1,21 +1,15 @@
 # STATUS
 
-- Task: `IDLE`
+- Task: nenhuma task ativa
 - State: `IDLE`
 - Owner: `Codex`
-- Role: `ORCHESTRATOR`
+- Role: `COORDINATOR`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Coordinator: `Codex`
-- Notification protocol: evento direto entre agentes e aviso ao Codex; três
-  heartbeats recorrentes de recuperação em 30 minutos.
 - Agent coordination: `IDLE`
-- Approval: `N/A`
-- Base SHA: `1c8939583a78faffe8267bbbfdfb82c30a6af94c`
-- Current SHA: `UNCOMMITTED_WORKTREE`
+- Notification protocol: evento direto entre agentes e aviso ao Codex; heartbeat como fallback de recuperação.
+- Última task finalizada: `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`
+- Último veredito: `APPROVED` pelo Sentinel; handoff arquivado.
 
-O painel visual foi aprovado pelo Sentinel e arquivado localmente. A fila pode
-prosseguir somente após promoção explícita da próxima task elegível.
-
-Push, merge, deploy, produção, secrets, migrations remotas, chamadas externas
-e comandos de escrita continuam proibidos.
+O próximo passo é promover apenas a próxima task elegível da fila, respeitando dependências, allowlist, gates e revisão independente. Push, merge, deploy, produção, secrets, migrations remotas, chamadas externas e escritas em integrações continuam proibidos.

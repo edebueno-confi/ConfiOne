@@ -664,7 +664,7 @@ function ExecutiveHdCanvas({
         </div>
       </div>
 
-      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte foi aplicado aos read models de Comercial e Suporte. Customer Success e Financeiro exibem somente indicadores com dimensão publicada; o consolidado global é marcado como indisponível neste recorte.</p> : null}
+      {groupCompany ? <p className="gso-hd-inline-status" role="status">Operação <strong>{groupCompany}</strong>: o recorte é aplicado server-side aos read models publicados de Comercial e Suporte. Customer Success só publica o recorte quando há pipeline de ticket confirmado e associação ticket-empresa; Financeiro permanece consolidado e fora desta dimensão.</p> : null}
 
       {executiveKpis ? (
         <>
