@@ -7,7 +7,7 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Último lote: `R1-UTF8-ENCODING-INTEGRITY-2026-08-21`
+- Último lote: `ANALYTICS-METRIC-METHODOLOGY-2026-08-21`
 - Último veredito: APPROVED por Sentinel
 - Próximo passo: aguardar promoção explícita da próxima task elegível.
 

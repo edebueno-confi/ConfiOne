@@ -2,7 +2,7 @@
 
 > Status: canônico para os indicadores publicados por contratos locais reconciliados em 2026-08-21.
 >
-> Escopo: registro técnico-legível das métricas já publicadas na Visão Geral, Comercial e Suporte/Customer Success. Este documento não cria KPI, não altera fórmula e não autoriza exposição adicional na interface.
+> Escopo: registro técnico-legível das métricas já publicadas ou explicitamente indisponíveis na Visão Geral, Comercial, Suporte, Customer Success, Financeiro e Produto/Desenvolvimento. Este documento não cria KPI, não altera fórmula e não autoriza exposição adicional na interface.
 
 ## Como ler este registro
 
@@ -26,6 +26,7 @@ As fontes de cálculo são server-side. A interface lê o payload do RPC e não 
 | Customer Success | HubSpot Companies com ligação financeira auditável | rpc_analytics_customer_success_kpis_v2 | MRR, cliente ativo e cobertura dependem de configuração e do vínculo HubSpot ↔ OMIE. |
 | Financeiro | OMIE via read model local de contas a receber | rpc_analytics_finance_snapshot e rpc_analytics_finance_source_status | Planilhas são históricas/staging; não são fallback do Dashboard publicado. |
 | Visão Geral | Composição dos read models acima | rpc_analytics_executive_kpis_v2 e rpc_analytics_ceo_snapshot | A Visão Geral reutiliza os domínios e não possui fórmula paralela. |
+| Produto/Desenvolvimento | Nenhuma fonte executável publicada no Analytics atual | bloco `product`/`development` de `rpc_analytics_ceo_snapshot` | O contrato retorna estado, fonte e motivo de indisponibilidade; não há KPI numérico publicado nem read model GitHub/roadmap neste lote. |
 
 Precedência em caso de divergência: código executável, migrations/views/RPCs e testes; depois contratos e documentação corrente; por último relatórios históricos. ANALYTICS_METRIC_CATALOG_V1.md permanece como catálogo histórico de contexto e não substitui este registro corrente.
 
@@ -51,9 +52,64 @@ Cada entrada de KPI tem state, value, basis e, quando necessário, reason:
 
 Ausência nunca deve ser convertida silenciosamente em zero. Zeros legítimos continuam possíveis quando a regra realmente calcula zero; alguns produtores usam nullif para tratar valor monetário zero sem evidência como indisponível. O estado do payload, e não uma inspeção visual isolada, é a fonte da decisão.
 
+### Proveniência, frescor e evidência mínima
+
+Os contratos `KpiEntry` e `KpiMeta` preservam `basis`, `state`, `reason`,
+`freshness_at`, `period_from`, `period_to`, `history_days` e avisos de cobertura
+quando o RPC os publica. A origem material é a tabela/read model indicada na
+coluna de fonte, e não o label mostrado na interface. `freshness_at` é o maior
+`synced_at` observado pelo read model do domínio; não significa que todos os
+registros do período estejam completos. Quando a função não publica cobertura,
+frescor ou denominador, isso é uma lacuna de evidência, não uma autorização para
+inferir disponibilidade.
+
+| Dimensão auditada | Regra documental | Evidência executável reconciliada |
+| --- | --- | --- |
+| Fonte e contrato | registrar RPC chamado e objeto/read model consumido | `analytics-api.ts`, `analytics-model.ts` e migrations dos RPCs |
+| Data/coorte | separar `*_created_at`, `*_closed_at`, resolução e posição atual | `app_private.kpi_entry` e os campos `basis` dos RPCs |
+| Período/timezone | `America/Sao_Paulo`, início inclusivo e fim exclusivo; timestamps de origem em UTC | migration `20260821100000_analytics_temporal_semantics_timezone_v1.sql` |
+| Estado/nulo | `available`, `partial`, `unavailable` e `awaiting_history`; zero não substitui ausência | `analytics-kpi-contract.mjs` e `app_private.kpi_entry` |
+| Frescor | declarar o `freshness_at` efetivamente publicado, sem prometer completude | metadados dos read models HubSpot/OMIE |
+| Filtros/escopo | filtros server-side e autorização do RPC; operação não é regra local de UI | `analytics-api.ts` e `20260822070000_analytics_pipeline_operation_governance_v1.sql` |
+
+## Matriz de disponibilidade auditada por domínio
+
+| Domínio | Estado atual | Fonte/contrato | Coorte ou posição | Cobertura, frescor e limitação |
+| --- | --- | --- | --- | --- |
+| Visão Geral | publicado para os blocos com read model; Produto/Desenvolvimento indisponível | `rpc_analytics_executive_kpis_v2` e `rpc_analytics_ceo_snapshot` | período e posição corrente em chamadas separadas | composição reutiliza Comercial, Suporte, CS e Financeiro; frescor é o metadado máximo dos domínios; não há fórmula paralela |
+| Comercial | publicado | `hubspot_deals`, `hubspot_pipeline_stages`, `analytics_source_config`; RPCs `*_commercial_*` | `hs_created_at`, `hs_closed_at` ou estágio atual | depende de pipeline ativo/classificação e cobertura de amount/probability/datas; históricos de etapa aguardam série |
+| Suporte | publicado/partial por KPI | `hubspot_tickets`, `hubspot_pipeline_stages`, `analytics_ticket_resolution_history`; RPCs `*_support_*` e snapshot CS | `hs_created_at`, resolução/primeira resposta ou estado atual | SLA, resolução, reabertura e histórico expõem cobertura/estado; snapshot executivo usa a coorte criada e estado atual |
+| Customer Success | publicado/partial por cobertura | `hubspot_companies`, vínculos financeiros e associações ticket→empresa; `rpc_analytics_customer_success_kpis_v2` | posição atual de empresa, títulos e tickets associados | MRR, atraso e tickets dependem de vínculo/associação válida; sem cobertura suficiente, o contrato deve permanecer partial/unavailable com reason |
+| Financeiro | publicado somente por API OMIE/read model local | `analytics_finance_receivables`, `rpc_analytics_finance_snapshot`, `rpc_analytics_finance_source_status` | posição financeira e datas do título/pagamento conforme contrato | frescor vem de `analytics_finance_sync_runs`; planilha não é fallback; ausência de sync/read model é unavailable |
+| Produto/Desenvolvimento | indisponível | `rpc_analytics_ceo_snapshot` retorna `status`, `source`, `reason`, sem métricas numéricas | não há coorte nem posição publicada | GitHub, roadmap, releases, deployments e PRs não têm contrato/read model executável neste lote; não inferir throughput, lead time ou estabilidade |
+
+### Campos financeiros e semântica de pagamento
+
+No read model financeiro, `received_amount` usa o valor recebido associado à
+data de pagamento (`dDtPagamento`/campo normalizado de pagamento), enquanto
+`open_receivables`, `overdue_receivables` e `overdue_rate` usam o saldo aberto,
+vencimento e aging da posição (`nValAberto`, data de vencimento e bucket de
+aging). O valor líquido (`nValLiquido`) e o valor pago (`nValPago`) são campos
+da origem de movimentos quando disponíveis para reconciliação, mas não devem
+ser tratados como uma segunda fonte publicada sem read model/contrato
+correspondente. O frescor é o último sync OMIE bem-sucedido, não a data de
+alteração da página. A migration `20260802020000_analytics_finance_api_only_surface_v1.sql`
+explicita que o Dashboard não usa planilha como fallback.
+
+### Produto e Desenvolvimento: indisponibilidade explícita
+
+O `CeoSnapshot` tipa `product` e `development` como blocos com `status`,
+`source` e `reason`. Esse contrato é uma declaração de estado de fonte, não um
+KPI. Sem ingestão/read model oficial para PRs, reviews, releases, deployments,
+projetos, incidentes ou ambientes, o estado correto é `unavailable` ou
+`not_configured` com motivo explícito. Não há base local para declarar
+`created_at`, `closed_at`, throughput, lead time, taxa de falha ou cobertura de
+deploy. Essa lacuna é fato do contrato local; a disponibilidade futura de APIs
+externas é hipótese/escopo de outro lote.
+
 ### Filtros e escopo
 
-O filtro temporal é p_from/p_to. Conforme a tela e o domínio, também podem ser aplicados responsável, pipeline, estágio, prioridade, empresa/grupo de operação e pipelines excluídos. O recorte de operação é preferência de leitura server-side, não uma nova permissão. A autorização continua sendo aplicada por app_private.can_read_analytics() e pelos grants dos RPCs.
+O filtro temporal é p_from/p_to. Conforme a tela e o domínio, também podem ser aplicados responsável, pipeline, estágio, prioridade, empresa/grupo de operação e pipelines excluídos. O recorte de operação é preferência de leitura server-side, não uma nova permissão. A autorização continua sendo aplicada por app_private.can_read_analytics() e pelos grants dos RPCs. A correspondência entre pipeline, área e operação foi validada e arquivada pela task `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21`; não se deve inferir operação pelo nome textual do pipeline.
 
 ## Visão Geral
 
@@ -194,7 +250,7 @@ A regra de cliente ativo, a fonte de MRR e o limiar de inatividade são metadado
 - SLA e tempo de resposta só são publicados quando há cobertura do campo ou do status correspondente; ausência não é interpretada como cumprimento.
 - Aging de etapa, conversão por etapa, churn, NRR, GRR e backlog histórico dependem de histórico e permanecem awaiting_history quando a série é insuficiente.
 - Chat, conversas e outras fontes externas não entram neste registro sem contrato executável.
-- ANALYTICS-METRIC-METHODOLOGY-2026-08-21 e ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 continuam PROPOSED: este registro prepara a base auditável, mas não expõe ainda a metodologia na interface.
+- `ANALYTICS-METRIC-METHODOLOGY-2026-08-21` é o lote corrente de documentação da metodologia, entregue para revisão; `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21` continua PROPOSED. Este registro não expõe ainda a metodologia na interface.
 
 ## Evidência executável
 
@@ -208,7 +264,8 @@ A regra de cliente ativo, a fonte de MRR e o limiar de inatividade são metadado
 
 ## Próximas evoluções autorizadas na fila
 
-1. ANALYTICS-METRIC-METHODOLOGY-2026-08-21 (PROPOSED): transformar este registro em explicação de metodologia para usuários, incluindo exemplos e ressalvas por indicador.
-2. ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 (PROPOSED): expor o contexto no produto sem obrigar leitura do código ou deste repositório.
+1. ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 (PROPOSED): expor o contexto no produto sem obrigar leitura do código ou deste repositório.
+2. DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21 (DONE): mapa de pipelines HubSpot por objeto, área e operação validado e arquivado; filtros e reconciliações server-side permanecem sujeitos ao contrato executável.
+3. R1-UTF8-ENCODING-INTEGRITY-2026-08-21 (DONE): integridade de charset tratada como mitigação defensiva e handoff arquivado; a causa de corrupção permanece não confirmada no runtime local.
 
 Essas evoluções não fazem parte deste lote e não foram marcadas como prontas.

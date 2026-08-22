@@ -1,4 +1,4 @@
 # REVIEW
 
-Nenhuma revisão ativa. O último review pertence ao lote arquivado
-`R1-UTF8-ENCODING-INTEGRITY-2026-08-21`.
+Nenhuma revisão ativa. O último veredito pertence ao lote arquivado
+`ANALYTICS-METRIC-METHODOLOGY-2026-08-21`.
