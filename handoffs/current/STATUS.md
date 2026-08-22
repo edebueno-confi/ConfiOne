@@ -7,9 +7,6 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Última task: `AUTH-TARGET-ACCESS-CONTRACT-2026-08-21`
-- Último veredito: APPROVED por Sentinel
-- Próximo passo: aguardar promoção explícita da próxima task elegível.
+- Approval: NONE
 
-Sem push, merge, deploy, produção, secrets, migrations remotas, chamadas
-externas ou escritas em integrações.
+Nenhuma task corrente ativa.

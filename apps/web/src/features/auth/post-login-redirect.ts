@@ -38,9 +38,10 @@ function normalizeRedirectTo(rawValue: string | null) {
 /**
  * Applies the release manifest's technical redirects before permission checks.
  *
- * `/inicio` is retained as a compatibility entry point, but the reduced
- * release publishes `/admin/analytics`. Checking the compatibility pathname
- * directly would incorrectly deny a valid platform administrator session.
+ * `/inicio` is the neutral authenticated reception. It is intentionally kept
+ * as a real route instead of being converted into a product-specific landing
+ * page, so a user without access to a requested area still has a safe entry
+ * point.
  */
 export function normalizePostLoginRedirectTarget(rawValue: string | null) {
   const normalized = normalizeRedirectTo(rawValue);
@@ -128,12 +129,33 @@ export async function resolvePostLoginRedirect(
   }
 
   if (!data) {
-    return {
-      destination: null,
-      denialReason: 'missing-profile',
+    const customerPortalAccess = await hasCustomerPortalAccess();
+    const context: InternalRouteContext = {
       roles: [],
       screenKeys: [],
-      hasCustomerPortalAccess: false,
+      hasCustomerPortalAccess: customerPortalAccess,
+      hasInternalActionAreaAccess: false,
+      hasCsPortfolioAccess: false,
+      hasReceptionAccess: true,
+    };
+    const redirectTo = normalizePostLoginRedirectTarget(rawRedirectTo);
+    const requestedRouteAllowed = redirectTo
+      ? canOpenInternalRoute(redirectTo, context)
+      : null;
+    const destination = redirectTo
+      ? requestedRouteAllowed
+        ? redirectTo
+        : '/inicio'
+      : '/inicio';
+
+    return {
+      destination,
+      denialReason: redirectTo && requestedRouteAllowed === false
+        ? 'missing-authorized-workspace'
+        : null,
+      roles: [],
+      screenKeys: [],
+      hasCustomerPortalAccess: customerPortalAccess,
       hasInternalActionAreaAccess: false,
       hasCsPortfolioAccess: false,
     };
@@ -165,13 +187,14 @@ export async function resolvePostLoginRedirect(
     hasCustomerPortalAccess: customerPortalAccess,
     hasInternalActionAreaAccess: internalActionAreaAccess,
     hasCsPortfolioAccess: csPortfolioAccess,
+    hasReceptionAccess: true,
   };
   const redirectTo = normalizePostLoginRedirectTarget(rawRedirectTo);
   const requestedRouteAllowed = redirectTo ? canOpenInternalRoute(redirectTo, context) : null;
   const destination = redirectTo
     ? requestedRouteAllowed
       ? redirectTo
-      : '/access-denied'
+      : getDefaultInternalLandingRoute(context)
     : getDefaultInternalLandingRoute(context);
 
   return {

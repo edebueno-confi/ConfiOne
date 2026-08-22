@@ -11,6 +11,8 @@ export interface InternalRouteContext {
   hasCustomerPortalAccess: boolean;
   hasInternalActionAreaAccess: boolean;
   hasCsPortfolioAccess: boolean;
+  /** Sessão autenticada pode sempre abrir a recepção, mesmo sem área operacional. */
+  hasReceptionAccess?: boolean;
 }
 
 function matchesRoute(pathname: string, basePath: string) {
@@ -43,6 +45,7 @@ export function canOpenInternalRoute(
 
   if (matchesRoute(routePathname, '/inicio')) {
     return (
+      context.hasReceptionAccess === true ||
       context.roles.includes('platform_admin') ||
       hasAnyRole(context.roles, [
         'support_manager',
@@ -143,6 +146,10 @@ export function canOpenInternalRoute(
 }
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
+  if (context.hasReceptionAccess === true && isRoutePublishedInRelease('/inicio')) {
+    return '/inicio';
+  }
+
   // While a reduced surface is published, the post-login destination must be a
   // published route. The candidate list below stays intact for the full mode.
   const releaseLanding = getReleaseLandingRoute();
