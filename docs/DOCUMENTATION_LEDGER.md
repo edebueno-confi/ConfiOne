@@ -149,6 +149,29 @@
 - **Riscos restantes:** sem contrato server-side e método validado, data,
   probabilidade, receita futura e confiança permanecem indisponíveis.
 
+## Auditoria do domínio Produto e Desenvolvimento — 2026-08-21
+
+- **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,
+  contrato executável, permissão ou release surface.
+- **Fontes canônicas:** `AnalyticsUnavailablePages`, `rpc_analytics_ceo_snapshot`,
+  Engineering Workspace (`engineering_work_items` e views/RPCs), Development
+  Control Plane local, roadmap e handoffs.
+- **Registro:** a área de Produto/Desenvolvimento permanece sem analytics
+  publicado e sem chamada ao GitHub. A fila técnica de Engenharia é real,
+  tenant-aware e originada de tickets, mas não é backlog de Produto. Commit,
+  `DONE` e dirty count do Control Plane não provam release ou deploy.
+- **Disponibilidade:** fila/status/update técnico são `AVAILABLE_NOW` em seu
+  próprio workspace; GitHub, releases, pull requests, throughput, lead time,
+  incidentes e ambientes exigem escopo e/ou nova ingestão. Não foi comprovada
+  `API_LIMITATION`.
+- **Docs alterados:** `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `docs/README.md`.
+- **Telas e objetos executáveis:** nenhum objeto executável foi alterado. A UI
+  de espera foi auditada como proteção contra métricas simuladas.
+- **Validação:** governance, auditoria documental, `docs:validate`,
+  `review:gates` quando aplicável e `git diff --check` serão registrados no
+  handoff.
+- **Riscos restantes:** falta decidir a fonte oficial de Produto, confirmar
 ## Fundação de contratos próximos do vencimento — 2026-08-21
 
 - **Tipo:** descoberta e fundação documental; sem mudança de runtime, banco,

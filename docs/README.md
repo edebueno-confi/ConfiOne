@@ -12,6 +12,7 @@
 - [Importação local do diretório HubSpot](./reports/HUBSPOT_CUSTOMER_DIRECTORY_IMPORT_2026-08-16.md)
 - [Auditoria do domínio Customer Success V1](./ANALYTICS_CS_DOMAIN_AUDIT_V1.md) — fontes locais, descoberta oficial das APIs HubSpot e lacunas de health score, churn, expansão e renovação.
 - [Auditoria do domínio de Suporte V1](./ANALYTICS_SUPPORT_DOMAIN_AUDIT_V1.md) — fila, tickets, conversas, chat, SLA, aging, prioridade, tenant e semântica de datas.
+- [Auditoria do domínio Produto e Desenvolvimento V1](./ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md) — separa a espera por GitHub, a operação técnica de Engenharia e as métricas que ainda exigem fonte, ingestão e histórico.
 
 - [VIEW_RPC_CONTRACTS.md](./VIEW_RPC_CONTRACTS.md) — contratos de agrupamento interno da Central de Clientes (`customer_account_groups`).
 - [Customer Relationship Groups V1](./reports/CUSTOMER_RELATIONSHIP_GROUPS_V1_2026-08-16.md) — decisão de domínio, implementação e validação da Central de Clientes.

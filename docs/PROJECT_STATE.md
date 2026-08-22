@@ -83,6 +83,25 @@
 - Fonte de continuidade: `docs/ANALYTICS_PREDICTION_FOUNDATION_V1.md`. O lote
   permanece documental até existir contrato server-side e método validado.
 
+## Auditoria do domínio Produto e Desenvolvimento — 2026-08-21
+
+- Não existe contrato analítico publicado para Produto e Desenvolvimento. A
+  rota `product-development` permanece em espera explícita: GitHub é fonte
+  futura, sem chamada, token, secret, contrato ou métrica nesta etapa.
+- O Engineering Workspace possui `engineering_work_items`, updates, links,
+  views e RPCs reais para demandas técnicas originadas de tickets. O contrato é
+  tenant-aware, auditável e útil para fila/status atual, mas não é backlog de
+  Produto, sprint, release, pull request, throughput ou lead time.
+- O Development Control Plane local lê handoffs, fila e Git para governança do
+  repositório. Commit, `DONE` e dirty count não são prova de entrega publicada,
+  deploy ou estabilidade de ambiente.
+- Roadmap, releases, pull requests, lead time, throughput, incidentes e
+  ambientes permanecem `REQUIRES_SCOPE` e/ou `REQUIRES_NEW_INGESTION`, conforme
+  a fonte; não há evidência para `API_LIMITATION`.
+- Fonte de continuidade: `docs/ANALYTICS_PRODUCT_DEV_DOMAIN_AUDIT_V1.md`.
+  Nenhum código, SQL, migration, RPC, RLS, integração ou UI foi alterado neste
+  lote.
+
 ## Fundação de contratos próximos do vencimento — 2026-08-21
 
 - Existem `renewal_at`, `ended_at`, status e owners de Customer Success nas
