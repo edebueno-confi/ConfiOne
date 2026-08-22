@@ -1,4 +1,7 @@
 # REVIEW
 
-Nenhuma revisão ativa. O último veredito pertence ao lote arquivado
-`ANALYTICS-METRIC-METHODOLOGY-2026-08-21`.
+Último veredito formal: `APPROVED` por Sentinel para
+`ANALYTICS-METRIC-CONTEXT-UI-2026-08-21`.
+
+O handoff completo foi arquivado em
+`handoffs/archive/ANALYTICS-METRIC-CONTEXT-UI-2026-08-21/`.

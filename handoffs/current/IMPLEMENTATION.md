@@ -2,5 +2,9 @@
 
 Estado corrente: `IDLE`.
 
-Evidências do último lote estão em
-`handoffs/archive/ANALYTICS-METRIC-METHODOLOGY-2026-08-21/`.
+Último lote finalizado localmente:
+`ANALYTICS-METRIC-CONTEXT-UI-2026-08-21`.
+Commit: `e73b7f9`.
+Veredito: `APPROVED` por Sentinel.
+
+Alterações preexistentes fora da allowlist foram preservadas no worktree.

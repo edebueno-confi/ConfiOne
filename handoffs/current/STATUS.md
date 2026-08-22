@@ -7,7 +7,7 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Último lote: `ANALYTICS-METRIC-METHODOLOGY-2026-08-21`
+- Última task: `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21`
 - Último veredito: APPROVED por Sentinel
 - Próximo passo: aguardar promoção explícita da próxima task elegível.
 

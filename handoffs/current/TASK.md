@@ -5,6 +5,6 @@
 - Role: EXECUTOR
 - Reviewer active: Sentinel
 - Review mode: SENTINEL_REQUIRED
-- Agent coordination: IDLE
+- Coordinator: Codex
 
-Último lote arquivado: `ANALYTICS-METRIC-METHODOLOGY-2026-08-21`.
+Última task arquivada: `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21`.

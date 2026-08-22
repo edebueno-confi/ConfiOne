@@ -250,7 +250,7 @@ A regra de cliente ativo, a fonte de MRR e o limiar de inatividade são metadado
 - SLA e tempo de resposta só são publicados quando há cobertura do campo ou do status correspondente; ausência não é interpretada como cumprimento.
 - Aging de etapa, conversão por etapa, churn, NRR, GRR e backlog histórico dependem de histórico e permanecem awaiting_history quando a série é insuficiente.
 - Chat, conversas e outras fontes externas não entram neste registro sem contrato executável.
-- `ANALYTICS-METRIC-METHODOLOGY-2026-08-21` é o lote corrente de documentação da metodologia, entregue para revisão; `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21` continua PROPOSED. Este registro não expõe ainda a metodologia na interface.
+- `ANALYTICS-METRIC-METHODOLOGY-2026-08-21` foi concluído e aprovado; `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21` está em implementação para expor o contexto metodológico na interface sem recalcular indicadores.
 
 ## Evidência executável
 
@@ -264,7 +264,7 @@ A regra de cliente ativo, a fonte de MRR e o limiar de inatividade são metadado
 
 ## Próximas evoluções autorizadas na fila
 
-1. ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 (PROPOSED): expor o contexto no produto sem obrigar leitura do código ou deste repositório.
+1. ANALYTICS-METRIC-CONTEXT-UI-2026-08-21 (READY_FOR_REVIEW): contexto metodológico exposto sob demanda na grade compartilhada, aguardando validação independente do Sentinel.
 2. DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21 (DONE): mapa de pipelines HubSpot por objeto, área e operação validado e arquivado; filtros e reconciliações server-side permanecem sujeitos ao contrato executável.
 3. R1-UTF8-ENCODING-INTEGRITY-2026-08-21 (DONE): integridade de charset tratada como mitigação defensiva e handoff arquivado; a causa de corrupção permanece não confirmada no runtime local.
 

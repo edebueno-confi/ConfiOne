@@ -77,3 +77,13 @@ test('o painel codifica o estado no próprio indicador', () => {
   assert.match(grid, /data-state=\{entry\.state\}/);
   assert.match(grid, /AnalyticsBoardLimitations/);
 });
+
+test('o contexto metodológico é acessível sob demanda e usa metadados do contrato', () => {
+  assert.match(grid, /<details className="gso-board-item__context">/);
+  assert.match(grid, /<summary>Como interpretar<\/summary>/);
+  assert.match(grid, /describeKpiState\(entry\)/);
+  assert.match(grid, /meta\.periodFrom|meta\.periodTo/);
+  assert.match(grid, /meta\.coveragePercent/);
+  assert.match(grid, /meta\.freshnessAt/);
+  assert.match(grid, /não informada no contrato/);
+});
