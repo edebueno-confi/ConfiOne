@@ -1,22 +1,18 @@
 # STATUS
 
-- Task: `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21`
-- State: `APPROVED`
+- Task: `IDLE`
+- State: `IDLE`
 - Owner: `Forge`
 - Role: `EXECUTOR`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
-- Approval: `APPROVED`
-- Base SHA: `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1`
-- Current SHA: `UNCOMMITTED_WORKTREE`
+- Approval: `NONE`
+- Base SHA: `0581660ae9b617845b66160dfa6059616cabecce`
+- Current SHA: `0581660ae9b617845b66160dfa6059616cabecce`
 
-Sentinel aprovou a correção do falso `Acesso negado` para `platform_admin`:
-o guard agora permite a superfície `/admin` publicada mesmo sem
-`screen_keys`, preservando o gate de release e o deny by default para os
-demais perfis.
-
-F-AUTH-001 foi resolvido. A regressão autentica no backend local, confirma o
-role real, valida explicitamente `screenKeys=[]`, mantém sessão e nega usuário
-sem autorização. O lote está aprovado para finalização local pelo Forge.
+`AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21` foi aprovado por Sentinel, integrado
+localmente pelo Forge com commit exclusivo, arquivado e marcado como `DONE`.
+Não existe próxima task autorizada e elegível: `AUTH-MODEL-INVENTORY-2026-08-21`
+permanece `PROPOSED`.
 
 Push, merge, deploy, migration remota, secrets e release continuam proibidos.
