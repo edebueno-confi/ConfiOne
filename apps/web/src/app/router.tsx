@@ -432,6 +432,10 @@ export const router = createBrowserRouter([
             element: withSuspense(<TenantsPage />),
           },
           {
+            path: 'customer-central',
+            element: withSuspense(<TenantsPage />),
+          },
+          {
             path: 'knowledge',
             element: withSuspense(<KnowledgePage />),
           },
