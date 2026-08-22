@@ -5,13 +5,14 @@ import test from 'node:test';
 const base = new URL('../../apps/web/src/features/analytics/', import.meta.url);
 const read = (name) => readFile(new URL(name, base), 'utf8');
 
-const [ceo, comercial, suporte, carteira, financeiro, grid] = await Promise.all([
+const [ceo, comercial, suporte, carteira, financeiro, grid, density] = await Promise.all([
   read('AnalyticsCeoPage.tsx'),
   read('AnalyticsCommercialPage.tsx'),
   read('AnalyticsCsPage.tsx'),
   read('AnalyticsCustomerSuccessPage.tsx'),
   read('AnalyticsFinancePage.tsx'),
   read('AnalyticsKpiBoard.tsx'),
+  read('high-density.css'),
 ]);
 
 /** Índice da primeira ocorrência, ou -1. */
@@ -84,4 +85,11 @@ test('o painel organiza por coorte, não por importância solta', () => {
   assert.match(grid, /bands: BoardBand\[\]/);
   assert.match(grid, /A coorte organiza o espaço/);
   assert.match(grid, /A confiabilidade vive dentro do número/);
+});
+
+test('a fila operacional respeita a largura disponível no desktop', () => {
+  assert.match(density, /@media \(min-width: 761px\)/);
+  assert.match(density, /gso-hd-pipeline-head,\s*\n\s*\.gso-high-density-ui \.gso-pilot-summary \.gso-hd-pipeline-row/);
+  assert.match(density, /grid-template-columns: minmax\(0, 1\.5fr\) minmax\(0, 1fr\) minmax\(4\.5rem, 0\.55fr\)/);
+  assert.match(density, /gso-hd-pipeline-row > \* \{\s*min-width: 0;/);
 });

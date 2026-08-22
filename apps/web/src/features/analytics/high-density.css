@@ -67,6 +67,20 @@
 .gso-high-density-ui .gso-pilot-summary .gso-hd-integrity,
 .gso-high-density-ui .gso-pilot-summary .gso-hd-exceptions,
 .gso-high-density-ui .gso-pilot-summary .gso-hd-pipelines { border-top: 1px solid var(--density-rule); padding-top: 0.65rem; }
+@media (min-width: 761px) {
+  /* Permite que nomes longos respeitem a largura da fila sem truncar texto
+     nem criar rolagem horizontal no desktop. */
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-pipeline-head,
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-pipeline-row {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(4.5rem, 0.55fr);
+  }
+
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-pipeline-head > *,
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-pipeline-row > * {
+    min-width: 0;
+  }
+}
+
 .gso-high-density-ui .gso-visual-v1-domain-frame { padding: 1rem 0 1.5rem; }
 .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-header { align-items: center; border-bottom: 1px solid var(--density-rule); padding-bottom: 0.65rem; }
 .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-aside { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 0.8rem; }

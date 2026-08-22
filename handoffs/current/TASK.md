@@ -1,9 +1,9 @@
 # TASK
 
 - Task ID: `DASHBOARD-UX-DENSITY-2026-08-21`
-- State: `READY_FOR_IMPLEMENTATION`
-- Owner: `Forge`
-- Role: `EXECUTOR`
+- State: `READY_FOR_REVIEW`
+- Owner: `Sentinel`
+- Role: `REVIEWER`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Approval: `APPROVED`
