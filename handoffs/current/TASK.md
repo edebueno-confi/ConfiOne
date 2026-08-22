@@ -7,4 +7,4 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 
-Última task arquivada: `ANALYTICS-METRIC-CONTEXT-UI-2026-08-21`.
+Última task arquivada: `AUTH-MODEL-AUDIT-2026-08-21`.

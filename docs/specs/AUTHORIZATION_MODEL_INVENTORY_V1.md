@@ -290,9 +290,16 @@ Estas notas não são conclusões de implementação:
 - Recomendações de simplificação: não concluídas neste lote; foram separadas
   como hipóteses e pendências.
 
-## 12. Próximo passo autorizado
+## 12. Encerramento documental da auditoria
 
-Entregar este inventário ao Sentinel para revisão independente. A próxima task
-`AUTH-MODEL-AUDIT-2026-08-21` continua `BACKLOG/PROPOSED` e só pode ser
-promovida depois de o Sentinel concluir este lote, Forge integrar o lote
-aprovado e `handoffs/current/` retornar a `IDLE`, conforme `OD-008`.
+O inventário foi reconciliado com a auditoria `AUTH-MODEL-AUDIT-2026-08-21`,
+registrada no plano canônico de simplificação. A auditoria está em
+`READY_FOR_REVIEW` para o Sentinel; não há simplificação aprovada, remoção de
+fonte ou alteração executável neste lote. A referência histórica abaixo não
+deve ser interpretada como autorização de promoção automática.
+
+## 13. Próximo passo autorizado
+
+Entregar a auditoria documental ao Sentinel para revisão independente. Qualquer
+task posterior só pode ser promovida depois do veredito, da integração local de
+um lote aprovado e do retorno de `handoffs/current/` a `IDLE`, conforme `OD-008`.
