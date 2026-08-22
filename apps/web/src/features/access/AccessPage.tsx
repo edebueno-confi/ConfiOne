@@ -716,12 +716,12 @@ export function AccessPage() {
               Acessos
             </h1>
             <p className="text-sm text-[color:var(--minimal-text-secondary)]">
-              Gerencie usuários, papéis, permissões e convites da plataforma.
+              Organize usuários, funções, clientes e convites com o acesso que cada pessoa já possui.
             </p>
           </div>
 
           <AppButton className="min-h-9 gap-2 rounded-md px-4 text-sm" onClick={() => setActiveDrawer('invite')}>
-            + Convidar usuário
+            + Adicionar usuário
           </AppButton>
         </div>
       </header>
@@ -752,9 +752,9 @@ export function AccessPage() {
         <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Acesso ao Dashboard Gerencial</h2>
+              <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Acesso aos indicadores</h2>
               <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
-                Conceda o perfil operacional sem liberar o console administrativo completo. Ele inclui Dashboard, Portal do cliente, Conteúdo e Integrações.
+                Este acesso adicional permite consultar os indicadores e não libera a administração completa da plataforma.
               </p>
             </div>
             {globalRoleMessage ? <p role="status" className="text-xs text-[color:var(--minimal-text-secondary)]">{globalRoleMessage}</p> : null}
@@ -764,7 +764,7 @@ export function AccessPage() {
               <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
                 <tr>
                   <th className="px-3 py-2">Usuário</th>
-                  <th className="px-3 py-2">Perfil global</th>
+                  <th className="px-3 py-2">Acesso aos indicadores</th>
                   <th className="px-3 py-2 text-right">Ação</th>
                 </tr>
               </thead>
@@ -1561,8 +1561,8 @@ export function AccessPage() {
               </Field>
 
               <Field
-                label="Referência manual"
-                description="Use apenas quando a pessoa não aparecer na busca."
+                label="Usuário"
+                description="Use somente quando a busca não localizar a pessoa."
               >
                 <TextInput
                   onChange={(event) =>
@@ -1571,7 +1571,7 @@ export function AccessPage() {
                       userId: event.target.value,
                     }))
                   }
-                  placeholder="Cole o identificador se precisar"
+                  placeholder="Informe o usuário somente se necessário"
                   required
                   value={addForm.userId}
                 />
@@ -1634,7 +1634,7 @@ export function AccessPage() {
 
           <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
             <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
-              Permissões do vínculo
+              Acesso deste cliente
             </h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="Papel">
@@ -1674,7 +1674,7 @@ export function AccessPage() {
 
           {!selectedMembership.can_update_role || !selectedMembership.can_update_status ? (
             <InlineNotice>
-              Alteração desabilitada para evitar autogestão ou transição sem permissão.
+              Alteração desabilitada para preservar a segurança da própria conta ou quando o acesso não permite essa mudança.
             </InlineNotice>
           ) : null}
         </form>
