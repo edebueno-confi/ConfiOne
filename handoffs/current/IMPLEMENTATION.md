@@ -1,9 +1,6 @@
 # IMPLEMENTATION
 
-- State: `IDLE`
-- Task: nenhuma task ativa
-- Owner: `Codex`
-- Coordinator: `Codex`
-- Agent coordination: `IDLE`
+Estado corrente: `IDLE`.
 
-O lote `DATA-PIPELINE-OPERATION-GOVERNANCE-2026-08-21` foi aprovado pelo Sentinel e arquivado. Consulte o handoff arquivado para implementação, evidências e gates.
+O lote `R1-UTF8-ENCODING-INTEGRITY-2026-08-21` foi finalizado localmente após
+aprovação formal do Sentinel. Evidências completas estão no pacote arquivado.
