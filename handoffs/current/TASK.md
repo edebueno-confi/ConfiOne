@@ -1,4 +1,9 @@
 # TASK
 
-Nenhuma task corrente. O último lote `R1-MY-SPACE-SAFE-LANDING-2026-08-21`
-foi arquivado após aprovação formal do Sentinel.
+- State: IDLE
+- Owner: Forge
+- Role: EXECUTOR
+- Reviewer active: Sentinel
+- Review mode: SENTINEL_REQUIRED
+- Coordinator: Codex
+- Próximo passo: aguardar promoção sequencial de task autorizada.

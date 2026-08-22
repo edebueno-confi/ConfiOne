@@ -1,6 +1,5 @@
 # STATUS
 
-- Task: nenhuma task corrente
 - State: IDLE
 - Owner: Forge
 - Role: EXECUTOR
@@ -8,4 +7,5 @@
 - Review mode: SENTINEL_REQUIRED
 - Coordinator: Codex
 - Agent coordination: IDLE
-- Próximo passo: aguardar promoção autorizada na fila.
+- Approval: n/a
+- Próximo passo: aguardar próxima task autorizada e elegível.
