@@ -97,8 +97,8 @@ const EXECUTIVE_BANDS: BoardBand[] = [
     ],
   },
   {
-    title: 'Atenção',
-    note: 'Sinais que costumam exigir ação antes do próximo ciclo.',
+    title: 'Atenção executiva',
+    note: 'Riscos financeiros e de retenção que pedem decisão.',
     dense: true,
     items: [
       { key: 'overdue_receivables', kind: 'currency', note: 'Vencido e não recebido', alertWhenPositive: true },
@@ -816,11 +816,12 @@ function ExecutiveHdCanvas({
         <section
           className="gso-hd-integrity"
           aria-labelledby="integrity-heading"
+          data-testid="overview-governance-coverage"
         >
           <HdSectionHeading
             id="integrity-heading"
-            title="Trilho de integridade"
-            description="Qualidade e cobertura sem uma caixa administrativa separada."
+            title="Governança e cobertura"
+            description="Cobertura, reconciliação e responsáveis que afetam a confiança nos dados."
           />
           <div className="gso-hd-integrity-line">
             <div>
@@ -846,11 +847,12 @@ function ExecutiveHdCanvas({
         <section
           className="gso-hd-exceptions"
           aria-labelledby="exceptions-heading"
+          data-testid="overview-operational-attention"
         >
           <HdSectionHeading
             id="exceptions-heading"
-            title="Sinais gerenciais"
-            description="Sinais operacionais separados da qualidade e do frescor dos dados."
+            title="Atenção operacional"
+            description="Exceções determinísticas que pedem acompanhamento ou ação."
           />
           {exceptions.length ? (
             <div className="gso-hd-signal-list">
@@ -878,12 +880,12 @@ function ExecutiveHdCanvas({
         </section>
       </div>
 
-      <section className="gso-hd-pipelines" aria-labelledby="pipelines-heading">
+      <section className="gso-hd-pipelines" aria-labelledby="pipelines-heading" data-testid="overview-operational-queue">
         <div className="gso-hd-section-heading-inline">
           <HdSectionHeading
             id="pipelines-heading"
-            title="Pipelines de Suporte prioritários"
-            description="Composição do volume no período selecionado."
+            title="Fila operacional"
+            description="Concentração de atendimentos por fila no período selecionado."
           />
           <span>
             {pipelines.length
