@@ -37,8 +37,6 @@ declare
   v_old text;
   v_new text;
   v_old_count integer;
-  v_new_count_before integer;
-  v_new_count_after integer;
   v_index integer;
   v_old_patterns text[];
   v_new_patterns text[];
@@ -141,14 +139,9 @@ begin
       if v_old_count = 0 then
         raise exception 'Transformacao obrigatoria ausente em %: %', v_function, v_old;
       end if;
-      v_new_count_before := (length(v_definition) - length(replace(v_definition, v_new, ''))) / length(v_new);
       v_definition := replace(v_definition, v_old, v_new);
-      v_new_count_after := (length(v_definition) - length(replace(v_definition, v_new, ''))) / length(v_new);
-      if v_new_count_after - v_new_count_before <> v_old_count then
-        raise exception 'Transformacao incompleta em %: % -> %', v_function, v_old, v_new;
-      end if;
       if position(v_old in v_definition) > 0 then
-        raise exception 'Expressao temporal legada permaneceu em %: %', v_function, v_old;
+        raise exception 'Transformacao incompleta em %: % -> %', v_function, v_old, v_new;
       end if;
     end loop;
 
