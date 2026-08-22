@@ -16,9 +16,10 @@ ul{margin-top:8px}footer{font-size:12px;color:#697487;border-top:1px solid #dde3
 <body><main>
 <h1>Migração de Sonho dos Pés</h1>
 <div class="sub">Origem: Genius Returns | Destino: After Sale V2</div>
-<div class="status">Situação: configurações gerais concluídas. O cadastro das lojas físicas foi preparado, mas a confirmação final da quantidade gravada na V2 está pendente porque a aba do painel não respondeu à leitura automática.</div>
+<div class="status">Situação: configurações gerais concluídas. A V2 mostra 1 loja ativa cadastrada, `Loja sonhodospes70`. Outras 94 lojas aptas ainda precisam ser cadastradas e conferidas.</div>
 <div class="grid">
 <div class="card"><strong>95</strong>lojas aptas para cadastro</div>
+<div class="card"><strong>1</strong>loja confirmada na V2</div>
 <div class="card"><strong>94</strong>sellers de retorno identificados</div>
 <div class="card"><strong>99</strong>registros encontrados na Genius</div>
 </div>
@@ -40,7 +41,8 @@ ul{margin-top:8px}footer{font-size:12px;color:#697487;border-top:1px solid #dde3
 <p>Na Genius, a loja física funciona como destino de retorno da mercadoria para a origem do pedido. O código do seller é o ID restritor. Na V2, esse comportamento foi representado pelo cadastro da loja com retorno para a origem e pelo uso do ID restritor como identificador externo.</p>
 <p>O arquivo <strong>LOJAS_V2_CADASTRO_SONHO_DOS_PES.csv</strong> contém 95 registros únicos, com endereço, identificador do seller, retorno para a origem e o CNPJ empresarial autorizado para atender à exigência da V2.</p>
 <table><thead><tr><th>Tratamento</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody>
-<tr><td>Incluídas na carga</td><td>95</td><td>Ativas, com endereço válido, ID restritor e sem duplicidade.</td></tr>
+<tr><td>Incluídas na base de carga</td><td>95</td><td>Ativas, com endereço válido, ID restritor e sem duplicidade.</td></tr>
+<tr><td>Confirmada na V2</td><td>1</td><td>Loja sonhodospes70, ativa, vinculada a Sonho dos Pés.</td></tr>
 <tr><td>Não incluídas</td><td>2</td><td>Registros inativos e sem ID restritor.</td></tr>
 <tr><td>Não incluída</td><td>1</td><td>Registro ativo sem endereço suficiente para cadastro.</td></tr>
 <tr><td>Consolidada</td><td>1 duplicidade</td><td>Mesmo endereço e mesmo código de seller; mantida apenas uma ocorrência.</td></tr>
