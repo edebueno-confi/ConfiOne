@@ -1,29 +1,19 @@
 # STATUS
 
-- Task: `DASHBOARD-UX-DENSITY-2026-08-21`
-- State: `APPROVED`
+- Task: `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21`
+- State: `READY_FOR_IMPLEMENTATION`
 - Owner: `Forge`
 - Role: `EXECUTOR`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Approval: `APPROVED`
-- Base SHA: `60bff9577de1bb4477d096e2989dae3d392df782`
+- Base SHA: `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1`
 - Current SHA: `UNCOMMITTED_WORKTREE`
 
-Forge refinou a densidade da Fila operacional no Dashboard Gerencial dentro da
-allowlist, preservando contratos, semântica, cobertura e estados de ausência.
+Task 26 foi finalizada localmente com APPROVED formal do Sentinel, commit
+exclusivo `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1` e handoff arquivado.
 
-Na revisão inicial, Sentinel registrou o finding `F-DASH-001` porque o bloco
-inicial de `TASK.md` estava em `READY_FOR_IMPLEMENTATION / Owner=Forge`, em
-conflito com a entrega. Forge normalizou os metadados e o re-review confirmou a
-resolução.
-
-Forge corrigiu somente os metadados canônicos de `TASK.md`, reentregou em
-`READY_FOR_REVIEW` e Sentinel aprovou o re-review. A funcionalidade melhorada
-é a densidade responsiva da Fila operacional, com colunas desktop que acomodam
-nomes longos sem alterar contratos, semântica, cobertura ou estados de
-ausência.
-
-Forge está autorizado a finalizar localmente o lote aprovado conforme o
-protocolo. Push, merge, deploy, migration remota, secrets e release continuam
-proibidos.
+Forge abriu a próxima task autorizada da fila: reproduzir e corrigir o caso de
+administrador válido recebendo `Acesso negado`, preservando isolamento,
+deny-by-default, sessão e estados de usuário inativo. Push, merge, deploy,
+migration remota, secrets e release continuam proibidos.

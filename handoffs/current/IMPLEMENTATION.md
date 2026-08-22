@@ -1,57 +1,38 @@
 # IMPLEMENTATION
 
-- Task ID: `DASHBOARD-UX-DENSITY-2026-08-21`
-- State: `READY_FOR_REVIEW`
-- Owner: `Sentinel`
+- Task ID: `AUTH-ADMIN-DENIAL-ROOT-CAUSE-2026-08-21`
+- State: `READY_FOR_IMPLEMENTATION`
+- Owner: `Forge`
 - Reviewer active: `Sentinel`
-- Base SHA: `60bff9577de1bb4477d096e2989dae3d392df782`
+- Base SHA: `56e5fd3b0a5812fac6f22572f136b2feb82fd8e1`
 - Current SHA: `UNCOMMITTED_WORKTREE`
 - Implementation SHA: `UNCOMMITTED_WORKTREE`
 
 ## Plano
 
-1. Auditar a composição atual e identificar somente ruído ou espaçamento que
-   prejudique a decisão em desktop Full HD.
-2. Aplicar o menor ajuste visual necessário usando os estilos e componentes
-   existentes, sem alterar semântica ou contrato.
-3. Atualizar testes estruturais apenas quando a alteração exigir uma nova
-   garantia.
-4. Executar os gates aplicáveis e entregar o lote a Sentinel.
+1. Confirmar branch, HEAD, worktree e a allowlist antes de tocar arquivos.
+2. Reconstituir o fluxo de autenticação e autorização com evidência de código,
+   contratos, rotas e testes existentes.
+3. Reproduzir o caso de administrador válido recebendo `Acesso negado`, sem
+   alterar estado remoto ou mascarar falhas.
+4. Corrigir somente a causa mínima comprovada e adicionar regressão focada.
+5. Executar os gates aplicáveis, registrar limitações e entregar a Sentinel.
 
-## Alterações realizadas
+## Estado da implementação
 
-- A fila operacional recebeu colunas desktop com `minmax(0, ...)` para que
-  nomes longos respeitem a largura disponível sem truncamento ou rolagem
-  horizontal intencional.
-- Os itens da fila receberam `min-width: 0` dentro do grid, preservando a
-  leitura das três colunas e a responsividade existente.
-- Nenhum rótulo, fonte, read model, fórmula, filtro, permissão, estado de
-  ausência ou cálculo de KPI foi alterado.
-- Resposta ao finding `F-DASH-001`: o bloco inicial de `TASK.md` foi
-  normalizado para `State=READY_FOR_REVIEW`, `Owner=Sentinel` e
-  `Role=REVIEWER`, mantendo Task ID, SHAs, reviewer ativo, review mode,
-  allowlist e critérios de aceitação inalterados.
+Implementação ainda não iniciada. Nenhum arquivo de produto foi alterado neste
+lote após a abertura do handoff.
 
-## Validações executadas
+## Validações
 
-- `node --test tests/scripts/analytics-layout-structure.test.mjs tests/scripts/dashboard-02-executive.test.mjs tests/scripts/mvp-ux-02-executive-integrated.test.mjs` PASS: 17/17.
-- `npm run web:typecheck` PASS.
-- `npm run web:build` PASS: Vite transformou 945 módulos.
-- `npm run lint` PASS: 0 erros e 160 warnings legados do workspace.
-- `npm run review:gates` PASS: 0 regressões bloqueantes e 45 itens do
-  baseline resolvidos.
-- `npm run docs:validate` PASS: 0 documentos bloqueados; 9 alertas
-  documentais existentes preservados.
-- `git diff --check` PASS.
-- Após a correção documental de `F-DASH-001`, `npm run docs:validate` PASS e
-  `git diff --check` PASS novamente; nenhum arquivo de produto foi alterado.
-- `node .agents/skills/genius-documentation-governance/scripts/validate-governance-skill.mjs`
-  PASS (`valid: true`); o `package.json` não expõe um alias npm
-  `validate-governance-skill`.
+Ainda não executadas para esta task. Serão registradas após a reprodução e a
+correção, incluindo testes focados, typecheck, build, lint aplicável,
+`review:gates` e `git diff --check`.
 
-## Limitações
+## Limitações e riscos
 
-- Não foi executado QA visual autenticado; o build e os testes estáticos não
-  substituem renderização, console, rede e fluxo funcional no navegador.
-- Não foram executados testes de banco, migrations ou integrações externas,
-  pois o lote altera somente composição visual e teste estrutural.
+- A reprodução autenticada pode depender de um ambiente local configurado e de
+  um usuário de teste válido; se isso impedir a reprodução, a limitação será
+  registrada sem inventar evidência.
+- Não serão executadas escritas remotas, alterações de secrets, deploys ou
+  migrations remotas.
