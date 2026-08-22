@@ -2,17 +2,15 @@
 
 - Task ID: `IDLE`
 - State: `IDLE`
-- Owner: `Forge`
-- Role: `EXECUTOR`
+- Owner: `Codex`
+- Role: `ORCHESTRATOR`
 - Reviewer active: `Sentinel`
 - Review mode: `SENTINEL_REQUIRED`
 - Coordinator: `Codex`
-- Approval: `NONE`
-- Base SHA: `24dce2e`
-- Current SHA: `24dce2e`
+- Agent coordination: `IDLE`
 
-Não há task ativa no handoff corrente. A fila canônica em
-`handoffs/README.md` permanece como fonte da próxima promoção autorizada.
+Nenhum lote ativo. A fila permanece sequencial e somente a próxima task
+autorizada pode ser promovida após conferência de dependências e critérios.
 
-Push, merge, deploy, produção, secrets, migrations remotas e escritas externas
-continuam proibidos.
+Push, merge, deploy, produção, secrets, migrations remotas, chamadas externas
+e comandos de escrita continuam proibidos.

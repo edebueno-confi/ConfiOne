@@ -2,14 +2,12 @@
 
 - Task ID: `IDLE`
 - State: `IDLE`
-- Owner: `Forge`
+- Owner: `Codex`
+- Role: `ORCHESTRATOR`
 - Reviewer active: `Sentinel`
+- Review mode: `SENTINEL_REQUIRED`
 - Coordinator: `Codex`
-- Base SHA: `24dce2e`
-- Implementation SHA: `24dce2e`
+- Agent coordination: `IDLE`
 
-Nenhuma implementação ativa. O lote aprovado anterior foi finalizado
-localmente e arquivado em `handoffs/archive/`.
-
-O próximo trabalho só pode ser promovido após leitura da fila, dependências,
-allowlist e estado do worktree.
+Nenhuma implementação ativa. O último lote aprovado foi arquivado no diretório
+correspondente de `handoffs/archive/`.

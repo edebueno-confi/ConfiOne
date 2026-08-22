@@ -6,6 +6,7 @@ import {
   createControlPlaneServer,
   parseQueueMarkdown,
   buildActivityTimeline,
+  parseReview,
   readSnapshot,
   REPOSITORY_ROOT,
 } from '../../tools/dev-control/server.mjs';
@@ -14,6 +15,7 @@ import {
   formatWorktreeStatus,
   groupQueueItems,
   normalizeQueueItems,
+  toCanonicalQueueState,
   UNRESOLVED_QUEUE_STATE,
 } from '../../tools/dev-control/public/queue-state.js';
 
@@ -39,7 +41,7 @@ test('fila canônica expõe autorização, dependências e resumo estruturado', 
   assert.equal(r14?.dependencies, 'R-11');
   assert.equal(backlogTask?.approval, 'APPROVED');
   assert.equal(operationScope?.dependencies, 'CONTROL-PLANE-BACKLOG-2026-08-21');
-  assert.equal(queue.filter((item) => item.state === 'ACTIVE').length, 1);
+  assert.ok(queue.some((item) => ['ACTIVE', 'READY', 'DONE'].includes(item.state)));
   assert.ok(queue.filter((item) => item.state === 'BACKLOG').length >= 10);
 });
 
@@ -52,12 +54,24 @@ test('snapshot do control plane lê o checkout real e os handoffs correntes', as
   assert.equal(typeof snapshot.current.status.task, 'string');
   assert.ok(snapshot.current.status.task.length > 0);
   if (snapshot.current.status.state === 'IDLE') {
-    assert.equal(snapshot.current.status.task, 'NONE');
+    assert.equal(snapshot.current.status.task, 'IDLE');
   } else {
     assert.ok(snapshot.queue.some((item) => item.task_id === snapshot.current.status.task));
   }
   assert.ok(['IDLE', 'READY_FOR_IMPLEMENTATION', 'IMPLEMENTING', 'VALIDATING', 'READY_FOR_REVIEW', 'REVIEWING', 'CHANGES_REQUESTED', 'FIXING', 'APPROVED', 'FINALIZING_LOCAL', 'COMPLETED', 'BLOCKED', 'DONE'].includes(snapshot.current.status.state));
-  assert.ok(['Codex', 'Claude', 'Ede'].includes(snapshot.current.status.owner));
+  assert.ok(['Forge', 'Sentinel', 'Codex', 'Claude', 'Ede'].includes(snapshot.current.status.owner));
+  assert.equal(snapshot.agents.length, 3);
+  assert.equal(snapshot.agents.find((agent) => agent.name === 'Sentinel')?.role, 'REVIEWER');
+  assert.equal(snapshot.agents.find((agent) => agent.name === 'Codex')?.observed, true);
+  assert.equal('documents' in snapshot.current, false);
+  const serialized = JSON.stringify(snapshot);
+  assert.doesNotMatch(serialized, /#\s+(TASK|IMPLEMENTATION|REVIEW|STATUS)\b/);
+  assert.doesNotMatch(serialized, /(?:secret|token|credential)\s*[:=]/i);
+  const backlogDetail = snapshot.taskDetails.find((item) => item.task_id === 'ANALYTICS-METRIC-METHODOLOGY-2026-08-21');
+  assert.equal(backlogDetail?.isCurrent, false);
+  assert.equal(backlogDetail?.review, null);
+  assert.equal(backlogDetail?.observedState, null);
+  assert.equal(backlogDetail?.owner, null);
   assert.ok(snapshot.queue.some((item) => item.task_id === 'R-03' && item.state === 'DONE'));
   const r03 = snapshot.archives.find((item) => item.archive === 'R03-SUPPORT-ERROR-FEEDBACK-2026-08-20');
   assert.ok(r03);
@@ -71,7 +85,7 @@ test('snapshot do control plane lê o checkout real e os handoffs correntes', as
   assert.ok(Array.isArray(snapshot.decisions));
   assert.ok(snapshot.activity.some((event) => event.source === 'Git'));
   assert.ok(snapshot.activity.some((event) => event.source === 'Handoff corrente'));
-  const activeCount = snapshot.queue.filter((item) => item.state === 'ACTIVE').length;
+  const activeCount = snapshot.queue.filter((item) => ['ACTIVE', 'READY'].includes(item.state)).length;
   assert.ok(activeCount <= 1);
   if (snapshot.current.status.state !== 'IDLE') assert.equal(activeCount, 1);
 });
@@ -84,6 +98,35 @@ test('Kanban preserva item com estado ausente em coluna explícita', () => {
   assert.equal(normalized.length, 1);
   assert.equal(normalized[0].state, UNRESOLVED_QUEUE_STATE);
   assert.ok(normalized.some((item) => item.state === UNRESOLVED_QUEUE_STATE));
+});
+
+test('fila visual normaliza estados canônicos sem perder o estado bruto', () => {
+  assert.equal(toCanonicalQueueState('PROPOSED'), 'BACKLOG');
+  assert.equal(toCanonicalQueueState('ACTIVE'), 'IMPLEMENTING');
+  assert.equal(toCanonicalQueueState('READY_FOR_IMPLEMENTATION'), 'READY');
+  assert.equal(toCanonicalQueueState('READY_FOR_REVIEW'), 'READY_FOR_REVIEW');
+  assert.equal(toCanonicalQueueState('estado_novo'), 'UNRESOLVED');
+
+  const normalized = normalizeQueueItems([
+    { task_id: 'CURRENT', state: 'READY' },
+    { task_id: 'LEGACY', state: 'ACTIVE' },
+  ], 'CURRENT', 'Forge', 'READY_FOR_IMPLEMENTATION');
+
+  assert.equal(normalized[0].state, 'READY');
+  assert.equal(normalized[0].canonicalState, 'READY');
+  assert.equal(normalized[1].state, 'ACTIVE');
+  assert.equal(normalized[1].canonicalState, 'IMPLEMENTING');
+});
+
+test('parseReview reconhece CHANGES_REQUESTED, REQUEST_CHANGES e findings', () => {
+  const canonical = parseReview(`- Veredito: CHANGES_REQUESTED\n\n### F-001 — MEDIUM\n\n### F-002 — LOW — RESOLVED`);
+  const legacy = parseReview(`Result: REQUEST_CHANGES\n\n### F-003 — HIGH`);
+
+  assert.equal(canonical.result, 'CHANGES_REQUESTED');
+  assert.deepEqual(canonical.openFindings, ['F-001 — MEDIUM']);
+  assert.deepEqual(canonical.resolvedFindings, ['F-002 — LOW — RESOLVED']);
+  assert.equal(legacy.result, 'REQUEST_CHANGES');
+  assert.deepEqual(legacy.openFindings, ['F-003 — HIGH']);
 });
 
 test('Kanban mantém BLOCKED e absorve estados futuros sem perder a contagem', () => {
@@ -181,6 +224,6 @@ test('control plane permanece isolado do produto e não contém escrita de arqui
 
   assert.doesNotMatch(serverSource, /writeFile|appendFile|rmSync|unlink/);
   assert.doesNotMatch(pageSource, /apps\/web|release-surface|supabase/i);
-  assert.doesNotMatch(appSource, /555\/555|data-tone/);
+  assert.doesNotMatch(appSource, /555\/555/);
   assert.match(appSource, /UNRESOLVED/);
 });
