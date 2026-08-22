@@ -141,10 +141,10 @@ Regras da fila:
 - `BACKLOG` representa item decomposto aguardando dependência ou seleção;
 - `READY` representa item elegível para abertura da próxima TASK;
 - A frente de autorização foi registrada com a primeira task em `READY` e as
-  demais em `BACKLOG/PROPOSED`; o `APPROVED` da task 29 autoriza sua abertura
-  futura, não a implementação neste turno. Como `handoffs/current/` está
-  ocupado por `SUPPORT-DOMAIN-AUDIT-2026-08-21`, Forge só pode receber a task
-  29 depois que o handoff atual retornar a `IDLE`.
+  demais em `BACKLOG/PROPOSED`. A task 29 foi aprovada, integrada localmente e
+  marcada como `DONE`; `handoffs/current/` retornou a `IDLE`.
+- A task 30 permanece `BACKLOG` com `Approval = PROPOSED`, portanto não é
+  elegível para abertura automática neste ciclo.
 - o próximo item só pode ser aberto depois de `APPROVED` no item anterior, suas
   dependências satisfeitas e o retorno de `handoffs/current/` para `IDLE`;
 - `Approval` é autorização do proprietário; `State` controla elegibilidade e
